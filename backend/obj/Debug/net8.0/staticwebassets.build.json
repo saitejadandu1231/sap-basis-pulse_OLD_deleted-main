@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "DBi0t+UNFve3DdOKWxkhpywjYsQ7neKfMDNX1/MARmo=",
+  "Source": "SapBasisPulse.Api",
+  "BasePath": "_content/SapBasisPulse.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
