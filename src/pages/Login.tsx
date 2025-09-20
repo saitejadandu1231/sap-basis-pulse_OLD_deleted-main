@@ -1,0 +1,364 @@
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useValidateDomain } from "@/hooks/useSupport";
+import { AlertCircle } from "lucide-react";
+
+const Login = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { signIn, signUp, user } = useAuth();
+  const validateDomain = useValidateDomain();
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [selectedRole, setSelectedRole] = useState("customer");
+  const [allowConsultantSignup, setAllowConsultantSignup] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in
+  if (user) {
+    navigate('/dashboard');
+    return null;
+  }
+
+  // Fetch signup options
+  useEffect(() => {
+    const fetchSignupOptions = async () => {
+      try {
+        const response = await fetch(`https://wkmhgfurujsvgckunpgy.supabase.co/functions/v1/signup-options`);
+        const data = await response.json();
+        setAllowConsultantSignup(data.allow_consultant_signup || false);
+      } catch (error) {
+        console.error('Error fetching signup options:', error);
+      }
+    };
+
+    fetchSignupOptions();
+  }, []);
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        toast({
+          title: "Sign In Failed",
+          description: error.message || "Invalid credentials",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Welcome back!",
+        description: "You have been signed in successfully"
+      });
+      
+      navigate('/dashboard');
+    } catch (error: any) {
+      toast({
+        title: "Sign In Error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!firstName.trim() || !lastName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "First name and last name are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Validate domain first
+      const isDomainAllowed = await validateDomain.mutateAsync(email);
+      
+      if (!isDomainAllowed) {
+        toast({
+          title: "Domain Not Allowed",
+          description: "Your email domain is not permitted to register. Please contact support.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await signUp(email, password, firstName, lastName, selectedRole);
+      
+      if (error) {
+        if (error.message?.includes('User already registered')) {
+          toast({
+            title: "Account Exists",
+            description: "An account with this email already exists. Please sign in instead.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Sign Up Failed",
+            description: error.message || "Failed to create account",
+            variant: "destructive"
+          });
+        }
+        return;
+      }
+
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account before signing in."
+      });
+      
+      // Clear form
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setFirstName("");
+      setLastName("");
+      setSelectedRole("customer");
+      
+    } catch (error: any) {
+      toast({
+        title: "Sign Up Error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-yuktor-400 to-yuktor-600 bg-clip-text text-transparent mb-2">
+            Yuktor
+          </h1>
+          <p className="text-muted-foreground">SAP BASIS Enterprise Support Platform</p>
+        </div>
+
+        <Card className="glass-card">
+          <Tabs defaultValue="signin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="signin">
+              <CardHeader>
+                <CardTitle>Welcome Back</CardTitle>
+                <CardDescription>
+                  Sign in to your Yuktor account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="bg-background/50"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="bg-background/50"
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full btn-glow bg-yuktor-600 hover:bg-yuktor-700"
+                    disabled={loading}
+                  >
+                    {loading ? "Signing In..." : "Sign In"}
+                  </Button>
+                </form>
+              </CardContent>
+            </TabsContent>
+            
+            <TabsContent value="signup">
+              <CardHeader>
+                <CardTitle>Create Account</CardTitle>
+                <CardDescription>
+                  Join Yuktor for professional SAP support
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first-name">First Name</Label>
+                      <Input
+                        id="first-name"
+                        type="text"
+                        placeholder="First name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="bg-background/50"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last-name">Last Name</Label>
+                      <Input
+                        id="last-name"
+                        type="text"
+                        placeholder="Last name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="bg-background/50"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Role Selection</Label>
+                    <RadioGroup value={selectedRole} onValueChange={setSelectedRole}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="customer" id="customer" />
+                        <Label htmlFor="customer">Customer</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem 
+                          value="consultant" 
+                          id="consultant"
+                          disabled={!allowConsultantSignup}
+                        />
+                        <Label htmlFor="consultant" className={!allowConsultantSignup ? "opacity-50" : ""}>
+                          Consultant
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                    {!allowConsultantSignup && (
+                      <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                        To register as a Consultant, please write to AppAdmin at appadmin@yuktor.com.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="bg-background/50"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="Create a password (min 6 characters)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="bg-background/50"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="bg-background/50"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex items-start space-x-2 text-sm text-muted-foreground">
+                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <p>
+                      By signing up, you agree to receive email verification. 
+                      Some email domains may be restricted for security purposes.
+                    </p>
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    className="w-full btn-glow bg-yuktor-600 hover:bg-yuktor-700"
+                    disabled={loading}
+                  >
+                    {loading ? "Creating Account..." : "Create Account"}
+                  </Button>
+                </form>
+              </CardContent>
+            </TabsContent>
+          </Tabs>
+        </Card>
+
+        <div className="text-center mt-6">
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            ← Back to Home
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
