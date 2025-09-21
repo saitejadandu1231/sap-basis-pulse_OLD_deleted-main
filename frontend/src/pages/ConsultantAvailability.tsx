@@ -230,48 +230,56 @@ const ConsultantAvailability = () => {
               <form onSubmit={handleDefineBlock} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="start-date">Start Date</Label>
+                    <Label htmlFor="start-date" className="text-sm font-medium">
+                      Start Date
+                    </Label>
                     <Input
                       id="start-date"
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="bg-background/50"
+                      className="bg-background/50 border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="end-date">End Date</Label>
+                    <Label htmlFor="end-date" className="text-sm font-medium">
+                      End Date
+                    </Label>
                     <Input
                       id="end-date"
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="bg-background/50"
+                      className="bg-background/50 border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20"
                       required
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="start-time">Start Time</Label>
+                    <Label htmlFor="start-time" className="text-sm font-medium">
+                      Start Time
+                    </Label>
                     <Input
                       id="start-time"
                       type="time"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="bg-background/50"
+                      className="bg-background/50 border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="end-time">End Time</Label>
+                    <Label htmlFor="end-time" className="text-sm font-medium">
+                      End Time
+                    </Label>
                     <Input
                       id="end-time"
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="bg-background/50"
+                      className="bg-background/50 border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20"
                       required
                     />
                   </div>

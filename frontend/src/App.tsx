@@ -13,6 +13,8 @@ import Dashboard from "./pages/Dashboard";
 import SupportSelection from "./pages/SupportSelection";
 import ConsultantAvailability from "./pages/ConsultantAvailability";
 import AdminDashboard from "./pages/AdminDashboard";
+import { MessagingPage } from "./pages/Messaging";
+import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
 import NotFound from "./pages/NotFound";
 import "@/lib/pwa"; // Initialize PWA functionality
 
@@ -46,6 +48,13 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <MessagingProtectedRoute>
+                  <MessagingPage />
+                </MessagingProtectedRoute>
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -83,7 +83,7 @@ namespace SapBasisPulse.Api.Services
 
         public async Task<IEnumerable<SupportRequestDto>> GetRecentForUserAsync(Guid userId)
         {
-            return await _context.Orders
+            var orders = await _context.Orders
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
                 .Include(o => o.SupportSubOption)
@@ -93,34 +93,19 @@ namespace SapBasisPulse.Api.Services
                 .Where(o => o.CreatedByUserId == userId)
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(10)
-                .Select(o => new SupportRequestDto
-                {
-                    Id = o.Id,
-                    SupportTypeId = o.SupportTypeId,
-                    SupportTypeName = o.SupportType != null ? o.SupportType.Name : "Unknown",
-                    SupportCategoryId = o.SupportCategoryId,
-                    SupportCategoryName = o.SupportCategory != null ? o.SupportCategory.Name : "Unknown",
-                    SupportSubOptionId = o.SupportSubOptionId,
-                    SupportSubOptionName = o.SupportSubOption != null ? o.SupportSubOption.Name : null,
-                    Description = o.Description,
-                    SrIdentifier = o.SrIdentifier,
-                    Priority = o.Priority,
-                    ConsultantId = o.Consultant != null ? o.Consultant.Id : Guid.Empty,
-                    ConsultantName = o.Consultant != null ? o.Consultant.FirstName + " " + o.Consultant.LastName : "Unknown",
-                    TimeSlotId = o.TimeSlotId ?? Guid.Empty,
-                    SlotStartTime = o.TimeSlot != null ? o.TimeSlot.SlotStartTime : DateTime.MinValue,
-                    SlotEndTime = o.TimeSlot != null ? o.TimeSlot.SlotEndTime : DateTime.MinValue,
-                    CreatedByUserId = o.CreatedByUserId,
-                    CreatedByName = o.CreatedByUser != null ? o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName : "Unknown",
-                    CreatedAt = o.CreatedAt,
-                    Status = o.Status
-                })
                 .ToListAsync();
+
+            var dtos = new List<SupportRequestDto>();
+            foreach (var order in orders)
+            {
+                dtos.Add(await ToDto(order));
+            }
+            return dtos;
         }
 
         public async Task<IEnumerable<SupportRequestDto>> GetRecentForConsultantAsync(Guid consultantId)
         {
-            return await _context.Orders
+            var orders = await _context.Orders
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
                 .Include(o => o.SupportSubOption)
@@ -130,34 +115,19 @@ namespace SapBasisPulse.Api.Services
                 .Where(o => o.ConsultantId == consultantId)
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(10)
-                .Select(o => new SupportRequestDto
-                {
-                    Id = o.Id,
-                    SupportTypeId = o.SupportTypeId,
-                    SupportTypeName = o.SupportType != null ? o.SupportType.Name : "Unknown",
-                    SupportCategoryId = o.SupportCategoryId,
-                    SupportCategoryName = o.SupportCategory != null ? o.SupportCategory.Name : "Unknown",
-                    SupportSubOptionId = o.SupportSubOptionId,
-                    SupportSubOptionName = o.SupportSubOption != null ? o.SupportSubOption.Name : null,
-                    Description = o.Description,
-                    SrIdentifier = o.SrIdentifier,
-                    Priority = o.Priority,
-                    ConsultantId = o.Consultant != null ? o.Consultant.Id : Guid.Empty,
-                    ConsultantName = o.Consultant != null ? o.Consultant.FirstName + " " + o.Consultant.LastName : "Unknown",
-                    TimeSlotId = o.TimeSlotId ?? Guid.Empty,
-                    SlotStartTime = o.TimeSlot != null ? o.TimeSlot.SlotStartTime : DateTime.MinValue,
-                    SlotEndTime = o.TimeSlot != null ? o.TimeSlot.SlotEndTime : DateTime.MinValue,
-                    CreatedByUserId = o.CreatedByUserId,
-                    CreatedByName = o.CreatedByUser != null ? o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName : "Unknown",
-                    CreatedAt = o.CreatedAt,
-                    Status = o.Status
-                })
                 .ToListAsync();
+
+            var dtos = new List<SupportRequestDto>();
+            foreach (var order in orders)
+            {
+                dtos.Add(await ToDto(order));
+            }
+            return dtos;
         }
 
         public async Task<IEnumerable<SupportRequestDto>> GetAllAsync()
         {
-            return await _context.Orders
+            var orders = await _context.Orders
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
                 .Include(o => o.SupportSubOption)
@@ -165,29 +135,14 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.TimeSlot)
                 .Include(o => o.CreatedByUser)
                 .OrderByDescending(o => o.CreatedAt)
-                .Select(o => new SupportRequestDto
-                {
-                    Id = o.Id,
-                    SupportTypeId = o.SupportTypeId,
-                    SupportTypeName = o.SupportType != null ? o.SupportType.Name : "Unknown",
-                    SupportCategoryId = o.SupportCategoryId,
-                    SupportCategoryName = o.SupportCategory != null ? o.SupportCategory.Name : "Unknown",
-                    SupportSubOptionId = o.SupportSubOptionId,
-                    SupportSubOptionName = o.SupportSubOption != null ? o.SupportSubOption.Name : null,
-                    Description = o.Description,
-                    SrIdentifier = o.SrIdentifier,
-                    Priority = o.Priority,
-                    ConsultantId = o.Consultant != null ? o.Consultant.Id : Guid.Empty,
-                    ConsultantName = o.Consultant != null ? o.Consultant.FirstName + " " + o.Consultant.LastName : "Unknown",
-                    TimeSlotId = o.TimeSlotId ?? Guid.Empty,
-                    SlotStartTime = o.TimeSlot != null ? o.TimeSlot.SlotStartTime : DateTime.MinValue,
-                    SlotEndTime = o.TimeSlot != null ? o.TimeSlot.SlotEndTime : DateTime.MinValue,
-                    CreatedByUserId = o.CreatedByUserId,
-                    CreatedByName = o.CreatedByUser != null ? o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName : "Unknown",
-                    CreatedAt = o.CreatedAt,
-                    Status = o.Status
-                })
                 .ToListAsync();
+
+            var dtos = new List<SupportRequestDto>();
+            foreach (var order in orders)
+            {
+                dtos.Add(await ToDto(order));
+            }
+            return dtos;
         }
 
         private async Task<SupportRequestDto> ToDto(Order o)
@@ -201,6 +156,19 @@ namespace SapBasisPulse.Api.Services
             if (o.TimeSlotId.HasValue)
                 await _context.Entry(o).Reference(x => x.TimeSlot).LoadAsync();
             await _context.Entry(o).Reference(x => x.CreatedByUser).LoadAsync();
+
+            // Check for existing conversation
+            var conversation = await _context.Conversations
+                .FirstOrDefaultAsync(c => c.OrderId == o.Id);
+
+            int unreadCount = 0;
+            if (conversation != null)
+            {
+                // Count unread messages in the conversation
+                unreadCount = await _context.Messages
+                    .Where(m => m.ConversationId == conversation.Id && m.ReadAt == null)
+                    .CountAsync();
+            }
             
             return new SupportRequestDto
             {
@@ -222,7 +190,10 @@ namespace SapBasisPulse.Api.Services
                 CreatedByUserId = o.CreatedByUserId,
                 CreatedByName = o.CreatedByUser != null ? o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName : "Unknown",
                 CreatedAt = o.CreatedAt,
-                Status = o.Status
+                Status = o.Status,
+                ConversationId = conversation?.Id,
+                HasConversation = conversation != null,
+                UnreadMessageCount = unreadCount
             };
         }
 

@@ -35,6 +35,9 @@ namespace SapBasisPulse.Api.DTOs
         public string CreatedByName { get; set; }
         public DateTime CreatedAt { get; set; }
         public string Status { get; set; }
+        public Guid? ConversationId { get; set; }
+        public bool HasConversation { get; set; }
+        public int UnreadMessageCount { get; set; }
     }
 
     public class UpdateStatusDto

@@ -34,6 +34,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketRatingService, TicketRatingService>();
 builder.Services.AddScoped<ISupportTaxonomyService, SupportTaxonomyService>();
 builder.Services.AddScoped<IConsultantAvailabilityService, ConsultantAvailabilityService>();
+builder.Services.AddScoped<IMessagingService, MessagingService>();
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
 // Add development helper service
 builder.Services.AddScoped<DevHelperService>();
@@ -135,6 +137,7 @@ if (app.Environment.IsDevelopment())
         using var scope = app.Services.CreateScope();
         var devHelper = scope.ServiceProvider.GetRequiredService<DevHelperService>();
         await devHelper.EnsureAllUsersActiveInDevelopmentAsync();
+        await devHelper.EnsureAdminUserExistsAsync();
 
         // Seed the database with support taxonomy data
         try

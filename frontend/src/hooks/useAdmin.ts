@@ -34,6 +34,9 @@ interface AdminSupportRequest {
   createdAt: string;
   createdByName: string;
   consultantName: string | null;
+  conversationId?: string | null;
+  hasConversation: boolean;
+  unreadMessageCount: number;
 }
 
 // Get all users

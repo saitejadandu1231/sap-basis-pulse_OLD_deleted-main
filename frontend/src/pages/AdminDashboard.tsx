@@ -20,9 +20,11 @@ import {
   AlertTriangle,
   Ticket,
   Clock,
-  CheckCircle
+  CheckCircle,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { 
   useAdminUsers, 
   useAdminSupportRequests, 
@@ -35,6 +37,7 @@ import { toast } from 'sonner';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const { data: featureFlags, refetch: refetchFeatureFlags } = useFeatureFlags();
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
@@ -220,7 +223,7 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 lg:w-fit">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-fit">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -232,6 +235,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
@@ -508,6 +515,113 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Messaging Feature Toggle */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5" />
+                        <h3 className="text-lg font-semibold">Messaging System</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Enable or disable the messaging functionality for all users
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge 
+                        variant={featureFlags?.messagingEnabled ? "default" : "secondary"}
+                        className="px-3 py-1"
+                      >
+                        {featureFlags?.messagingEnabled ? "Enabled" : "Disabled"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {featureFlags?.messagingEnabled ? (
+                      <>
+                        <p>✓ Users can start conversations from support tickets</p>
+                        <p>✓ Messaging page is accessible</p>
+                        <p>✓ Message notifications are active</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>✗ Conversation buttons are hidden</p>
+                        <p>✗ Messaging page shows disabled message</p>
+                        <p>✗ API endpoints return disabled error</p>
+                      </>
+                    )}
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">How to change this setting:</p>
+                    <p className="text-sm text-muted-foreground">
+                      Currently, messaging can be enabled/disabled by updating the <code>MessagingEnabled</code> 
+                      setting in the <code>appsettings.json</code> configuration file and restarting the application.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Current value: <code>Auth:MessagingEnabled = {featureFlags?.messagingEnabled ? 'true' : 'false'}</code>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Consultant Registration Feature Toggle */}
+                <div className="space-y-4 pt-6 border-t">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="w-5 h-5" />
+                        <h3 className="text-lg font-semibold">Consultant Registration</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Allow new consultant registrations through the public registration form
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge 
+                        variant={featureFlags?.consultantRegistrationEnabled ? "default" : "secondary"}
+                        className="px-3 py-1"
+                      >
+                        {featureFlags?.consultantRegistrationEnabled ? "Enabled" : "Disabled"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-2">How to change this setting:</p>
+                    <p className="text-sm text-muted-foreground">
+                      Update the <code>ConsultantRegistrationEnabled</code> setting in the 
+                      <code>appsettings.json</code> configuration file and restart the application.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Current value: <code>Auth:ConsultantRegistrationEnabled = {featureFlags?.consultantRegistrationEnabled ? 'true' : 'false'}</code>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Refresh Feature Flags */}
+                <div className="pt-6 border-t">
+                  <Button 
+                    onClick={() => {
+                      refetchFeatureFlags();
+                      toast.success('Feature flags refreshed');
+                    }}
+                    variant="outline"
+                  >
+                    Refresh Settings
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Click to reload the current feature flag values from the server
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 

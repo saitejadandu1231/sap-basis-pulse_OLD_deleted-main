@@ -147,5 +147,33 @@ namespace SapBasisPulse.Api.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<IEnumerable<BookedSlotDto>> GetBookedSlotsForConsultantAsync(Guid consultantId)
+        {
+            return await _context.Orders
+                .Where(o => o.ConsultantId == consultantId && o.TimeSlotId != null)
+                .Include(o => o.TimeSlot)
+                .Include(o => o.CreatedByUser)
+                .Include(o => o.SupportType)
+                .Include(o => o.SupportCategory)
+                .Select(o => new BookedSlotDto
+                {
+                    Id = o.TimeSlot.Id,
+                    ConsultantId = consultantId,
+                    SlotStartTime = o.TimeSlot.SlotStartTime,
+                    SlotEndTime = o.TimeSlot.SlotEndTime,
+                    OrderNumber = o.OrderNumber,
+                    CustomerName = $"{o.CreatedByUser.FirstName} {o.CreatedByUser.LastName}".Trim(),
+                    CustomerEmail = o.CreatedByUser.Email,
+                    SupportTypeName = o.SupportType.Name,
+                    SupportCategoryName = o.SupportCategory.Name,
+                    Priority = o.Priority,
+                    Description = o.Description,
+                    Status = o.Status,
+                    CreatedAt = o.CreatedAt
+                })
+                .OrderBy(b => b.SlotStartTime)
+                .ToListAsync();
+        }
     }
 }

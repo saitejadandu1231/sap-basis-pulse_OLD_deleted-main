@@ -3,12 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Settings, LogOut, Users, BarChart3 } from "lucide-react";
+import { Plus, Settings, LogOut, Users, BarChart3, MessageSquare } from "lucide-react";
 import RecentTickets from "@/components/RecentTickets";
+import ConsultantBookedSlots from "@/components/ConsultantBookedSlots";
+import { useUnreadMessageCount } from "@/services/messagingHooks";
+import { Badge } from "@/components/ui/badge";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, userRole, firstName, lastName, signOut } = useAuth();
+  const { data: unreadCount } = useUnreadMessageCount();
+  const { data: featureFlags } = useFeatureFlags();
 
   const handleSignOut = async () => {
     await signOut();
@@ -31,6 +37,23 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/messages')}
+              className="hover:bg-background/50 relative"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Messages
+              {unreadCount !== undefined && unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
+            </Button>
             {userRole === 'consultant' && (
               <Button 
                 variant="outline" 
@@ -51,6 +74,35 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Messages Card - Available for all users when messaging is enabled */}
+          {featureFlags?.messagingEnabled && (
+            <Card className="glass-card hover:scale-105 transition-transform cursor-pointer" 
+                  onClick={() => navigate('/messages')}>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-yuktor-500">
+                  <MessageSquare className="w-5 h-5" />
+                  <span>Messages</span>
+                  {unreadCount !== undefined && unreadCount > 0 && (
+                    <Badge variant="destructive" className="ml-auto">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Chat with consultants and customers
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  {unreadCount && unreadCount > 0 
+                    ? `You have ${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`
+                    : 'Send messages and share files with your support team'
+                  }
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Customer Actions */}
           {userRole === 'customer' && (
             <Card className="glass-card hover:scale-105 transition-transform cursor-pointer" 
@@ -74,19 +126,20 @@ const Dashboard = () => {
 
           {/* Consultant Actions */}
           {userRole === 'consultant' && (
-            <Card className="glass-card hover:scale-105 transition-transform">
+            <Card className="glass-card hover:scale-105 transition-transform cursor-pointer" 
+                  onClick={() => navigate('/consultant/availability')}>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-yuktor-500">
                   <Users className="w-5 h-5" />
-                  <span>My Assignments</span>
+                  <span>Manage Availability</span>
                 </CardTitle>
                 <CardDescription>
-                  View and manage assigned support tickets
+                  Set your available time slots for consultations
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Work on customer support requests assigned to you
+                  Configure when you're available for customer support sessions
                 </p>
               </CardContent>
             </Card>
@@ -153,7 +206,11 @@ const Dashboard = () => {
 
         {/* Recent Tickets Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RecentTickets />
+          {userRole === 'consultant' ? (
+            <ConsultantBookedSlots />
+          ) : (
+            <RecentTickets />
+          )}
           
           {/* Quick Stats */}
           <Card className="glass-card">

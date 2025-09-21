@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Identity;
 using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.Entities;
 
@@ -12,11 +13,13 @@ namespace SapBasisPulse.Api.Services
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly UserManager<User> _userManager;
 
-        public DevHelperService(AppDbContext context, IConfiguration config)
+        public DevHelperService(AppDbContext context, IConfiguration config, UserManager<User> userManager)
         {
             _context = context;
             _config = config;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -45,6 +48,53 @@ namespace SapBasisPulse.Api.Services
                 }
                 
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// Ensure the default admin user exists in development mode
+        /// </summary>
+        public async Task EnsureAdminUserExistsAsync()
+        {
+            // Only run in development
+            if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() != "development")
+            {
+                return;
+            }
+
+            const string adminEmail = "Admin@gmail.com";
+            const string adminPassword = "Admin@1234";
+
+            // Check if admin user already exists
+            var existingAdmin = await _userManager.FindByEmailAsync(adminEmail);
+            if (existingAdmin != null)
+            {
+                // Admin user already exists
+                return;
+            }
+
+            // Create the admin user
+            var adminUser = new User
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                FirstName = "System",
+                LastName = "Administrator",
+                Role = UserRole.Admin,
+                Status = UserStatus.Active,
+                EmailConfirmed = true, // Auto-confirm in development
+                LockoutEnabled = false
+            };
+
+            var result = await _userManager.CreateAsync(adminUser, adminPassword);
+            
+            if (result.Succeeded)
+            {
+                Console.WriteLine($"✓ Default admin user created successfully: {adminEmail}");
+            }
+            else
+            {
+                Console.WriteLine($"✗ Failed to create admin user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
         }
     }

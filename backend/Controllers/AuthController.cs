@@ -26,6 +26,13 @@ namespace SapBasisPulse.Api.Controllers
                 return Ok(new { isEnabled });
             }
 
+            [HttpGet("messaging-status")]
+            public IActionResult GetMessagingStatus()
+            {
+                bool isEnabled = _configuration.GetSection("Auth")["MessagingEnabled"]?.ToLower() == "true";
+                return Ok(new { isEnabled });
+            }
+
 
 
         [HttpPost("confirm-email")]

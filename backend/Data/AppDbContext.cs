@@ -15,10 +15,13 @@ namespace SapBasisPulse.Api.Data
         public DbSet<SupportType> SupportTypes { get; set; }
         public DbSet<SupportCategory> SupportCategories { get; set; }
         public DbSet<SupportSubOption> SupportSubOptions { get; set; }
-    public DbSet<LoginActivity> LoginActivities { get; set; }
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
-    public DbSet<AuditLog> AuditLogs { get; set; }
-    public DbSet<ServiceRequestIdentifier> ServiceRequestIdentifiers { get; set; }
+        public DbSet<LoginActivity> LoginActivities { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<ServiceRequestIdentifier> ServiceRequestIdentifiers { get; set; }
+        public DbSet<Conversation> Conversations { get; set; }
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<MessageAttachment> MessageAttachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -66,6 +69,85 @@ namespace SapBasisPulse.Api.Data
 
         // Apply the ServiceRequestIdentifier configuration
         modelBuilder.ApplyConfiguration(new ServiceRequestIdentifierConfiguration());
+
+        // Configure messaging entities
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasOne(c => c.Order)
+                .WithMany()
+                .HasForeignKey(c => c.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(c => c.Customer)
+                .WithMany()
+                .HasForeignKey(c => c.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(c => c.Consultant)
+                .WithMany()
+                .HasForeignKey(c => c.ConsultantId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.Property(c => c.Subject)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.HasIndex(c => c.OrderId);
+            entity.HasIndex(c => new { c.CustomerId, c.ConsultantId });
+        });
+
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasOne(m => m.Conversation)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(m => m.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(m => m.Sender)
+                .WithMany()
+                .HasForeignKey(m => m.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(m => m.Content)
+                .HasMaxLength(2000)
+                .IsRequired();
+
+            entity.Property(m => m.MessageType)
+                .HasMaxLength(20)
+                .HasDefaultValue("text");
+
+            entity.HasIndex(m => m.ConversationId);
+            entity.HasIndex(m => m.SentAt);
+        });
+
+        modelBuilder.Entity<MessageAttachment>(entity =>
+        {
+            entity.HasOne(ma => ma.Message)
+                .WithMany(m => m.Attachments)
+                .HasForeignKey(ma => ma.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ma => ma.UploadedBy)
+                .WithMany()
+                .HasForeignKey(ma => ma.UploadedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(ma => ma.FileName)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(ma => ma.OriginalFileName)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(ma => ma.ContentType)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(ma => ma.FilePath)
+                .HasMaxLength(500)
+                .IsRequired();
+        });
 
         base.OnModelCreating(modelBuilder);
         }

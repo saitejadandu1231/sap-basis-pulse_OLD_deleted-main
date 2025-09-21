@@ -12,5 +12,6 @@ namespace SapBasisPulse.Api.Services
         Task<ConsultantAvailabilitySlotDto?> GetSlotByIdAsync(Guid id);
         Task<ConsultantAvailabilitySlotsResponse> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto);
         Task<bool> DeleteSlotAsync(Guid id);
+        Task<IEnumerable<BookedSlotDto>> GetBookedSlotsForConsultantAsync(Guid consultantId);
     }
 }

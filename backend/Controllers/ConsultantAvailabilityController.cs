@@ -58,5 +58,13 @@ namespace SapBasisPulse.Api.Controllers
             if (!success) return NotFound();
             return NoContent();
         }
+
+        [HttpGet("consultant/{consultantId}/booked-slots")]
+        [Authorize(Roles = "Consultant,Admin")]
+        public async Task<IActionResult> GetBookedSlotsForConsultant(Guid consultantId)
+        {
+            var bookedSlots = await _service.GetBookedSlotsForConsultantAsync(consultantId);
+            return Ok(bookedSlots);
+        }
     }
 }

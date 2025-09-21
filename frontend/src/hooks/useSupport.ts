@@ -69,6 +69,9 @@ interface SupportRequest {
   createdByName: string;
   createdAt: string;
   status: string;
+  conversationId?: string | null;
+  hasConversation: boolean;
+  unreadMessageCount: number;
 }
 // Fetch Support Taxonomy
 export const useSupportTypes = () => {
