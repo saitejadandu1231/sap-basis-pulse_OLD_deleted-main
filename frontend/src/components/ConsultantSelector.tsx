@@ -5,12 +5,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAvailableConsultants } from "@/hooks/useSupport";
-import { User } from "lucide-react";
+import { User, Star } from "lucide-react";
+
+interface Consultant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  status: string;
+  averageRating?: number;
+  totalRatings?: number;
+}
 
 interface ConsultantSelectorProps {
   onConsultantSelect: (consultantId: string) => void;
   selectedConsultant?: string;
 }
+
+const renderStars = (rating: number) => {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-3 h-3 ${
+            star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+          }`}
+        />
+      ))}
+    </div>
+  );
+};
 
 const ConsultantSelector = ({ onConsultantSelect, selectedConsultant }: ConsultantSelectorProps) => {
   const { data: consultants, isLoading } = useAvailableConsultants();
@@ -54,9 +80,23 @@ const ConsultantSelector = ({ onConsultantSelect, selectedConsultant }: Consulta
                 <SelectValue placeholder="Select a consultant" />
               </SelectTrigger>
               <SelectContent className="bg-background border-muted">
-                {consultants.map(consultant => (
+                {consultants.map((consultant: Consultant) => (
                   <SelectItem key={consultant.id} value={consultant.id}>
-                    {consultant.firstName} {consultant.lastName}
+                    <div className="flex items-center justify-between w-full">
+                      <span>{consultant.firstName} {consultant.lastName}</span>
+                      <div className="flex items-center gap-2 ml-4">
+                        {consultant.averageRating && consultant.averageRating > 0 ? (
+                          <>
+                            {renderStars(Math.round(consultant.averageRating))}
+                            <span className="text-xs text-muted-foreground">
+                              ({consultant.averageRating.toFixed(1)} · {consultant.totalRatings || 0} reviews)
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">New consultant</span>
+                        )}
+                      </div>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

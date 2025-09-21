@@ -363,7 +363,7 @@ const SupportSelection = () => {
                 )}
 
                 {/* --- Consultant Selection --- */}
-                {description.trim() && selectedPriority && (
+                {selectedPriority && (
                   <div className="space-y-4">
                     <div className="border-t border-gray-700 pt-6">
                       <Label className="text-base font-medium text-white">Choose a Consultant</Label>
@@ -373,7 +373,7 @@ const SupportSelection = () => {
                 )}
 
                 {/* --- Consultant Calendar --- */}
-                {selectedConsultant && description.trim() && selectedPriority && (
+                {selectedConsultant && (
                   <div className="space-y-4">
                     <div className="border-t border-gray-700 pt-6">
                       <Label className="text-base font-medium text-white">Available Time Slots</Label>

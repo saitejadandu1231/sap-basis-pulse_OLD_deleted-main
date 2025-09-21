@@ -62,6 +62,31 @@ namespace SapBasisPulse.Api.Services
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<ConsultantWithRatingDto>> GetConsultantUsersWithRatingsAsync()
+        {
+            return await _context.Users
+                .Where(u => u.Role == UserRole.Consultant && u.Status == UserStatus.Active)
+                .Select(u => new ConsultantWithRatingDto
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Role = u.Role.ToString(),
+                    Status = u.Status.ToString(),
+                    AverageRating = _context.TicketRatings
+                        .Where(r => r.RatedUserId == u.Id && r.RatingForRole == "consultant")
+                        .Average(r => (double?)((r.CommunicationProfessionalism + r.ResolutionQuality + r.ResponseTime) / 3.0)),
+                    TotalRatings = _context.TicketRatings
+                        .Where(r => r.RatedUserId == u.Id && r.RatingForRole == "consultant")
+                        .Count()
+                })
+                .OrderByDescending(u => u.AverageRating ?? 0)
+                .ThenByDescending(u => u.TotalRatings)
+                .ThenBy(u => u.FirstName)
+                .ToListAsync();
+        }
+
         public async Task<UserDto?> GetByIdAsync(Guid id)
         {
             var u = await _context.Users.FindAsync(id);

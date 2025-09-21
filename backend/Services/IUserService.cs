@@ -6,6 +6,7 @@ namespace SapBasisPulse.Api.Services
     {
         Task<IEnumerable<UserDto>> GetAllAsync();
         Task<IEnumerable<UserDto>> GetConsultantUsersAsync();
+        Task<IEnumerable<ConsultantWithRatingDto>> GetConsultantUsersWithRatingsAsync();
         Task<UserDto?> GetByIdAsync(Guid id);
         Task<(bool Success, string? Error, UserDto? User)> CreateAsync(CreateUserDto dto);
         Task<(bool Success, string? Error, UserDto? User)> UpdateAsync(Guid id, UpdateUserDto dto);

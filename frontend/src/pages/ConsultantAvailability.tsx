@@ -332,14 +332,14 @@ const ConsultantAvailability = () => {
                 {slots.map((slot) => (
                   <div
                     key={slot.id}
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                    className={`flex items-center justify-between p-3 rounded-lg border backdrop-blur-sm ${
                       slot.booked_by_customer_choice_id
-                        ? 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
-                        : 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
+                        ? 'bg-red-500/10 border-red-500/20 text-white'
+                        : 'bg-green-500/10 border-green-500/20 text-white'
                     }`}
                   >
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-white">
                         {new Date(slot.slot_start_time).toLocaleDateString()} 
                         {' '}
                         {new Date(slot.slot_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -348,8 +348,8 @@ const ConsultantAvailability = () => {
                       </p>
                       <p className={`text-sm ${
                         slot.booked_by_customer_choice_id
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-green-600 dark:text-green-400'
+                          ? 'text-red-300'
+                          : 'text-green-300'
                       }`}>
                         {slot.booked_by_customer_choice_id ? 'Booked' : 'Available'}
                       </p>
@@ -359,7 +359,7 @@ const ConsultantAvailability = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteSlot(slot.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

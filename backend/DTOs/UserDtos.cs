@@ -42,4 +42,16 @@ namespace SapBasisPulse.Api.DTOs
         public string Role { get; set; }
         public string Status { get; set; }
     }
+
+    public class ConsultantWithRatingDto
+    {
+        public Guid Id { get; set; }
+        public string Email { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Role { get; set; }
+        public string Status { get; set; }
+        public double? AverageRating { get; set; }
+        public int TotalRatings { get; set; }
+    }
 }
