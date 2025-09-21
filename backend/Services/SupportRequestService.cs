@@ -225,5 +225,20 @@ namespace SapBasisPulse.Api.Services
                 Status = o.Status
             };
         }
+
+        public async Task<bool> UpdateStatusAsync(Guid orderId, string status)
+        {
+            // The orderId parameter is the Order ID from the frontend
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null) return false;
+
+            // Validate status
+            var validStatuses = new[] { "New", "InProgress", "PendingCustomerAction", "TopicClosed", "Closed", "ReOpened" };
+            if (!validStatuses.Contains(status)) return false;
+
+            order.Status = status;
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

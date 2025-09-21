@@ -11,6 +11,7 @@ namespace SapBasisPulse.Api.Services
         Task<IEnumerable<SupportRequestDto>> GetRecentForUserAsync(Guid userId);
         Task<IEnumerable<SupportRequestDto>> GetRecentForConsultantAsync(Guid consultantId);
         Task<IEnumerable<SupportRequestDto>> GetAllAsync();
+        Task<bool> UpdateStatusAsync(Guid orderId, string status);
         // Add admin/analytics methods as needed
     }
 }

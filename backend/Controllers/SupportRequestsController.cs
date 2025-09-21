@@ -54,5 +54,21 @@ namespace SapBasisPulse.Api.Controllers
             var result = await _service.GetAllAsync();
             return Ok(result);
         }
+
+        [HttpPut("{orderId}/status")]
+        [Authorize(Roles = "Consultant,Admin")]
+        public async Task<IActionResult> UpdateStatus(Guid orderId, [FromBody] UpdateStatusDto dto)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var result = await _service.UpdateStatusAsync(orderId, dto.Status);
+            
+            if (!result)
+            {
+                return BadRequest(new { error = "Invalid ticket ID or status" });
+            }
+
+            await _auditLogService.LogAsync(userId, "UpdateTicketStatus", "Order", orderId.ToString(), $"Status changed to {dto.Status}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
+            return Ok(new { message = "Status updated successfully" });
+        }
     }
 }

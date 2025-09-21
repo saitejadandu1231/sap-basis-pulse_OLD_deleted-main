@@ -95,7 +95,8 @@ const Dashboard = () => {
           {/* Admin Actions */}
           {userRole === 'admin' && (
             <>
-              <Card className="glass-card hover:scale-105 transition-transform">
+              <Card className="glass-card hover:scale-105 transition-transform cursor-pointer" 
+                    onClick={() => navigate('/admin')}>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-yuktor-500">
                     <Settings className="w-5 h-5" />
@@ -112,7 +113,8 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card hover:scale-105 transition-transform">
+              <Card className="glass-card hover:scale-105 transition-transform cursor-pointer" 
+                    onClick={() => navigate('/admin')}>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-yuktor-500">
                     <BarChart3 className="w-5 h-5" />
@@ -171,7 +173,7 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Member Since:</span>
                   <span className="font-medium">
-                    {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                    {user?.id ? 'Recent' : 'N/A'}
                   </span>
                 </div>
               </div>

@@ -7,7 +7,7 @@ import { useUpdateTicketStatus } from '@/hooks/useSupport';
 import { toast } from 'sonner';
 
 interface TicketStatusUpdaterProps {
-  customerChoiceId: string;
+  orderId: string;
   currentStatus: string;
   onStatusUpdate?: (newStatus: string) => void;
 }
@@ -22,7 +22,7 @@ const statusOptions = [
 ];
 
 const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
-  customerChoiceId,
+  orderId,
   currentStatus,
   onStatusUpdate
 }) => {
@@ -37,7 +37,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
 
     try {
       await updateStatus.mutateAsync({
-        customerChoiceId,
+        orderId,
         status: selectedStatus as any
       });
 

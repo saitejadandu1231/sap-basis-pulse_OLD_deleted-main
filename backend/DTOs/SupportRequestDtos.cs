@@ -36,4 +36,9 @@ namespace SapBasisPulse.Api.DTOs
         public DateTime CreatedAt { get; set; }
         public string Status { get; set; }
     }
+
+    public class UpdateStatusDto
+    {
+        public string Status { get; set; }
+    }
 }

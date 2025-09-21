@@ -1,25 +1,25 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Star } from 'lucide-react';
+import { Star, ThumbsUp } from 'lucide-react';
 import { useSubmitTicketRating } from '@/hooks/useSupport';
 import { toast } from 'sonner';
 
-interface TicketRatingFormProps {
+interface CompactRatingFormProps {
   orderId: string;
   ratedUserId: string;
   ratingForRole: 'customer' | 'consultant';
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
+const CompactRatingForm: React.FC<CompactRatingFormProps> = ({
   orderId,
   ratedUserId,
   ratingForRole,
-  onSuccess
+  onSuccess,
+  onCancel
 }) => {
   const [resolutionQuality, setResolutionQuality] = useState(0);
   const [responseTime, setResponseTime] = useState(0);
@@ -38,7 +38,7 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-6 h-6 cursor-pointer transition-colors ${
+            className={`w-4 h-4 cursor-pointer transition-colors ${
               star <= currentRating
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300 hover:text-yellow-400'
@@ -57,6 +57,16 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
       toast.error('Please provide ratings for all categories');
       return;
     }
+
+    console.log('Submitting rating with data:', {
+      orderId,
+      ratedUserId,
+      ratingForRole,
+      resolutionQuality,
+      responseTime,
+      communicationProfessionalism,
+      comments: comments.trim() || undefined
+    });
 
     try {
       await createRating.mutateAsync({
@@ -78,53 +88,72 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Rate {ratingForRole === 'consultant' ? 'Consultant' : 'Customer'}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label>Resolution Quality</Label>
+    <div className="bg-muted/30 rounded-lg p-4 space-y-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ThumbsUp className="w-4 h-4" />
+        <span className="font-medium text-sm">
+          Rate {ratingForRole === 'consultant' ? 'Consultant' : 'Customer'}
+        </span>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs">Resolution Quality</Label>
             {renderStars(resolutionQuality, setResolutionQuality)}
           </div>
 
-          <div className="space-y-2">
-            <Label>Response Time</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Response Time</Label>
             {renderStars(responseTime, setResponseTime)}
           </div>
 
-          <div className="space-y-2">
-            <Label>Communication & Professionalism</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Communication</Label>
             {renderStars(communicationProfessionalism, setCommunicationProfessionalism)}
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="comments">Additional Comments (Optional)</Label>
-            <Textarea
-              id="comments"
-              value={comments}
-              onChange={(e) => setComments(e.target.value.slice(0, 100))}
-              placeholder="Share your experience..."
-              className="resize-none"
-              maxLength={100}
-            />
-            <div className="text-sm text-gray-500 text-right">
-              {comments.length}/100 characters
-            </div>
+        <div className="space-y-1">
+          <Label htmlFor="comments" className="text-xs">Comments (Optional)</Label>
+          <Textarea
+            id="comments"
+            value={comments}
+            onChange={(e) => setComments(e.target.value.slice(0, 100))}
+            placeholder="Share your experience..."
+            className="resize-none text-sm"
+            rows={2}
+            maxLength={100}
+          />
+          <div className="text-xs text-muted-foreground text-right">
+            {comments.length}/100 characters
           </div>
+        </div>
 
+        <div className="flex gap-2">
           <Button 
             type="submit" 
-            className="w-full"
+            size="sm"
             disabled={createRating.isPending || !resolutionQuality || !responseTime || !communicationProfessionalism}
+            className="flex-1"
           >
             {createRating.isPending ? 'Submitting...' : 'Submit Rating'}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+          {onCancel && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={onCancel}
+              disabled={createRating.isPending}
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
+      </form>
+    </div>
   );
 };
 
-export default TicketRatingForm;
+export default CompactRatingForm;

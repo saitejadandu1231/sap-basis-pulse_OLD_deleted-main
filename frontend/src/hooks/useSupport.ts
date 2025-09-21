@@ -49,6 +49,8 @@ interface Order {
 
 interface SupportRequest {
   id: string;
+  orderId?: string;
+  orderNumber?: string;
   supportTypeId: string;
   supportTypeName: string;
   supportCategoryId: string;
@@ -219,10 +221,13 @@ export const useCreateSupportRequest = () => {
 // Submit ticket rating
 export const useSubmitTicketRating = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: async (data: {
       orderId: string;
+      ratedUserId: string;
+      ratingForRole: 'customer' | 'consultant';
       resolutionQuality: number;
       responseTime: number;
       communicationProfessionalism: number;
@@ -233,7 +238,16 @@ export const useSubmitTicketRating = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          orderId: data.orderId,
+          ratedByUserId: user?.id || '',
+          ratedUserId: data.ratedUserId,
+          ratingForRole: data.ratingForRole,
+          communicationProfessionalism: data.communicationProfessionalism,
+          resolutionQuality: data.resolutionQuality,
+          responseTime: data.responseTime,
+          comments: data.comments
+        }),
       });
       
       if (!response.ok) {
@@ -245,7 +259,23 @@ export const useSubmitTicketRating = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recentTickets'] });
+      queryClient.invalidateQueries({ queryKey: ['ticketRatings'] });
     },
+  });
+};
+
+// Get ratings for an order
+export const useTicketRatings = (orderId: string) => {
+  return useQuery({
+    queryKey: ['ticketRatings', orderId],
+    queryFn: async () => {
+      const response = await apiFetch(`TicketRatings/order/${orderId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch ticket ratings');
+      }
+      return await response.json();
+    },
+    enabled: !!orderId,
   });
 };
 
@@ -255,10 +285,10 @@ export const useUpdateTicketStatus = () => {
   
   return useMutation({
     mutationFn: async (data: {
-      customerChoiceId: string;
+      orderId: string;
       status: 'New' | 'InProgress' | 'PendingCustomerAction' | 'TopicClosed' | 'Closed' | 'ReOpened';
     }) => {
-      const response = await apiFetch(`SupportRequests/${data.customerChoiceId}/status`, {
+      const response = await apiFetch(`SupportRequests/${data.orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
