@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Calendar, Clock, Trash2, Mail } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { apiFetch } from "@/lib/api";
 
 interface AvailabilitySlot {
@@ -18,10 +17,17 @@ interface AvailabilitySlot {
   booked_by_customer_choice_id: string | null;
 }
 
+// Helper functions for date/time formatting
+const formatDateForApi = (dateString: string, timeString: string): string => {
+  // Create a Date object and convert to UTC ISO string
+  const localDate = new Date(`${dateString}T${timeString}:00`);
+  return localDate.toISOString();
+};
+
 const ConsultantAvailability = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, userRole, session } = useAuth();
+  const { user, userRole, token } = useAuth();
   
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -43,20 +49,25 @@ const ConsultantAvailability = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch admin email
-        const emailResponse = await apiFetch(`/functions/v1/calendar-admin-email`);
-        const emailData = await emailResponse.json();
-        setAdminEmail(emailData.admin_email || 'appadmin@yuktor.com');
+        // Set default admin email
+        setAdminEmail('appadmin@yuktor.com');
 
         // Fetch consultant slots
-        if (session) {
-          const slotsResponse = await apiFetch(`/functions/v1/consultant-availability`, {
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`
-            }
+        if (user?.id) {
+          const slotsResponse = await apiFetch(`ConsultantAvailability/consultant/${user.id}`, {
+            method: 'GET'
           });
           const slotsData = await slotsResponse.json();
-          setSlots(slotsData.slots || []);
+          
+          // Map backend data to frontend format
+          const formattedSlots = Array.isArray(slotsData) ? slotsData.map((slot: any) => ({
+            id: slot.id,
+            slot_start_time: slot.slotStartTime,
+            slot_end_time: slot.slotEndTime,
+            booked_by_customer_choice_id: null // Backend uses isBooked flag instead
+          })) : [];
+          
+          setSlots(formattedSlots);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -64,7 +75,7 @@ const ConsultantAvailability = () => {
     };
 
     fetchData();
-  }, [session]);
+  }, [token, user?.id]);
 
   const handleDefineBlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,18 +92,15 @@ const ConsultantAvailability = () => {
     setLoading(true);
 
     try {
-      const response = await apiFetch(`/functions/v1/consultant-availability`, {
+      const response = await apiFetch(`ConsultantAvailability`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          startDate,
-          endDate,
-          startTime,
-          endTime,
-          slotDurationMinutes: 60
+          consultantId: user?.id,
+          slotStartTime: formatDateForApi(startDate, startTime),
+          slotEndTime: formatDateForApi(endDate, endTime)
         })
       });
 
@@ -102,19 +110,29 @@ const ConsultantAvailability = () => {
         throw new Error(data.error || 'Failed to create availability slots');
       }
 
+      // Check if we received the new response format with multiple slots
+      const createdSlotsCount = data.slots ? data.slots.length : 1;
+      
       toast({
         title: "Success!",
-        description: `Created ${data.slots.length} availability slots`
+        description: `${createdSlotsCount} availability ${createdSlotsCount === 1 ? 'slot' : 'slots'} created successfully`
       });
 
       // Refresh slots
-      const slotsResponse = await apiFetch(`/functions/v1/consultant-availability`, {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
+      const slotsResponse = await apiFetch(`ConsultantAvailability/consultant/${user?.id}`, {
+        method: 'GET'
       });
       const slotsData = await slotsResponse.json();
-      setSlots(slotsData.slots || []);
+      
+      // Map backend data to frontend format
+      const formattedSlots = slotsData.map((slot: any) => ({
+        id: slot.id,
+        slot_start_time: slot.slotStartTime,
+        slot_end_time: slot.slotEndTime,
+        booked_by_customer_choice_id: slot.isBooked ? "some-id" : null // Use isBooked flag from backend
+      }));
+      
+      setSlots(formattedSlots || []);
 
       // Clear form
       setStartDate("");
@@ -135,17 +153,24 @@ const ConsultantAvailability = () => {
 
   const handleDeleteSlot = async (slotId: string) => {
     try {
-      const response = await apiFetch(`/functions/v1/consultant-availability/${slotId}`, {
+      const response = await apiFetch(`ConsultantAvailability/${slotId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
+          'Content-Type': 'application/json'
         }
-      });
-
-      const data = await response.json();
+      });      
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete slot');
+        // Try to parse error if possible
+        let errorMsg = 'Failed to delete slot';
+        try {
+          const data = await response.json();
+          errorMsg = data.error || errorMsg;
+        } catch (e) {
+          // If no JSON body, just use the status text
+          errorMsg = response.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
       toast({

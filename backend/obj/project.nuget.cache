@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "gDPB/AdIezY=",
+  "dgSpecHash": "IDLWlnJ49BM=",
   "success": true,
-  "projectFilePath": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj",
+  "projectFilePath": "e:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\saite\\.nuget\\packages\\google.apis\\1.71.0\\google.apis.1.71.0.nupkg.sha512",
     "C:\\Users\\saite\\.nuget\\packages\\google.apis.auth\\1.71.0\\google.apis.auth.1.71.0.nupkg.sha512",

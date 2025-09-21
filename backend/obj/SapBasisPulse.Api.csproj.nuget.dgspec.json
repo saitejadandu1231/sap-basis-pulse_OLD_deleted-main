@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj": {}
+    "e:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj": {}
   },
   "projects": {
-    "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj": {
+    "e:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj",
+        "projectUniqueName": "e:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj",
         "projectName": "SapBasisPulse.Api",
-        "projectPath": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj",
+        "projectPath": "e:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj",
         "packagesPath": "C:\\Users\\saite\\.nuget\\packages\\",
-        "outputPath": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\obj\\",
+        "outputPath": "e:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\saite\\AppData\\Roaming\\NuGet\\NuGet.Config",

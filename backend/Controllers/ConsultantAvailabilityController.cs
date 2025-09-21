@@ -22,6 +22,14 @@ namespace SapBasisPulse.Api.Controllers
             var slots = await _service.GetSlotsForConsultantAsync(consultantId);
             return Ok(slots);
         }
+        
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetSlotsForDateRange([FromQuery] Guid consultantId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            var slots = await _service.GetSlotsForDateRangeAsync(consultantId, startDate, endDate);
+            return Ok(slots);
+        }
 
         [HttpGet("{id}")]
         [Authorize]
@@ -37,8 +45,9 @@ namespace SapBasisPulse.Api.Controllers
         public async Task<IActionResult> CreateSlot([FromBody] CreateConsultantAvailabilitySlotDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var slot = await _service.CreateSlotAsync(dto);
-            return CreatedAtAction(nameof(GetSlotById), new { id = slot.Id }, slot);
+            var slotsResponse = await _service.CreateSlotAsync(dto);
+            // Return the created slots
+            return Ok(slotsResponse);
         }
 
         [HttpDelete("{id}")]

@@ -36,6 +36,16 @@ namespace SapBasisPulse.Api.Services
                 var existing = await _userManager.FindByEmailAsync(dto.Email);
                 if (existing != null) return (false, "Email already exists", null);
 
+                // Check if consultant registration is enabled when role is Consultant
+                if (dto.Role?.Equals("Consultant", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    bool consultantRegistrationEnabled = _config.GetSection("Auth")["ConsultantRegistrationEnabled"]?.ToLower() == "true";
+                    if (!consultantRegistrationEnabled)
+                    {
+                        return (false, "Consultant registration is currently disabled. Please contact AppAdmin at appadmin@yuktor.com for assistance.", null);
+                    }
+                }
+
                 // In development, we can optionally skip the email verification
                 bool autoPendingVerification = true;
                 if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development" && 

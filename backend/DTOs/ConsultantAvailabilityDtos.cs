@@ -17,4 +17,9 @@ namespace SapBasisPulse.Api.DTOs
         public DateTime SlotStartTime { get; set; }
         public DateTime SlotEndTime { get; set; }
     }
+    
+    public class ConsultantAvailabilitySlotsResponse
+    {
+        public IEnumerable<ConsultantAvailabilitySlotDto> Slots { get; set; }
+    }
 }

@@ -45,6 +45,22 @@ namespace SapBasisPulse.Api.Services
                 })
                 .ToListAsync();
         }
+        
+        public async Task<IEnumerable<UserDto>> GetConsultantUsersAsync()
+        {
+            return await _context.Users
+                .Where(u => u.Role == UserRole.Consultant && u.Status == UserStatus.Active)
+                .Select(u => new UserDto
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Role = u.Role.ToString(),
+                    Status = u.Status.ToString()
+                })
+                .ToListAsync();
+        }
 
         public async Task<UserDto?> GetByIdAsync(Guid id)
         {

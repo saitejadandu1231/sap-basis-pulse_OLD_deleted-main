@@ -8,8 +8,9 @@ namespace SapBasisPulse.Api.Services
     public interface IConsultantAvailabilityService
     {
         Task<IEnumerable<ConsultantAvailabilitySlotDto>> GetSlotsForConsultantAsync(Guid consultantId);
+        Task<IEnumerable<ConsultantAvailabilitySlotDto>> GetSlotsForDateRangeAsync(Guid consultantId, DateTime startDate, DateTime endDate);
         Task<ConsultantAvailabilitySlotDto?> GetSlotByIdAsync(Guid id);
-        Task<ConsultantAvailabilitySlotDto> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto);
+        Task<ConsultantAvailabilitySlotsResponse> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto);
         Task<bool> DeleteSlotAsync(Guid id);
     }
 }

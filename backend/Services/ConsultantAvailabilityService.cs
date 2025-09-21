@@ -27,6 +27,35 @@ namespace SapBasisPulse.Api.Services
                 })
                 .ToListAsync();
         }
+        
+        public async Task<IEnumerable<ConsultantAvailabilitySlotDto>> GetSlotsForDateRangeAsync(Guid consultantId, DateTime startDate, DateTime endDate)
+        {
+            // Ensure dates are in UTC
+            var startDateUtc = startDate.Kind != DateTimeKind.Utc 
+                ? DateTime.SpecifyKind(startDate, DateTimeKind.Utc) 
+                : startDate;
+                
+            var endDateUtc = endDate.Kind != DateTimeKind.Utc 
+                ? DateTime.SpecifyKind(endDate, DateTimeKind.Utc) 
+                : endDate;
+                
+            // Set the end date to the end of the day
+            endDateUtc = endDateUtc.Date.AddDays(1).AddSeconds(-1);
+            
+            return await _context.ConsultantAvailabilitySlots
+                .Where(s => s.ConsultantId == consultantId && 
+                           s.SlotStartTime >= startDateUtc && 
+                           s.SlotStartTime <= endDateUtc)
+                .Select(s => new ConsultantAvailabilitySlotDto
+                {
+                    Id = s.Id,
+                    ConsultantId = s.ConsultantId,
+                    SlotStartTime = s.SlotStartTime,
+                    SlotEndTime = s.SlotEndTime,
+                    IsBooked = s.BookedByCustomerChoiceId != null
+                })
+                .ToListAsync();
+        }
 
         public async Task<ConsultantAvailabilitySlotDto?> GetSlotByIdAsync(Guid id)
         {
@@ -42,24 +71,71 @@ namespace SapBasisPulse.Api.Services
             };
         }
 
-        public async Task<ConsultantAvailabilitySlotDto> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto)
+        public async Task<ConsultantAvailabilitySlotsResponse> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto)
         {
-            var slot = new ConsultantAvailabilitySlot
+            // Ensure the dates are in UTC format for PostgreSQL
+            var startTimeUtc = dto.SlotStartTime.Kind != DateTimeKind.Utc 
+                ? DateTime.SpecifyKind(dto.SlotStartTime, DateTimeKind.Utc)
+                : dto.SlotStartTime;
+                
+            var endTimeUtc = dto.SlotEndTime.Kind != DateTimeKind.Utc
+                ? DateTime.SpecifyKind(dto.SlotEndTime, DateTimeKind.Utc)
+                : dto.SlotEndTime;
+
+            // Break down into hourly slots
+            var currentTime = startTimeUtc;
+            var createdSlots = new List<ConsultantAvailabilitySlot>();
+            
+            // Generate hourly slots within the time block
+            while (currentTime.AddHours(1) <= endTimeUtc)
             {
-                Id = Guid.NewGuid(),
-                ConsultantId = dto.ConsultantId,
-                SlotStartTime = dto.SlotStartTime,
-                SlotEndTime = dto.SlotEndTime
-            };
-            _context.ConsultantAvailabilitySlots.Add(slot);
+                var slot = new ConsultantAvailabilitySlot
+                {
+                    Id = Guid.NewGuid(),
+                    ConsultantId = dto.ConsultantId,
+                    SlotStartTime = currentTime,
+                    SlotEndTime = currentTime.AddHours(1)
+                };
+                _context.ConsultantAvailabilitySlots.Add(slot);
+                createdSlots.Add(slot);
+                
+                // Move to the next hour
+                currentTime = currentTime.AddHours(1);
+            }
+            
+            // If there's a remaining partial slot (less than an hour), create it too
+            if (currentTime < endTimeUtc)
+            {
+                var slot = new ConsultantAvailabilitySlot
+                {
+                    Id = Guid.NewGuid(),
+                    ConsultantId = dto.ConsultantId,
+                    SlotStartTime = currentTime,
+                    SlotEndTime = endTimeUtc
+                };
+                _context.ConsultantAvailabilitySlots.Add(slot);
+                createdSlots.Add(slot);
+            }
+            
+            // If no slots were created (e.g., if end time is before start time)
+            if (!createdSlots.Any())
+            {
+                throw new ArgumentException("Invalid time range. End time must be after start time.");
+            }
+            
             await _context.SaveChangesAsync();
-            return new ConsultantAvailabilitySlotDto
+            
+            // Return all created slots as the response
+            return new ConsultantAvailabilitySlotsResponse
             {
-                Id = slot.Id,
-                ConsultantId = slot.ConsultantId,
-                SlotStartTime = slot.SlotStartTime,
-                SlotEndTime = slot.SlotEndTime,
-                IsBooked = false
+                Slots = createdSlots.Select(s => new ConsultantAvailabilitySlotDto
+                {
+                    Id = s.Id,
+                    ConsultantId = s.ConsultantId,
+                    SlotStartTime = s.SlotStartTime,
+                    SlotEndTime = s.SlotEndTime,
+                    IsBooked = false
+                }).ToList()
             };
         }
 

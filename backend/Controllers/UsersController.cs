@@ -23,6 +23,14 @@ namespace SapBasisPulse.Api.Controllers
             var users = await _userService.GetAllAsync();
             return Ok(users);
         }
+        
+        [HttpGet("consultants")]
+        [Authorize]
+        public async Task<IActionResult> GetAllConsultants()
+        {
+            var users = await _userService.GetConsultantUsersAsync();
+            return Ok(users);
+        }
 
         [HttpGet("{id}")]
         [Authorize]

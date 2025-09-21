@@ -38,19 +38,21 @@ const Login = () => {
     }
   }, [user, navigate, from]);
 
-  // Fetch signup options
+  // Fetch consultant registration status
   useEffect(() => {
-    const fetchSignupOptions = async () => {
+    const fetchConsultantRegistrationStatus = async () => {
       try {
-        const response = await apiFetch(`/functions/v1/signup-options`);
+        const response = await apiFetch('auth/consultant-registration-status');
         const data = await response.json();
-        setAllowConsultantSignup(data.allow_consultant_signup || false);
+        setAllowConsultantSignup(data.isEnabled || false);
       } catch (error) {
-        console.error('Error fetching signup options:', error);
+        console.error('Error fetching consultant registration status:', error);
+        // Default to false if there's an error
+        setAllowConsultantSignup(false);
       }
     };
 
-    fetchSignupOptions();
+    fetchConsultantRegistrationStatus();
   }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -284,7 +286,7 @@ const Login = () => {
                     </RadioGroup>
                     {!allowConsultantSignup && (
                       <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-                        To register as a Consultant, please write to AppAdmin at appadmin@yuktor.com.
+                        Consultant registration is currently disabled. To register as a Consultant, please contact AppAdmin at appadmin@yuktor.com.
                       </p>
                     )}
                   </div>
