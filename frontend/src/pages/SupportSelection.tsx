@@ -83,7 +83,7 @@ const SupportSelection = () => {
   const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
   const selectedPriorityObj = priorityOptions.find(p => p.id === selectedPriority);
 
-  const resetDependentStates = (level: 'support' | 'category' | 'subOption' | 'priority' | 'description') => {
+  const resetDependentStates = (level: 'support' | 'category' | 'subOption' | 'priority') => {
     if (level === 'support') {
       setSelectedCategory('');
     }
@@ -93,9 +93,11 @@ const SupportSelection = () => {
       // setSelectedPriority(''); // Priority is independent of category/support type for now
       // setDescription(''); 
     }
-    // Always reset consultant and slot if any of the core details change
-    setSelectedConsultant('');
-    setSelectedTimeSlot('');
+    // Only reset consultant and slot for support structure changes, not description changes
+    if (level === 'support' || level === 'category' || level === 'subOption') {
+      setSelectedConsultant('');
+      setSelectedTimeSlot('');
+    }
   };
 
   const handleSupportTypeChange = (value: string) => {
@@ -116,14 +118,12 @@ const SupportSelection = () => {
 
   const handlePriorityChange = (value: string) => {
     setSelectedPriority(value);
-    resetDependentStates('priority'); 
+    // Priority changes should not reset consultant and time slot selections
   };
   
   const handleDescriptionChange = (value: string) => {
     setDescription(value);
-    if (description.trim() && !value.trim()) { // If it becomes empty
-        resetDependentStates('description');
-    }
+    // Description changes should not affect other form selections
   };
 
   // The requiresSrIdentifier property may not exist yet in the API response
@@ -133,22 +133,6 @@ const SupportSelection = () => {
       selectedSubOptionObj?.requiresSrIdentifier : 
       selectedSubOptionObj?.name === 'Service Request (SR)') && 
     (selectedSupportTypeObj?.name === 'SAP RISE' || selectedSupportTypeObj?.name === 'SAP Grow');
-    
-  // Debug information
-  console.log("SupportSelection.tsx:138 Selected Support Type:", selectedSupportTypeObj);
-  console.log("SupportSelection.tsx:139 Selected Sub Option:", selectedSubOptionObj);
-  console.log("SupportSelection.tsx:140 Needs SR Identifier:", needsSrIdentifier);
-  console.log("SupportSelection.tsx:141 requiresSrIdentifier property:", selectedSubOptionObj?.requiresSrIdentifier);
-  
-  // Additional debug info
-  console.log("SupportSelection.tsx:143 Is SR (SR) name check:", selectedSubOptionObj?.name === 'Service Request (SR)');
-  console.log("SupportSelection.tsx:144 Is SAP RISE/Grow check:", (selectedSupportTypeObj?.name === 'SAP RISE' || selectedSupportTypeObj?.name === 'SAP Grow'));
-  
-  // Debug logs
-  console.log('Selected Support Type:', selectedSupportTypeObj);
-  console.log('Selected Sub Option:', selectedSubOptionObj);
-  console.log('Needs SR Identifier:', needsSrIdentifier);
-  console.log('requiresSrIdentifier property:', selectedSubOptionObj?.requiresSrIdentifier);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

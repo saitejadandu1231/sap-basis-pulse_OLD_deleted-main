@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import PWAStatus from "@/components/PWAStatus";
-import EnhancedPWADebugger from "@/components/EnhancedPWADebugger";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -54,7 +53,6 @@ const App = () => (
           </Routes>
         </BrowserRouter>
         <PWAStatus />
-        <EnhancedPWADebugger />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
