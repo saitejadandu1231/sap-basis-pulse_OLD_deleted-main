@@ -1,0 +1,25 @@
+<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="180" height="180" fill="#4F46E5" rx="28"/>
+  
+  <!-- SAP BASIS Pulse Icon -->
+  <g transform="translate(30, 30)">
+    <!-- Background circle -->
+    <circle cx="60" cy="60" r="52" fill="white" opacity="0.1"/>
+    
+    <!-- Main logo elements -->
+    <g fill="white">
+      <!-- SAP-style bars -->
+      <rect x="22" y="34" width="7" height="52" rx="3.5"/>
+      <rect x="37" y="26" width="7" height="68" rx="3.5"/>
+      <rect x="52" y="18" width="7" height="84" rx="3.5"/>
+      <rect x="67" y="30" width="7" height="60" rx="3.5"/>
+      <rect x="82" y="42" width="7" height="36" rx="3.5"/>
+      <rect x="97" y="50" width="7" height="20" rx="3.5"/>
+    </g>
+    
+    <!-- Pulse wave -->
+    <path d="M15 90 L22 90 L26 76 L34 106 L42 60 L48 90 L105 90" 
+          stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

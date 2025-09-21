@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PWAStatus from "@/components/PWAStatus";
+import EnhancedPWADebugger from "@/components/EnhancedPWADebugger";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -13,6 +15,7 @@ import SupportSelection from "./pages/SupportSelection";
 import ConsultantAvailability from "./pages/ConsultantAvailability";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import "@/lib/pwa"; // Initialize PWA functionality
 
 const queryClient = new QueryClient();
 
@@ -50,9 +53,9 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <PWAStatus />
+        <EnhancedPWADebugger />
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
-
-export default App;
+);export default App;

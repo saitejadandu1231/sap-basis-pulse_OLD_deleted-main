@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SapBasisPulse.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7ce12eee283b8ae2f96e5c79955587f1191220e4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8d5df16b52e9bb9b81046655e04a988dad785930")]
 [assembly: System.Reflection.AssemblyProductAttribute("SapBasisPulse.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SapBasisPulse.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
