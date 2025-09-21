@@ -13,9 +13,11 @@ import {
     useSupportTypes, 
     useSupportCategories, 
     useSupportSubOptions, 
+    useConsultantAvailabilitySlots,
     useAvailableTimeSlots, 
     useCreateSupportRequest 
 } from '@/hooks/useSupport';
+import { useValidateServiceRequestIdentifier } from '@/hooks/useServiceRequestIdentifier';
 
 const priorityOptions = [
     { id: 'Low', name: 'Low' },
@@ -36,6 +38,10 @@ const SupportSelection = () => {
   const [selectedPriority, setSelectedPriority] = useState(''); // UAT Fix: Remove default priority
   const [selectedConsultant, setSelectedConsultant] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  
+  // Validate SR Identifier if it's entered
+  const { data: srValidationResult, isLoading: validatingSrIdentifier } = 
+    useValidateServiceRequestIdentifier(srIdentifier);
 
   useEffect(() => {
     if (userRole === 'consultant') {
@@ -45,7 +51,7 @@ const SupportSelection = () => {
   }, [userRole, navigate]);
 
   const { data: supportTypes, isLoading: loadingTypes } = useSupportTypes();
-  const { data: supportCategories, isLoading: loadingCategories } = useSupportCategories();
+  const { data: supportCategories, isLoading: loadingCategories } = useSupportCategories(selectedSupport);
   
   // --- TypeScript Error Fix & Conditional Hook Call Logic ---
   // Call hooks only when their dependency ID is available.
@@ -54,7 +60,18 @@ const SupportSelection = () => {
   const { data: supportSubOptionsData, isLoading: loadingSubOptions } = useSupportSubOptions(selectedSupport || undefined);
   const supportSubOptions = useMemo(() => selectedSupport ? supportSubOptionsData : [], [selectedSupport, supportSubOptionsData]);
 
-  const { data: timeSlotsData, isLoading: loadingSlots } = useAvailableTimeSlots(selectedConsultant || undefined);
+  // Get today's and next week's date strings for availability slot range
+  const today = new Date();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  const startDate = today.toISOString().split('T')[0];
+  const endDate = nextWeek.toISOString().split('T')[0];
+
+  const { data: timeSlotsData, isLoading: loadingSlots } = useConsultantAvailabilitySlots(
+    selectedConsultant || null,
+    startDate,
+    endDate
+  );
   const timeSlots = useMemo(() => selectedConsultant ? timeSlotsData : [], [selectedConsultant, timeSlotsData]);
   // --- End TypeScript Error Fix ---
 
@@ -109,9 +126,29 @@ const SupportSelection = () => {
     }
   };
 
+  // The requiresSrIdentifier property may not exist yet in the API response
+  // So we check if the property exists, and if not, we default based on the name
   const needsSrIdentifier = 
-    selectedSubOptionObj?.requires_sr_identifier &&
+    (selectedSubOptionObj?.requiresSrIdentifier !== undefined ? 
+      selectedSubOptionObj?.requiresSrIdentifier : 
+      selectedSubOptionObj?.name === 'Service Request (SR)') && 
     (selectedSupportTypeObj?.name === 'SAP RISE' || selectedSupportTypeObj?.name === 'SAP Grow');
+    
+  // Debug information
+  console.log("SupportSelection.tsx:138 Selected Support Type:", selectedSupportTypeObj);
+  console.log("SupportSelection.tsx:139 Selected Sub Option:", selectedSubOptionObj);
+  console.log("SupportSelection.tsx:140 Needs SR Identifier:", needsSrIdentifier);
+  console.log("SupportSelection.tsx:141 requiresSrIdentifier property:", selectedSubOptionObj?.requiresSrIdentifier);
+  
+  // Additional debug info
+  console.log("SupportSelection.tsx:143 Is SR (SR) name check:", selectedSubOptionObj?.name === 'Service Request (SR)');
+  console.log("SupportSelection.tsx:144 Is SAP RISE/Grow check:", (selectedSupportTypeObj?.name === 'SAP RISE' || selectedSupportTypeObj?.name === 'SAP Grow'));
+  
+  // Debug logs
+  console.log('Selected Support Type:', selectedSupportTypeObj);
+  console.log('Selected Sub Option:', selectedSubOptionObj);
+  console.log('Needs SR Identifier:', needsSrIdentifier);
+  console.log('requiresSrIdentifier property:', selectedSubOptionObj?.requiresSrIdentifier);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,9 +157,15 @@ const SupportSelection = () => {
       toast.error('Please fill in all required fields, including priority, consultant, and time slot.');
       return;
     }
-    if (needsSrIdentifier && !srIdentifier.trim()) {
-      toast.error('SR Identifier is required for this request type and support combination.');
-      return;
+    if (needsSrIdentifier) {
+      if (!srIdentifier.trim()) {
+        toast.error('SR Identifier is required for this request type and support combination.');
+        return;
+      }
+      if (!srValidationResult?.isValid) {
+        toast.error('Please enter a valid SR Identifier.');
+        return;
+      }
     }
     try {
       await createRequest.mutateAsync({
@@ -147,7 +190,7 @@ const SupportSelection = () => {
     // UAT Fix: selectedPriority is now part of base validation
     const baseValid = selectedSupport && selectedCategory && description.trim() && selectedPriority && selectedConsultant && selectedTimeSlot;
     if (needsSrIdentifier) {
-      return baseValid && srIdentifier.trim();
+      return baseValid && srIdentifier.trim() && srValidationResult?.isValid === true;
     }
     return baseValid;
   };
@@ -257,10 +300,25 @@ const SupportSelection = () => {
                     <Label htmlFor="sr-identifier" className="text-sm font-medium text-white">
                       SR Identifier <span className="text-red-500">*</span>
                     </Label>
-                    <Input id="sr-identifier" value={srIdentifier} onChange={e => setSrIdentifier(e.target.value)} 
-                           className="w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
+                    <Input id="sr-identifier" 
+                           value={srIdentifier} 
+                           onChange={e => setSrIdentifier(e.target.value)} 
+                           className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 ${srIdentifier && srValidationResult && !srValidationResult.isValid ? 'border-red-500' : ''}`}
                            placeholder="Enter SR Identifier"
                     />
+                    {validatingSrIdentifier && srIdentifier && (
+                      <div className="text-xs text-yellow-500">Validating identifier...</div>
+                    )}
+                    {!validatingSrIdentifier && srIdentifier && srValidationResult && (
+                      <div className={`text-xs ${srValidationResult.isValid ? 'text-green-500' : 'text-red-500'}`}>
+                        {srValidationResult.message}
+                      </div>
+                    )}
+                    {!validatingSrIdentifier && srIdentifier && srValidationResult?.isValid && srValidationResult.taskDescription && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        Task: {srValidationResult.taskDescription}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -327,7 +385,7 @@ const SupportSelection = () => {
                                 <div key={slot.id} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700">
                                   <RadioGroupItem value={slot.id} id={`slot-${slot.id}`} />
                                   <Label htmlFor={`slot-${slot.id}`} className="cursor-pointer text-gray-200">
-                                    {formatTimeSlot(slot.slot_start_time, slot.slot_end_time)}
+                                    {formatTimeSlot(slot.slotStartTime, slot.slotEndTime)}
                                   </Label>
                                 </div>
                               ))}

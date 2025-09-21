@@ -18,6 +18,7 @@ namespace SapBasisPulse.Api.Data
     public DbSet<LoginActivity> LoginActivities { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<ServiceRequestIdentifier> ServiceRequestIdentifiers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -62,6 +63,9 @@ namespace SapBasisPulse.Api.Data
                 .HasForeignKey(o => o.TimeSlotId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // Apply the ServiceRequestIdentifier configuration
+        modelBuilder.ApplyConfiguration(new ServiceRequestIdentifierConfiguration());
 
         base.OnModelCreating(modelBuilder);
         }

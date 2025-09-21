@@ -12,5 +12,7 @@ namespace SapBasisPulse.Api.Services
         Task<SupportTypeDto> CreateSupportTypeAsync(CreateSupportTypeDto dto);
         Task<SupportCategoryDto> CreateSupportCategoryAsync(CreateSupportCategoryDto dto);
         Task<SupportSubOptionDto> CreateSupportSubOptionAsync(CreateSupportSubOptionDto dto);
+        Task<IEnumerable<SupportCategoryDto>> GetSupportCategoriesByTypeAsync(Guid typeId);
+        Task<IEnumerable<SupportSubOptionDto>> GetSupportSubOptionsByTypeAsync(Guid typeId);
     }
 }

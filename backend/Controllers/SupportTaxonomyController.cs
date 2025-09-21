@@ -23,6 +23,14 @@ namespace SapBasisPulse.Api.Controllers
             return Ok(types);
         }
 
+        [HttpGet("types")]
+        [Authorize]
+        public async Task<IActionResult> GetSupportTypes()
+        {
+            var types = await _service.GetAllSupportTypesAsync();
+            return Ok(types);
+        }
+
         [HttpGet("{id}")]
         [Authorize]
         public async Task<IActionResult> GetSupportTypeById(Guid id)
@@ -50,6 +58,14 @@ namespace SapBasisPulse.Api.Controllers
             return Ok(cat);
         }
 
+        [HttpGet("categories")]
+        [Authorize]
+        public async Task<IActionResult> GetSupportCategories([FromQuery] Guid typeId)
+        {
+            var categories = await _service.GetSupportCategoriesByTypeAsync(typeId);
+            return Ok(categories);
+        }
+
         [HttpPost("suboption")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateSupportSubOption([FromBody] CreateSupportSubOptionDto dto)
@@ -57,6 +73,14 @@ namespace SapBasisPulse.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var sub = await _service.CreateSupportSubOptionAsync(dto);
             return Ok(sub);
+        }
+        
+        [HttpGet("suboptions")]
+        [Authorize]
+        public async Task<IActionResult> GetSupportSubOptions([FromQuery] Guid typeId)
+        {
+            var subOptions = await _service.GetSupportSubOptionsByTypeAsync(typeId);
+            return Ok(subOptions);
         }
     }
 }

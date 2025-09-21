@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle } from "lucide-react";
@@ -14,8 +14,12 @@ import { apiFetch } from "@/lib/api";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { signIn, signUp, user } = useAuth();
+  
+  // Get the redirect path from location state if available
+  const from = (location.state as { from?: string })?.from || '/dashboard';
   // domain validation removed; we call backend register API directly
   
   const [email, setEmail] = useState("");
@@ -28,10 +32,11 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   // Redirect if already logged in
-  if (user) {
-    navigate('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, from]);
 
   // Fetch signup options
   useEffect(() => {
@@ -69,7 +74,8 @@ const Login = () => {
         description: "You have been signed in successfully"
       });
       
-      navigate('/dashboard');
+      // Navigate with replace to avoid history stack issues
+      navigate(from, { replace: true });
     } catch (error: any) {
       toast({
         title: "Sign In Error",

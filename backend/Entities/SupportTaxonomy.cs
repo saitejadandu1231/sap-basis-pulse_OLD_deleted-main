@@ -25,5 +25,6 @@ namespace SapBasisPulse.Api.Entities
         public string Name { get; set; }
         public Guid SupportTypeId { get; set; }
         public SupportType SupportType { get; set; }
+        public bool RequiresSrIdentifier { get; set; }
     }
 }

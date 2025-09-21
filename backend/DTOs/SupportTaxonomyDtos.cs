@@ -19,6 +19,7 @@ namespace SapBasisPulse.Api.DTOs
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public bool RequiresSrIdentifier { get; set; }
     }
     public class CreateSupportTypeDto
     {
@@ -33,5 +34,6 @@ namespace SapBasisPulse.Api.DTOs
     {
         public string Name { get; set; }
         public Guid SupportTypeId { get; set; }
+        public bool RequiresSrIdentifier { get; set; }
     }
 }

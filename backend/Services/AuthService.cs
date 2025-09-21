@@ -36,6 +36,14 @@ namespace SapBasisPulse.Api.Services
                 var existing = await _userManager.FindByEmailAsync(dto.Email);
                 if (existing != null) return (false, "Email already exists", null);
 
+                // In development, we can optionally skip the email verification
+                bool autoPendingVerification = true;
+                if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development" && 
+                    _config.GetSection("Auth")["AutoActivateInDevelopment"]?.ToLower() == "true")
+                {
+                    autoPendingVerification = false;
+                }
+
                 var user = new User
                 {
                     Id = Guid.NewGuid(),
@@ -44,8 +52,8 @@ namespace SapBasisPulse.Api.Services
                     FirstName = dto.FirstName,
                     LastName = dto.LastName,
                     Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.Customer,
-                    Status = UserStatus.PendingVerification,
-                    EmailConfirmed = false
+                    Status = autoPendingVerification ? UserStatus.PendingVerification : UserStatus.Active,
+                    EmailConfirmed = !autoPendingVerification
                 };
 
                 var result = await _userManager.CreateAsync(user, dto.Password);
@@ -61,7 +69,16 @@ namespace SapBasisPulse.Api.Services
                 var confirmLink = $"{frontendUrl}/confirm-email?token={Uri.EscapeDataString(confirmationToken)}";
                 var subject = "Confirm your email";
                 var body = $"<p>Hi {user.FirstName},</p><p>Please confirm your email by clicking <a href='{confirmLink}'>here</a>.</p>";
-                await _emailSender.SendEmailAsync(user.Email, subject, body);
+                
+                try
+                {
+                    await _emailSender.SendEmailAsync(user.Email, subject, body);
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue with registration
+                    // We've already captured this in SmtpEmailSender
+                }
 
                 var token = GenerateJwtToken(user);
                 return (true, null, new AuthResponseDto
@@ -96,8 +113,22 @@ namespace SapBasisPulse.Api.Services
             if (result == PasswordVerificationResult.Failed)
                 return (false, "Invalid credentials", null);
 
-            if (user.Status != UserStatus.Active)
-                return (false, "User is not active", null);
+            // In development, we can allow logins regardless of user status if configured
+            bool bypassStatusCheck = false;
+            if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development" && 
+                _config.GetSection("Auth")["BypassStatusCheckInDevelopment"]?.ToLower() == "true")
+            {
+                bypassStatusCheck = true;
+            }
+
+            if (!bypassStatusCheck && user.Status != UserStatus.Active)
+            {
+                // If the user exists but is not active, provide a more helpful message
+                if (user.Status == UserStatus.PendingVerification)
+                    return (false, "Please verify your email before logging in", null);
+                else
+                    return (false, "User is not active", null);
+            }
 
             var token = GenerateJwtToken(user);
             return (true, null, new AuthResponseDto

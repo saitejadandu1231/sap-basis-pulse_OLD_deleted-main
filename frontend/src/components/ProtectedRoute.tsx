@@ -21,7 +21,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Use replace to avoid building up history
+    return <Navigate to="/login" replace state={{ from: window.location.pathname }} />;
   }
 
   return <>{children}</>;

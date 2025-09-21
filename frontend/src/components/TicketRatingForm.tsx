@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
-import { useCreateTicketRating } from '@/hooks/useSupport';
+import { useSubmitTicketRating } from '@/hooks/useSupport';
 import { toast } from 'sonner';
 
 interface TicketRatingFormProps {
@@ -26,7 +26,7 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
   const [communicationProfessionalism, setCommunicationProfessionalism] = useState(0);
   const [comments, setComments] = useState('');
 
-  const createRating = useCreateTicketRating();
+  const createRating = useSubmitTicketRating();
 
   const handleStarClick = (rating: number, setter: (value: number) => void) => {
     setter(rating);
@@ -61,8 +61,6 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
     try {
       await createRating.mutateAsync({
         orderId,
-        ratedUserId,
-        ratingForRole,
         resolutionQuality,
         responseTime,
         communicationProfessionalism,
