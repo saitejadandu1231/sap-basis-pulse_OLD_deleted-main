@@ -16,6 +16,12 @@ import AdminDashboard from "./pages/AdminDashboard";
 import { MessagingPage } from "./pages/Messaging";
 import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
 import NotFound from "./pages/NotFound";
+import Tickets from "./pages/Tickets";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
+import AdminUsers from "./pages/admin/Users";
+import AdminAnalytics from "./pages/admin/Analytics";
+import AdminSettings from "./pages/admin/AdminSettings";
 import "@/lib/pwa"; // Initialize PWA functionality
 
 const queryClient = new QueryClient();
@@ -40,6 +46,21 @@ const App = () => (
                 <SupportSelection />
               </ProtectedRoute>
             } />
+            <Route path="/tickets" element={
+              <ProtectedRoute>
+                <Tickets />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/help" element={
+              <ProtectedRoute>
+                <Help />
+              </ProtectedRoute>
+            } />
             <Route path="/consultant/availability" element={
               <ProtectedRoute>
                 <ConsultantAvailability />
@@ -48,6 +69,21 @@ const App = () => (
             <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users" element={
+              <ProtectedRoute>
+                <AdminUsers />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/analytics" element={
+              <ProtectedRoute>
+                <AdminAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/settings" element={
+              <ProtectedRoute>
+                <AdminSettings />
               </ProtectedRoute>
             } />
             <Route path="/messages" element={

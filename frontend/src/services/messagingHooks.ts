@@ -29,6 +29,8 @@ export function useConversation(conversationId: string) {
     queryKey: messagingKeys.conversation(conversationId),
     queryFn: () => MessagingService.getConversation(conversationId),
     enabled: !!conversationId,
+    refetchOnWindowFocus: false,
+    retry: 1, // Only retry once to reduce unnecessary API calls
   });
 }
 
@@ -37,6 +39,11 @@ export function useConversationByOrder(orderId: string) {
     queryKey: ['conversation', 'order', orderId],
     queryFn: () => MessagingService.getConversationByOrder(orderId),
     enabled: !!orderId,
+    retry: false, // Don't retry on 404 - conversation might not exist yet
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Prevent refetch when component remounts
+    refetchOnReconnect: false, // Prevent refetch on reconnect
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
   });
 }
 
@@ -49,6 +56,35 @@ export function useCreateConversation() {
       queryClient.invalidateQueries({ queryKey: messagingKeys.conversations() });
       queryClient.setQueryData(messagingKeys.conversation(data.id), data);
     },
+  });
+}
+
+export function useCreateOrGetConversationForOrder() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (orderId: string) => MessagingService.createOrGetConversationForOrder(orderId),
+    onSuccess: (data) => {
+      // Update the cache without triggering refetches
+      queryClient.setQueryData(messagingKeys.conversation(data.id), data);
+      queryClient.setQueryData(['conversation', 'order', data.orderId], data);
+      
+      // Delay the invalidation to prevent cascading effects
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: messagingKeys.conversations() });
+      }, 300);
+    },
+    onError: (error: any) => {
+      console.error('Error creating conversation:', error);
+      // Parse the server error message if available
+      let errorMessage = "Failed to create conversation";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      // Display the error to the user using toast or similar
+      console.error(errorMessage);
+    },
+    retry: 1, // Only retry once to avoid hammering the server
   });
 }
 

@@ -21,10 +21,13 @@ import {
   Ticket,
   Clock,
   CheckCircle,
-  MessageSquare
+  MessageSquare,
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useNavigate } from 'react-router-dom';
 import { 
   useAdminUsers, 
   useAdminSupportRequests, 
@@ -38,6 +41,7 @@ import { toast } from 'sonner';
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { data: featureFlags, refetch: refetchFeatureFlags } = useFeatureFlags();
+  const navigate = useNavigate();
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
@@ -217,6 +221,60 @@ const AdminDashboard = () => {
                 </div>
                 <Clock className="w-8 h-8 text-orange-600" />
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Navigation */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/users')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  User Management
+                </div>
+                <ExternalLink className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Comprehensive user management with advanced filtering and bulk operations
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/analytics')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <BarChart3 className="w-5 h-5 mr-2" />
+                  Analytics & Reports
+                </div>
+                <ExternalLink className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Detailed analytics dashboard with metrics, charts, and exportable reports
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/settings')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  System Settings
+                </div>
+                <ExternalLink className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Configure feature flags, security settings, and system-wide preferences
+              </p>
             </CardContent>
           </Card>
         </div>

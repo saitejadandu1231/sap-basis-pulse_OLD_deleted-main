@@ -7,6 +7,7 @@ namespace SapBasisPulse.Api.Services
 {
     public interface IMessagingService
     {
+        Task<bool> OrderExistsAsync(Guid orderId);
         // Conversation operations
         Task<ConversationDto> CreateConversationAsync(CreateConversationDto dto, Guid userId);
         Task<ConversationDto?> GetConversationByIdAsync(Guid conversationId, Guid userId);

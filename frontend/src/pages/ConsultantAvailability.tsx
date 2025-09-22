@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Calendar, Clock, Trash2, Mail } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import PageLayout from "@/components/layout/PageLayout";
 
 interface AvailabilitySlot {
   id: string;
@@ -195,28 +195,14 @@ const ConsultantAvailability = () => {
   }
 
   return (
-    <div className="min-h-screen gradient-bg">
-      {/* Header */}
-      <header className="border-b border-muted/20 bg-background/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-yuktor-400 to-yuktor-600 bg-clip-text text-transparent">
-              Availability Management
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Manage your consulting availability slots
-            </p>
-          </div>
-          <Button variant="ghost" onClick={() => navigate('/dashboard')}>
-            ← Back to Dashboard
-          </Button>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Define Availability Block */}
-          <Card className="glass-card">
+    <PageLayout
+      title="Availability Management"
+      description="Manage your consulting availability slots"
+      showSidebar={true}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Define Availability Block */}
+        <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Calendar className="w-5 h-5" />
@@ -378,8 +364,7 @@ const ConsultantAvailability = () => {
             )}
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </PageLayout>
   );
 };
 

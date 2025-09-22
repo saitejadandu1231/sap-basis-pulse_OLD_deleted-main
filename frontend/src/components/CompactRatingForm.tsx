@@ -92,7 +92,7 @@ const CompactRatingForm: React.FC<CompactRatingFormProps> = ({
       <div className="flex items-center gap-2 mb-3">
         <ThumbsUp className="w-4 h-4" />
         <span className="font-medium text-sm">
-          Rate {ratingForRole === 'consultant' ? 'Consultant' : 'Customer'}
+          Rate Consultant
         </span>
       </div>
 

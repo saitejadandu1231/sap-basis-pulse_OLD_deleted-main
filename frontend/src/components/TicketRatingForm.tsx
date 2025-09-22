@@ -80,7 +80,7 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Rate {ratingForRole === 'consultant' ? 'Consultant' : 'Customer'}</CardTitle>
+        <CardTitle>Rate Consultant</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">

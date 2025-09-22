@@ -50,7 +50,23 @@ namespace SapBasisPulse.Api.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                var conversation = await _messagingService.CreateConversationAsync(new CreateConversationDto { OrderId = orderId }, userId);
+                
+                // First check if order exists
+                var orderExists = await _messagingService.OrderExistsAsync(orderId);
+                if (!orderExists)
+                {
+                    return BadRequest(new { error = $"Order with ID {orderId} not found" });
+                }
+                
+                // Create a proper DTO with default values for conversation creation
+                var createConversationDto = new CreateConversationDto 
+                { 
+                    OrderId = orderId,
+                    Subject = "Support Request Discussion", // Default subject
+                    InitialMessage = "Conversation started for support request." // Default initial message
+                };
+                
+                var conversation = await _messagingService.CreateConversationAsync(createConversationDto, userId);
                 return Ok(conversation);
             }
             catch (ArgumentException ex)
@@ -134,11 +150,18 @@ namespace SapBasisPulse.Api.Controllers
         {
             try
             {
+                // First check if order exists
+                var orderExists = await _messagingService.OrderExistsAsync(orderId);
+                if (!orderExists)
+                {
+                    return NotFound(new { error = $"Order with ID {orderId} not found" });
+                }
+                
                 var userId = GetCurrentUserId();
                 var conversation = await _messagingService.GetConversationByOrderIdAsync(orderId, userId);
                 
                 if (conversation == null)
-                    return NotFound(new { error = "Conversation not found" });
+                    return NotFound(new { error = "Conversation not found for this order" });
 
                 return Ok(conversation);
             }

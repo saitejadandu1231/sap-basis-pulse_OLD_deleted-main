@@ -9,16 +9,19 @@ using System.Threading.Tasks;
 
 namespace SapBasisPulse.Api.Services
 {
-    public class MessagingService : IMessagingService
+public class MessagingService : IMessagingService
+{
+    private readonly AppDbContext _context;
+
+    public MessagingService(AppDbContext context)
     {
-        private readonly AppDbContext _context;
-
-        public MessagingService(AppDbContext context)
-        {
-            _context = context;
-        }
-
-        public async Task<ConversationDto> CreateConversationAsync(CreateConversationDto dto, Guid userId)
+        _context = context;
+    }
+    
+    public async Task<bool> OrderExistsAsync(Guid orderId)
+    {
+        return await _context.Orders.AnyAsync(o => o.Id == orderId);
+    }        public async Task<ConversationDto> CreateConversationAsync(CreateConversationDto dto, Guid userId)
         {
             // Get the order and verify user access
             var order = await _context.Orders
@@ -27,7 +30,7 @@ namespace SapBasisPulse.Api.Services
                 .FirstOrDefaultAsync(o => o.Id == dto.OrderId);
 
             if (order == null)
-                throw new ArgumentException("Order not found");
+                throw new ArgumentException($"Order with ID {dto.OrderId} not found. User ID: {userId}");
 
             // Verify user has access to this order
             if (order.CreatedByUserId != userId && order.ConsultantId != userId)
@@ -96,7 +99,10 @@ namespace SapBasisPulse.Api.Services
                 .Include(c => c.Order)
                 .FirstOrDefaultAsync(c => c.OrderId == orderId);
 
-            if (conversation == null || !await CanUserAccessConversationAsync(conversation.Id, userId))
+            if (conversation == null)
+                return null;
+                
+            if (!await CanUserAccessConversationAsync(conversation.Id, userId))
                 return null;
 
             return await MapToConversationDto(conversation, userId);

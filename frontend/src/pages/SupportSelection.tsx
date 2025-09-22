@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,38 +6,64 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import ConsultantSelector from '@/components/ConsultantSelector';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
+import PageLayout from '@/components/layout/PageLayout';
+import { 
+    ChevronRight, 
+    ChevronLeft, 
+    Check, 
+    AlertCircle,
+    Clock,
+    User,
+    FileText,
+    Settings,
+    Star,
+    Calendar
+} from 'lucide-react';
 import { 
     useSupportTypes, 
     useSupportCategories, 
     useSupportSubOptions, 
     useConsultantAvailabilitySlots,
-    useAvailableTimeSlots, 
-    useCreateSupportRequest 
+    useCreateSupportRequest,
+    useAvailableConsultants 
 } from '@/hooks/useSupport';
 import { useValidateServiceRequestIdentifier } from '@/hooks/useServiceRequestIdentifier';
 
 const priorityOptions = [
-    { id: 'Low', name: 'Low' },
-    { id: 'Medium', name: 'Medium' },
-    { id: 'High', name: 'High' },
-    { id: 'VeryHigh', name: 'Very High' },
+    { id: 'Low', name: 'Low', color: 'bg-blue-100 text-blue-800', icon: '🔵' },
+    { id: 'Medium', name: 'Medium', color: 'bg-yellow-100 text-yellow-800', icon: '🟡' },
+    { id: 'High', name: 'High', color: 'bg-orange-100 text-orange-800', icon: '🟠' },
+    { id: 'VeryHigh', name: 'Very High', color: 'bg-red-100 text-red-800', icon: '🔴' },
+];
+
+const STEPS = [
+    { id: 'type', title: 'Support Type', icon: Settings, description: 'Choose the type of support you need' },
+    { id: 'category', title: 'Category', icon: FileText, description: 'Select the specific category' },
+    { id: 'details', title: 'Details', icon: AlertCircle, description: 'Provide request details' },
+    { id: 'consultant', title: 'Consultant', icon: User, description: 'Choose consultant and time' },
+    { id: 'review', title: 'Review', icon: Check, description: 'Review and submit your request' }
 ];
 
 const SupportSelection = () => {
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
   
+  // Step management
+  const [currentStep, setCurrentStep] = useState(0);
+  
+  // Form state
   const [selectedSupport, setSelectedSupport] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubOption, setSelectedSubOption] = useState('');
   const [description, setDescription] = useState('');
   const [srIdentifier, setSrIdentifier] = useState('');
-  const [selectedPriority, setSelectedPriority] = useState(''); // UAT Fix: Remove default priority
+  const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [consultantShowingReviews, setConsultantShowingReviews] = useState<string | null>(null);
   
   // Validate SR Identifier if it's entered
   const { data: srValidationResult, isLoading: validatingSrIdentifier } = 
@@ -52,11 +78,7 @@ const SupportSelection = () => {
 
   const { data: supportTypes, isLoading: loadingTypes } = useSupportTypes();
   const { data: supportCategories, isLoading: loadingCategories } = useSupportCategories(selectedSupport);
-  
-  // --- TypeScript Error Fix & Conditional Hook Call Logic ---
-  // Call hooks only when their dependency ID is available.
-  // The hooks themselves should ideally handle a null/undefined ID by not fetching.
-  // If they don't, this pattern helps prevent errors.
+  const { data: consultants, isLoading: consultantsLoading } = useAvailableConsultants();
   const { data: supportSubOptionsData, isLoading: loadingSubOptions } = useSupportSubOptions(selectedSupport || undefined);
   const supportSubOptions = useMemo(() => selectedSupport ? supportSubOptionsData : [], [selectedSupport, supportSubOptionsData]);
 
@@ -73,77 +95,79 @@ const SupportSelection = () => {
     endDate
   );
   const timeSlots = useMemo(() => selectedConsultant ? timeSlotsData : [], [selectedConsultant, timeSlotsData]);
-  // --- End TypeScript Error Fix ---
-
 
   const createRequest = useCreateSupportRequest();
 
-  const selectedSupportTypeObj = supportTypes?.find(type => type.id === selectedSupport);
-  const selectedCategoryObj = supportCategories?.find(cat => cat.id === selectedCategory);
-  const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
-  const selectedPriorityObj = priorityOptions.find(p => p.id === selectedPriority);
-
-  const resetDependentStates = (level: 'support' | 'category' | 'subOption' | 'priority') => {
-    if (level === 'support') {
-      setSelectedCategory('');
-    }
-    if (level === 'support' || level === 'category') {
-      setSelectedSubOption('');
-      setSrIdentifier('');
-      // setSelectedPriority(''); // Priority is independent of category/support type for now
-      // setDescription(''); 
-    }
-    // Only reset consultant and slot for support structure changes, not description changes
-    if (level === 'support' || level === 'category' || level === 'subOption') {
-      setSelectedConsultant('');
-      setSelectedTimeSlot('');
+  // Step navigation logic
+  const nextStep = () => {
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Auto-advance logic
   const handleSupportTypeChange = (value: string) => {
     setSelectedSupport(value);
-    resetDependentStates('support');
+    setSelectedCategory('');
+    setSelectedSubOption('');
+    setSrIdentifier('');
+    setSelectedConsultant('');
+    setSelectedTimeSlot('');
+    // Auto-advance to next step
+    setTimeout(() => nextStep(), 300);
   };
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
-    resetDependentStates('category');
+    setSelectedSubOption('');
+    setSrIdentifier('');
+    setSelectedConsultant('');
+    setSelectedTimeSlot('');
+    // Auto-advance to next step
+    setTimeout(() => nextStep(), 300);
   };
 
-  const handleSubOptionChange = (value: string) => {
-    setSelectedSubOption(value);
-    setSrIdentifier(''); 
-    resetDependentStates('subOption');
+  // Validation for each step
+  const isStepValid = (stepIndex: number) => {
+    switch (stepIndex) {
+      case 0: return !!selectedSupport;
+      case 1: return !!selectedCategory;
+      case 2: return !!description && !!selectedPriority;
+      case 3: return !!selectedConsultant && !!selectedTimeSlot;
+      case 4: return true; // Review step
+      default: return false;
+    }
   };
 
-  const handlePriorityChange = (value: string) => {
-    setSelectedPriority(value);
-    // Priority changes should not reset consultant and time slot selections
-  };
-  
-  const handleDescriptionChange = (value: string) => {
-    setDescription(value);
-    // Description changes should not affect other form selections
+  const canProceedToNext = () => {
+    return isStepValid(currentStep);
   };
 
-  // The requiresSrIdentifier property may not exist yet in the API response
-  // So we check if the property exists, and if not, we default based on the name
-  const needsSrIdentifier = 
-    (selectedSubOptionObj?.requiresSrIdentifier !== undefined ? 
-      selectedSubOptionObj?.requiresSrIdentifier : 
-      selectedSubOptionObj?.name === 'Service Request (SR)') && 
-    (selectedSupportTypeObj?.name === 'SAP RISE' || selectedSupportTypeObj?.name === 'SAP Grow');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // UAT Fix: selectedPriority is now required as it has no default
+  // Form submission
+  const handleSubmit = async () => {
     if (!selectedSupport || !selectedCategory || !description.trim() || !selectedPriority || !selectedConsultant || !selectedTimeSlot) {
-      toast.error('Please fill in all required fields, including priority, consultant, and time slot.');
+      toast.error('Please complete all steps before submitting.');
       return;
     }
+
+    const selectedSupportTypeObj = supportTypes?.find(type => type.id === selectedSupport);
+    const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
+    
+    const needsSrIdentifier = 
+      (selectedSubOptionObj?.requiresSrIdentifier !== undefined ? 
+        selectedSubOptionObj?.requiresSrIdentifier : 
+        selectedSubOptionObj?.name === 'Service Request (SR)') && 
+      (selectedSupportTypeObj?.name === 'SAP RISE' || selectedSupportTypeObj?.name === 'SAP Grow');
+
     if (needsSrIdentifier) {
       if (!srIdentifier.trim()) {
-        toast.error('SR Identifier is required for this request type and support combination.');
+        toast.error('SR Identifier is required for this request type.');
         return;
       }
       if (!srValidationResult?.isValid) {
@@ -151,6 +175,7 @@ const SupportSelection = () => {
         return;
       }
     }
+
     try {
       await createRequest.mutateAsync({
         supportTypeId: selectedSupport,
@@ -170,233 +195,1089 @@ const SupportSelection = () => {
     }
   };
 
-  const isFormValid = () => {
-    // UAT Fix: selectedPriority is now part of base validation
-    const baseValid = selectedSupport && selectedCategory && description.trim() && selectedPriority && selectedConsultant && selectedTimeSlot;
-    if (needsSrIdentifier) {
-      return baseValid && srIdentifier.trim() && srValidationResult?.isValid === true;
-    }
-    return baseValid;
-  };
+  // Step components
+  const renderStepContent = () => {
+    const selectedSupportTypeObj = supportTypes?.find(type => type.id === selectedSupport);
+    const selectedCategoryObj = supportCategories?.find(cat => cat.id === selectedCategory);
+    const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
+    const selectedPriorityObj = priorityOptions.find(p => p.id === selectedPriority);
+    const selectedConsultantObj = consultants?.find(c => c.id === selectedConsultant);
+    const selectedTimeSlotObj = timeSlots?.find(slot => slot.id === selectedTimeSlot);
 
-  const formatTimeSlot = (startTime: string, endTime: string): string => { // Added return type for clarity
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    return `${start.toLocaleDateString()} ${start.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    })} - ${end.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    })}`;
-  };
+    switch (currentStep) {
+      case 0: // Support Type
+        return (
+          <div className="space-y-6">
+            <div className="mb-8">
+              {/* Enhanced Progress Bar */}
+              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+                {/* Step indicators with connecting line */}
+                <div className="flex items-center justify-between mb-4">
+                  {STEPS.map((step, index) => {
+                    const StepIcon = step.icon;
+                    const isActive = index === currentStep;
+                    const isCompleted = index < currentStep;
+                    const isUpcoming = index > currentStep;
 
-  if (userRole === 'consultant') return null;
-
-  // --- JSX Rendering ---
-  // To fix TS2322, ensure all conditional rendering paths return a valid ReactNode or null.
-  // The structure below should be fine. The error might have been from a temporary state during my previous refactoring.
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="space-y-6">
-          <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
-            <CardHeader className="bg-gray-800">
-              <CardTitle className="text-2xl font-bold text-center text-yellow-500">Create Support Request</CardTitle>
-            </CardHeader>
-            <CardContent className="bg-gray-800 p-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                
-                {/* --- Support Type --- */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium text-white">Support Type</Label>
-                  {loadingTypes ? <div className="text-sm text-gray-400">Loading...</div> : 
-                    !selectedSupport ? (
-                      <RadioGroup value={selectedSupport} onValueChange={handleSupportTypeChange}>
-                        {supportTypes?.map(type => (
-                          <div key={type.id} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700">
-                            <RadioGroupItem value={type.id} id={`type-${type.id}`} />
-                            <Label htmlFor={`type-${type.id}`} className="cursor-pointer text-gray-200">{type.name}</Label>
+                    return (
+                      <div key={step.id} className="flex items-center">
+                        <div className="flex flex-col items-center relative">
+                          {/* Step Circle */}
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30 scale-110' 
+                              : isCompleted 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30' 
+                                : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
+                          }`}>
+                            {isCompleted ? (
+                              <Check className="w-6 h-6" />
+                            ) : (
+                              <StepIcon className="w-6 h-6" />
+                            )}
                           </div>
-                        ))}
-                      </RadioGroup>
-                    ) : (
-                      <div className="p-3 bg-gray-700 rounded-md">
-                        <p className="text-gray-200 font-semibold">{selectedSupportTypeObj?.name}</p>
-                        <Button variant="link" size="sm" onClick={() => handleSupportTypeChange('')} className="text-yellow-500 p-0 h-auto mt-1">Change</Button>
-                      </div>
-                    )
-                  }
-                </div>
-
-                {/* --- Category --- */}
-                {selectedSupport && (
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium text-white">Category</Label>
-                    {loadingCategories ? <div className="text-sm text-gray-400">Loading...</div> :
-                      !selectedCategory ? (
-                        <RadioGroup value={selectedCategory} onValueChange={handleCategoryChange}>
-                          {(supportCategories || [])?.map(category => ( // Added fallback to empty array
-                            <div key={category.id} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700">
-                              <RadioGroupItem value={category.id} id={`cat-${category.id}`} />
-                              <Label htmlFor={`cat-${category.id}`} className="cursor-pointer text-gray-200">{category.name}</Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      ) : (
-                        <div className="p-3 bg-gray-700 rounded-md">
-                          <p className="text-gray-200 font-semibold">{selectedCategoryObj?.name}</p>
-                          <Button variant="link" size="sm" onClick={() => handleCategoryChange('')} className="text-yellow-500 p-0 h-auto mt-1">Change</Button>
+                          
+                          {/* Step Label */}
+                          <div className="mt-3 text-center">
+                            <p className={`text-xs font-medium transition-colors ${
+                              isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {step.title}
+                            </p>
+                          </div>
                         </div>
-                      )
-                    }
-                  </div>
-                )}
-
-                {/* --- Request Type (Sub-options) --- */}
-                {/* UAT Issue 1 Fix: Ensure this section shows if sub-options are available for ANY selected support type */}
-                {selectedCategory && supportSubOptions && supportSubOptions.length > 0 && (
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium text-white">Request Type</Label>
-                    {loadingSubOptions ? <div className="text-sm text-gray-400">Loading...</div> :
-                      !selectedSubOption ? (
-                        <RadioGroup value={selectedSubOption} onValueChange={handleSubOptionChange}>
-                          {supportSubOptions.map(option => ( // No ?. here, already checked supportSubOptions
-                            <div key={option.id} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700">
-                              <RadioGroupItem value={option.id} id={`subopt-${option.id}`} />
-                              <Label htmlFor={`subopt-${option.id}`} className="cursor-pointer text-gray-200">{option.name}</Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      ) : (
-                        <div className="p-3 bg-gray-700 rounded-md">
-                            <p className="text-gray-200 font-semibold">{selectedSubOptionObj?.name}</p>
-                            <Button variant="link" size="sm" onClick={() => handleSubOptionChange('')} className="text-yellow-500 p-0 h-auto mt-1">Change</Button>
-                        </div>
-                      )
-                    }
-                  </div>
-                )}
-                
-                {/* --- SR Identifier --- */}
-                {selectedSubOption && needsSrIdentifier && (
-                  <div className="space-y-2">
-                    <Label htmlFor="sr-identifier" className="text-sm font-medium text-white">
-                      SR Identifier <span className="text-red-500">*</span>
-                    </Label>
-                    <Input id="sr-identifier" 
-                           value={srIdentifier} 
-                           onChange={e => setSrIdentifier(e.target.value)} 
-                           className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500 ${srIdentifier && srValidationResult && !srValidationResult.isValid ? 'border-red-500' : ''}`}
-                           placeholder="Enter SR Identifier"
-                    />
-                    {validatingSrIdentifier && srIdentifier && (
-                      <div className="text-xs text-yellow-500">Validating identifier...</div>
-                    )}
-                    {!validatingSrIdentifier && srIdentifier && srValidationResult && (
-                      <div className={`text-xs ${srValidationResult.isValid ? 'text-green-500' : 'text-red-500'}`}>
-                        {srValidationResult.message}
-                      </div>
-                    )}
-                    {!validatingSrIdentifier && srIdentifier && srValidationResult?.isValid && srValidationResult.taskDescription && (
-                      <div className="text-xs text-gray-400 mt-1">
-                        Task: {srValidationResult.taskDescription}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* --- Priority --- */}
-                {selectedCategory && ( 
-                    <div className="space-y-3">
-                        <Label className="text-base font-medium text-white">Priority</Label>
-                        {!selectedPriority ? ( // UAT Fix: Show options if no priority selected
-                            <RadioGroup value={selectedPriority} onValueChange={handlePriorityChange}>
-                                {priorityOptions.map(prio => (
-                                    <div key={prio.id} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700">
-                                        <RadioGroupItem value={prio.id} id={`prio-${prio.id}`} />
-                                        <Label htmlFor={`prio-${prio.id}`} className="cursor-pointer text-gray-200">{prio.name}</Label>
-                                    </div>
-                                ))}
-                            </RadioGroup>
-                        ) : (
-                            <div className="p-3 bg-gray-700 rounded-md">
-                                <p className="text-gray-200 font-semibold">{selectedPriorityObj?.name}</p>
-                                <Button variant="link" size="sm" onClick={() => handlePriorityChange('')} className="text-yellow-500 p-0 h-auto mt-1">Change</Button>
-                            </div>
+                        
+                        {/* Connecting Line */}
+                        {index < STEPS.length - 1 && (
+                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                            <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
+                            <div 
+                              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+                                index < currentStep ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' : 'bg-transparent w-0'
+                              }`}
+                            />
+                          </div>
                         )}
-                    </div>
-                )}
-
-                {/* --- Description --- */}
-                {selectedPriority && ( // Show description after priority is selected
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-base font-medium text-white">
-                      Description <span className="text-red-500">*</span>
-                    </Label>
-                    <Textarea 
-                        id="description" 
-                        value={description} 
-                        onChange={e => handleDescriptionChange(e.target.value)}
-                        maxLength={1000}
-                        className="min-h-[100px] resize-none bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-yellow-500 focus:border-yellow-500"
-                        placeholder="Describe your support request..."
-                    />
-                    <div className="text-sm text-gray-400 text-right">{description.length}/1000</div>
-                  </div>
-                )}
-
-                {/* --- Consultant Selection --- */}
-                {selectedPriority && (
-                  <div className="space-y-4">
-                    <div className="border-t border-gray-700 pt-6">
-                      <Label className="text-base font-medium text-white">Choose a Consultant</Label>
-                      <ConsultantSelector onConsultantSelect={setSelectedConsultant} selectedConsultant={selectedConsultant} />
-                    </div>
-                  </div>
-                )}
-
-                {/* --- Consultant Calendar --- */}
-                {selectedConsultant && (
-                  <div className="space-y-4">
-                    <div className="border-t border-gray-700 pt-6">
-                      <Label className="text-base font-medium text-white">Available Time Slots</Label>
-                      <div className="grid grid-cols-1 gap-3">
-                        {loadingSlots ? <div className="text-sm text-gray-400">Loading...</div> : 
-                          timeSlots && timeSlots.length > 0 ? (
-                            <RadioGroup value={selectedTimeSlot} onValueChange={setSelectedTimeSlot}>
-                              {timeSlots.map(slot => (
-                                <div key={slot.id} className="flex items-center space-x-2 p-2 rounded hover:bg-gray-700">
-                                  <RadioGroupItem value={slot.id} id={`slot-${slot.id}`} />
-                                  <Label htmlFor={`slot-${slot.id}`} className="cursor-pointer text-gray-200">
-                                    {formatTimeSlot(slot.slotStartTime, slot.slotEndTime)}
-                                  </Label>
-                                </div>
-                              ))}
-                            </RadioGroup>
-                          ) : (
-                            <div className="text-sm text-gray-400 p-4 bg-gray-700 rounded-md">
-                              No available time slots for this consultant.
-                            </div>
-                          )
-                        }
                       </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-foreground">Progress</span>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Step {currentStep + 1} of {STEPS.length} ({Math.round(progress)}%)
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${progress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse" />
                     </div>
                   </div>
-                )}
-
-                {/* --- Submit Button --- */}
-                <div className="pt-6">
-                  <Button type="submit" className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900" disabled={!isFormValid() || createRequest.isPending}>
-                    {createRequest.isPending ? 'Creating...' : 'Submit Request'}
-                  </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+              
+              {/* Current Step Header */}
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Select Support Type</h2>
+                  <p className="text-muted-foreground">Choose the type of support you need</p>
+                </div>
+              </div>
+            </div>
+            
+            {loadingTypes ? (
+              <div className="text-center py-8">Loading support types...</div>
+            ) : (
+              <div className="grid gap-4">
+                {supportTypes?.map(type => (
+                  <Card 
+                    key={type.id} 
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedSupport === type.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => handleSupportTypeChange(type.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{type.name}</h3>
+                          {type.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
+                          )}
+                        </div>
+                        {selectedSupport === type.id && (
+                          <Check className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      case 1: // Category
+        return (
+          <div className="space-y-6">
+            <div className="mb-8">
+              {/* Enhanced Progress Bar */}
+              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+                {/* Step indicators with connecting line */}
+                <div className="flex items-center justify-between mb-4">
+                  {STEPS.map((step, index) => {
+                    const StepIcon = step.icon;
+                    const isActive = index === currentStep;
+                    const isCompleted = index < currentStep;
+                    const isUpcoming = index > currentStep;
+
+                    return (
+                      <div key={step.id} className="flex items-center">
+                        <div className="flex flex-col items-center relative">
+                          {/* Step Circle */}
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-green-500 to-teal-600 text-white shadow-lg shadow-green-500/30 scale-110' 
+                              : isCompleted 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30' 
+                                : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
+                          }`}>
+                            {isCompleted ? (
+                              <Check className="w-6 h-6" />
+                            ) : (
+                              <StepIcon className="w-6 h-6" />
+                            )}
+                          </div>
+                          
+                          {/* Step Label */}
+                          <div className="mt-3 text-center">
+                            <p className={`text-xs font-medium transition-colors ${
+                              isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {step.title}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Connecting Line */}
+                        {index < STEPS.length - 1 && (
+                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                            <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
+                            <div 
+                              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+                                index < currentStep ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' : 'bg-transparent w-0'
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-foreground">Progress</span>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Step {currentStep + 1} of {STEPS.length} ({Math.round(progress)}%)
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-500 to-teal-600 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${progress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Current Step Header */}
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Select Category</h2>
+                  <p className="text-muted-foreground">Choose the specific category for your request</p>
+                  {selectedSupportTypeObj && (
+                    <Badge variant="secondary" className="mt-2">
+                      {selectedSupportTypeObj.name}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {loadingCategories ? (
+              <div className="text-center py-8">Loading categories...</div>
+            ) : (
+              <div className="grid gap-4">
+                {supportCategories?.map(category => (
+                  <Card 
+                    key={category.id} 
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedCategory === category.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
+                    }`}
+                    onClick={() => handleCategoryChange(category.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{category.name}</h3>
+                          {category.description && (
+                            <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
+                          )}
+                        </div>
+                        {selectedCategory === category.id && (
+                          <Check className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      case 2: // Details
+        return (
+          <div className="space-y-6">
+            <div className="mb-8">
+              {/* Enhanced Progress Bar */}
+              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+                {/* Step indicators with connecting line */}
+                <div className="flex items-center justify-between mb-4">
+                  {STEPS.map((step, index) => {
+                    const StepIcon = step.icon;
+                    const isActive = index === currentStep;
+                    const isCompleted = index < currentStep;
+                    const isUpcoming = index > currentStep;
+
+                    return (
+                      <div key={step.id} className="flex items-center">
+                        <div className="flex flex-col items-center relative">
+                          {/* Step Circle */}
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg shadow-orange-500/30 scale-110' 
+                              : isCompleted 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30' 
+                                : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
+                          }`}>
+                            {isCompleted ? (
+                              <Check className="w-6 h-6" />
+                            ) : (
+                              <StepIcon className="w-6 h-6" />
+                            )}
+                          </div>
+                          
+                          {/* Step Label */}
+                          <div className="mt-3 text-center">
+                            <p className={`text-xs font-medium transition-colors ${
+                              isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {step.title}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Connecting Line */}
+                        {index < STEPS.length - 1 && (
+                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                            <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
+                            <div 
+                              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+                                index < currentStep ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' : 'bg-transparent w-0'
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-foreground">Progress</span>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Step {currentStep + 1} of {STEPS.length} ({Math.round(progress)}%)
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-orange-500 to-red-600 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${progress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Current Step Header */}
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <AlertCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Request Details</h2>
+                  <p className="text-muted-foreground">Provide details about your support request</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6">
+              {/* Priority Selection */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Priority Level</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {priorityOptions.map(priority => (
+                    <Card 
+                      key={priority.id} 
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        selectedPriority === priority.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => setSelectedPriority(priority.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-2xl">{priority.icon}</span>
+                          <div className="flex-1">
+                            <h3 className="font-semibold">{priority.name}</h3>
+                          </div>
+                          {selectedPriority === priority.id && (
+                            <Check className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-base font-semibold">
+                  Description *
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe your issue in detail..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={6}
+                  className="min-h-[120px]"
+                />
+              </div>
+
+              {/* SR Identifier if needed */}
+              {selectedSubOptionObj?.name === 'Service Request (SR)' && (
+                <div className="space-y-2">
+                  <Label htmlFor="srIdentifier" className="text-base font-semibold">
+                    Service Request Identifier *
+                  </Label>
+                  <Input
+                    id="srIdentifier"
+                    placeholder="Enter SR number (e.g., SR123456789)"
+                    value={srIdentifier}
+                    onChange={(e) => setSrIdentifier(e.target.value)}
+                  />
+                  {validatingSrIdentifier && (
+                    <p className="text-sm text-muted-foreground">Validating...</p>
+                  )}
+                  {srIdentifier && srValidationResult && (
+                    <p className={`text-sm ${srValidationResult.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                      {srValidationResult.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 3: // Consultant Selection
+        return (
+          <div className="space-y-6">
+            <div className="mb-8">
+              {/* Enhanced Progress Bar */}
+              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+                {/* Step indicators with connecting line */}
+                <div className="flex items-center justify-between mb-4">
+                  {STEPS.map((step, index) => {
+                    const StepIcon = step.icon;
+                    const isActive = index === currentStep;
+                    const isCompleted = index < currentStep;
+                    const isUpcoming = index > currentStep;
+
+                    return (
+                      <div key={step.id} className="flex items-center">
+                        <div className="flex flex-col items-center relative">
+                          {/* Step Circle */}
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/30 scale-110' 
+                              : isCompleted 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30' 
+                                : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
+                          }`}>
+                            {isCompleted ? (
+                              <Check className="w-6 h-6" />
+                            ) : (
+                              <StepIcon className="w-6 h-6" />
+                            )}
+                          </div>
+                          
+                          {/* Step Label */}
+                          <div className="mt-3 text-center">
+                            <p className={`text-xs font-medium transition-colors ${
+                              isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {step.title}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Connecting Line */}
+                        {index < STEPS.length - 1 && (
+                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                            <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
+                            <div 
+                              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+                                index < currentStep ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' : 'bg-transparent w-0'
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-foreground">Progress</span>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Step {currentStep + 1} of {STEPS.length} ({Math.round(progress)}%)
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-500 to-pink-600 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${progress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Current Step Header */}
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Choose Consultant & Time</h2>
+                  <p className="text-muted-foreground">Select a consultant and available time slot</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Priority Selection - Quick Selector */}
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className=" from-orange-100 to-orange-200 border border-orange-300 rounded-lg p-4">
+                  <Label className="text-base font-semibold flex items-center space-x-2 mb-3">
+                    <AlertCircle className="w-4 h-4 text-orange-600" />
+                    <span>Set Priority Level *</span>
+                  </Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {priorityOptions.map(priority => {
+                      const isSelected = selectedPriority === priority.id;
+                      return (
+                        <Card
+                          key={priority.id}
+                          className={`cursor-pointer transition-all duration-200 hover:shadow-sm hover:-translate-y-0.5 ${
+                            isSelected 
+                              ? 'ring-2 ring-orange-500 border-orange-300 shadow-lg' 
+                              : 'hover:border-orange-200 bg-card'
+                          }`}
+                          style={isSelected ? {
+                            background: 'linear-gradient(135deg, rgb(254 215 170) 0%, rgb(251 191 36) 100%) !important',
+                            backgroundColor: 'rgb(254 215 170) !important'
+                          } : {
+                            backgroundColor: 'hsl(var(--card))'
+                          }}
+                          onClick={() => setSelectedPriority(priority.id)}
+                        >
+                          <CardContent className="p-3 text-center">
+                            <div className="space-y-2">
+                              <span className="text-lg">{priority.icon}</span>
+                              <h4 className={`text-sm font-medium ${
+                                isSelected ? 'text-orange-800' : 'text-foreground'
+                              }`}>
+                                {priority.name}
+                              </h4>
+                              {isSelected && (
+                                <div className="w-4 h-4 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto">
+                                  <Check className="w-2.5 h-2.5 text-white" />
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Consultant Selection - Enhanced */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span>Choose a consultant for your support request *</span>
+                </Label>
+                
+                {consultantsLoading ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="bg-muted/30 rounded-lg p-4 animate-pulse">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-muted rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-muted rounded w-3/4" />
+                            <div className="h-3 bg-muted rounded w-1/2" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : consultants && consultants.length > 0 ? (
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {consultants.map((consultant: any) => {
+                      const isSelected = selectedConsultant === consultant.id;
+                      const showReviews = consultantShowingReviews === consultant.id;
+                      
+                      return (
+                        <Card
+                          key={consultant.id}
+                          className={`transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+                            isSelected 
+                              ? 'ring-2 ring-purple-500 border-purple-300 shadow-lg' 
+                              : 'hover:border-purple-200 bg-card'
+                          }`}
+                          style={isSelected ? {
+                            background: 'linear-gradient(135deg, rgb(243 232 255) 0%, rgb(221 214 254) 100%) !important',
+                            backgroundColor: 'rgb(243 232 255) !important'
+                          } : {
+                            backgroundColor: 'hsl(var(--card))'
+                          }}
+                        >
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              {/* Header - Consultant Info */}
+                              <div 
+                                className="flex items-start space-x-3 cursor-pointer"
+                                onClick={() => setSelectedConsultant(consultant.id)}
+                              >
+                                {/* Avatar */}
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-medium text-sm relative ${
+                                  isSelected 
+                                    ? 'bg-gradient-to-r from-purple-500 to-pink-600' 
+                                    : 'bg-gradient-to-r from-gray-500 to-gray-600'
+                                }`}>
+                                  {consultant.firstName?.[0]}{consultant.lastName?.[0]}
+                                  {consultant.status === 'available' && (
+                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+                                  )}
+                                </div>
+                                
+                                {/* Consultant Info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <h4 className={`font-medium text-sm leading-tight ${
+                                        isSelected ? 'text-purple-800' : 'text-foreground'
+                                      }`}>
+                                        {consultant.firstName} {consultant.lastName}
+                                      </h4>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {consultant.role || 'SAP Consultant'}
+                                      </p>
+                                    </div>
+                                    
+                                    {/* Selection Indicator */}
+                                    {isSelected && (
+                                      <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <Check className="w-3 h-3 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Performance Indicators */}
+                                  <div className="flex items-center space-x-3 mt-2">
+                                    {/* Rating */}
+                                    {consultant.averageRating && consultant.averageRating > 0 ? (
+                                      <div className="flex items-center space-x-1">
+                                        <div className="flex">
+                                          {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                              key={star}
+                                              className={`w-3 h-3 ${
+                                                star <= Math.round(consultant.averageRating) 
+                                                  ? 'fill-yellow-400 text-yellow-400' 
+                                                  : 'text-gray-300'
+                                              }`}
+                                            />
+                                          ))}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">
+                                          {consultant.averageRating.toFixed(1)}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">New</span>
+                                    )}
+                                    
+                                    {/* Response Time */}
+                                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                      <Clock className="w-3 h-3" />
+                                      <span>{consultant.avgResponseTime || '< 1h'}</span>
+                                    </div>
+                                    
+                                    {/* Success Rate */}
+                                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                      <Check className="w-3 h-3" />
+                                      <span>{consultant.successRate || '95'}%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Status and Actions Bar */}
+                              <div className="flex items-center justify-between pt-2 border-t border-muted/30">
+                                <div className="flex items-center space-x-2">
+                                  <Badge 
+                                    variant={consultant.status === 'available' ? 'default' : 'secondary'} 
+                                    className="text-xs px-2 py-0.5"
+                                  >
+                                    {consultant.status === 'available' ? 'Available Now' : 'Busy'}
+                                  </Badge>
+                                  
+                                  {consultant.totalRatings > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {consultant.totalRatings} reviews
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {/* Review Toggle Button */}
+                                {consultant.totalRatings > 0 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-xs h-6 px-2 hover:text-purple-600 hover:bg-transparent"
+                                    style={{
+                                      backgroundColor: 'transparent'
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setConsultantShowingReviews(showReviews ? null : consultant.id);
+                                    }}
+                                  >
+                                    {showReviews ? 'Hide Reviews' : 'View Reviews'}
+                                    <ChevronRight className={`w-3 h-3 ml-1 transition-transform ${
+                                      showReviews ? 'rotate-90' : ''
+                                    }`} />
+                                  </Button>
+                                )}
+                              </div>
+                              
+                              {/* Reviews Section - Expandable */}
+                              {showReviews && consultant.totalRatings > 0 && (
+                                <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                                  <div className="bg-muted/20 rounded-lg p-3 space-y-2">
+                                    <h5 className="text-xs font-medium text-muted-foreground">Customer Reviews</h5>
+                                    {/* Sample reviews - you can replace with real data */}
+                                    {[
+                                      { rating: 5, comment: 'Excellent support, resolved my issue quickly!', date: '2 days ago' },
+                                      { rating: 4, comment: 'Very knowledgeable and professional.', date: '1 week ago' },
+                                      { rating: 5, comment: 'Great experience, highly recommended.', date: '2 weeks ago' }
+                                    ].slice(0, 2).map((review, idx) => (
+                                      <div key={idx} className="border-l-2 border-purple-200 pl-2">
+                                        <div className="flex items-center space-x-1">
+                                          <div className="flex">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                              <Star
+                                                key={star}
+                                                className={`w-2.5 h-2.5 ${
+                                                  star <= review.rating 
+                                                    ? 'fill-yellow-400 text-yellow-400' 
+                                                    : 'text-gray-300'
+                                                }`}
+                                              />
+                                            ))}
+                                          </div>
+                                          <span className="text-xs text-muted-foreground">{review.date}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                          "{review.comment}"
+                                        </p>
+                                      </div>
+                                    ))}
+                                    {consultant.totalRatings > 2 && (
+                                      <p className="text-xs text-muted-foreground text-center pt-1">
+                                        +{consultant.totalRatings - 2} more reviews
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <Card className="border-dashed border-2 border-muted-foreground/20">
+                    <CardContent className="p-8 text-center">
+                      <User className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+                      <h4 className="font-medium text-muted-foreground mb-2">No consultants available</h4>
+                      <p className="text-sm text-muted-foreground/70">Please try again later or contact support.</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Time Slot Selection - Redesigned */}
+              {selectedConsultant && (
+                <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full" />
+                    <Label className="text-base font-semibold flex items-center space-x-2">
+                      <Clock className="w-4 h-4" />
+                      <span>Available Time Slots</span>
+                    </Label>
+                  </div>
+                  
+                  {loadingSlots ? (
+                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                      {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="bg-muted/30 rounded-lg p-3 animate-pulse">
+                          <div className="space-y-2">
+                            <div className="h-4 bg-muted rounded w-2/3" />
+                            <div className="h-3 bg-muted rounded w-full" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : timeSlots && timeSlots.length > 0 ? (
+                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {timeSlots.map(slot => {
+                        const isSelected = selectedTimeSlot === slot.id;
+                        const startTime = new Date(slot.slotStartTime);
+                        const endTime = new Date(slot.slotEndTime);
+                        const isToday = startTime.toDateString() === new Date().toDateString();
+                        const isTomorrow = startTime.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                        
+                        let dateLabel = startTime.toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          weekday: 'short'
+                        });
+                        if (isToday) dateLabel = 'Today';
+                        else if (isTomorrow) dateLabel = 'Tomorrow';
+                        
+                        return (
+                          <Card
+                            key={slot.id}
+                            className={`cursor-pointer transition-all duration-200 hover:shadow-sm hover:-translate-y-0.5 ${
+                              isSelected 
+                                ? 'ring-2 ring-purple-500 border-purple-200' 
+                                : 'hover:border-purple-200 bg-card'
+                            }`}
+                            style={isSelected ? {
+                              background: 'linear-gradient(135deg, rgb(250 245 255) 0%, rgb(243 232 255) 100%) !important',
+                              backgroundColor: 'rgb(250 245 255) !important'
+                            } : {
+                              backgroundColor: 'hsl(var(--card))'
+                            }}
+                            onClick={() => setSelectedTimeSlot(slot.id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="space-y-2">
+                                {/* Date */}
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-sm font-medium ${
+                                    isSelected ? 'text-purple-900' : 'text-foreground'
+                                  }`}>
+                                    {dateLabel}
+                                  </span>
+                                  {isSelected && (
+                                    <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                                      <Check className="w-2.5 h-2.5 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Time */}
+                                <div className={`text-xs flex items-center space-x-1 ${
+                                  isSelected ? 'text-purple-700' : 'text-muted-foreground'
+                                }`}>
+                                  <Clock className="w-3 h-3" />
+                                  <span>
+                                    {startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <Card className="border-dashed border-2 border-muted-foreground/20">
+                      <CardContent className="p-6 text-center">
+                        <Calendar className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+                        <h4 className="font-medium text-muted-foreground mb-2">No time slots available</h4>
+                        <p className="text-sm text-muted-foreground/70">This consultant has no available slots at the moment.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 4: // Review
+        return (
+          <div className="space-y-6">
+            <div className="mb-8">
+              {/* Enhanced Progress Bar */}
+              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+                {/* Step indicators with connecting line */}
+                <div className="flex items-center justify-between mb-4">
+                  {STEPS.map((step, index) => {
+                    const StepIcon = step.icon;
+                    const isActive = index === currentStep;
+                    const isCompleted = index < currentStep;
+                    const isUpcoming = index > currentStep;
+
+                    return (
+                      <div key={step.id} className="flex items-center">
+                        <div className="flex flex-col items-center relative">
+                          {/* Step Circle */}
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-green-500 to-blue-600 text-white shadow-lg shadow-green-500/30 scale-110' 
+                              : isCompleted 
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30' 
+                                : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
+                          }`}>
+                            {isCompleted ? (
+                              <Check className="w-6 h-6" />
+                            ) : (
+                              <StepIcon className="w-6 h-6" />
+                            )}
+                          </div>
+                          
+                          {/* Step Label */}
+                          <div className="mt-3 text-center">
+                            <p className={`text-xs font-medium transition-colors ${
+                              isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                            }`}>
+                              {step.title}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Connecting Line */}
+                        {index < STEPS.length - 1 && (
+                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                            <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
+                            <div 
+                              className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+                                index < currentStep ? 'bg-gradient-to-r from-green-500 to-emerald-600 w-full' : 'bg-transparent w-0'
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-foreground">Progress</span>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Step {currentStep + 1} of {STEPS.length} ({Math.round(progress)}%)
+                    </span>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-500 to-blue-600 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${progress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Current Step Header */}
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Check className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Review Your Request</h2>
+                  <p className="text-muted-foreground">Please review your support request before submitting</p>
+                </div>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="grid gap-4">
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="font-medium">Support Type:</span>
+                    <span>{selectedSupportTypeObj?.name}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="font-medium">Category:</span>
+                    <span>{selectedCategoryObj?.name}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="font-medium">Priority:</span>
+                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${selectedPriorityObj?.color || 'bg-gray-100 text-gray-800'}`}>
+                      <span className="mr-1">{selectedPriorityObj?.icon}</span>
+                      <span>{selectedPriorityObj?.name}</span>
+                    </div>
+                  </div>
+                  <div className="py-2 border-b">
+                    <span className="font-medium">Description:</span>
+                    <p className="mt-2 text-muted-foreground">{description}</p>
+                  </div>
+                  {srIdentifier && (
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="font-medium">SR Identifier:</span>
+                      <span>{srIdentifier}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2">
+                    <span className="font-medium">Consultant & Time:</span>
+                    <div className="text-right">
+                      {selectedConsultantObj ? (
+                        <div className="space-y-1">
+                          <p className="font-medium">{selectedConsultantObj.firstName} {selectedConsultantObj.lastName}</p>
+                          <p className="text-sm text-muted-foreground">{selectedConsultantObj.role || 'SAP Consultant'}</p>
+                          {selectedTimeSlotObj && (
+                            <div className="text-sm">
+                              <p className="text-muted-foreground">
+                                {new Date(selectedTimeSlotObj.slotStartTime).toLocaleDateString('en-US', { 
+                                  weekday: 'long',
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                              <p className="font-medium text-purple-600">
+                                {new Date(selectedTimeSlotObj.slotStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(selectedTimeSlotObj.slotEndTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <p>Consultant ID: {selectedConsultant}</p>
+                          <p>Time Slot: {selectedTimeSlot}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const progress = ((currentStep + 1) / STEPS.length) * 100;
+
+  return (
+    <PageLayout
+      title="Create Support Request"
+      description="Submit a new support request with our step-by-step wizard"
+      showSidebar={true}
+    >
+      <div className="max-w-4xl mx-auto">
+        {/* Step Content */}
+        <Card>
+          <CardContent className="p-8">
+            {renderStepContent()}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8 pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 0}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+
+              <div className="flex gap-2">
+                {currentStep === STEPS.length - 1 ? (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={createRequest.isPending}
+                    className="min-w-[120px]"
+                  >
+                    {createRequest.isPending ? 'Submitting...' : 'Submit Request'}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={nextStep}
+                    disabled={!canProceedToNext()}
+                    className="min-w-[120px]"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

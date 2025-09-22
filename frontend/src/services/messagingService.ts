@@ -113,10 +113,22 @@ const MessagingService = {
   },
 
   getConversationByOrder: async (orderId: string): Promise<Conversation> => {
-    const response = await axios.get<Conversation>(`${API_URL}/conversations/for-order/${orderId}`, {
+    const response = await axios.get<Conversation>(`${API_URL}/conversations/by-order/${orderId}`, {
       headers: getAuthHeaders()
     });
     return response.data;
+  },
+
+  createOrGetConversationForOrder: async (orderId: string): Promise<Conversation> => {
+    try {
+      const response = await axios.post<Conversation>(`${API_URL}/conversations/for-order/${orderId}`, {}, {
+        headers: getAuthHeaders()
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error creating conversation for order ${orderId}:`, error.response?.data || error.message);
+      throw error; // Re-throw for handling in the component
+    }
   },
 
   updateConversationStatus: async (conversationId: string, isActive: boolean): Promise<boolean> => {

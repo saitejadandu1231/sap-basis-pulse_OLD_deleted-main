@@ -42,17 +42,14 @@ const TicketRatingContainer: React.FC<TicketRatingContainerProps> = ({
   const userHasRated = ratings?.some((rating: any) => rating.ratedByUserId === user?.id);
 
   const getRatingTarget = () => {
+    // Only customers can rate consultants
     if (user?.role === 'customer') {
       return {
         ratedUserId: consultantId,
         ratingForRole: 'consultant' as const
       };
-    } else if (user?.role === 'consultant') {
-      return {
-        ratedUserId: createdByUserId,
-        ratingForRole: 'customer' as const
-      };
     }
+    // Consultants cannot rate customers
     return null;
   };
 
@@ -77,7 +74,7 @@ const TicketRatingContainer: React.FC<TicketRatingContainerProps> = ({
               className="w-full"
             >
               <Star className="w-3 h-3 mr-1" />
-              Rate {ratingTarget.ratingForRole === 'consultant' ? 'Consultant' : 'Customer'}
+              Rate Consultant
             </Button>
           ) : (
             <CompactRatingForm
@@ -94,9 +91,9 @@ const TicketRatingContainer: React.FC<TicketRatingContainerProps> = ({
         </div>
       )}
 
-      {!canRate && (user?.role === 'customer' || user?.role === 'consultant') && (
+      {!canRate && user?.role === 'customer' && (
         <div className="text-xs text-muted-foreground text-center p-2 bg-muted/30 rounded">
-          Ratings are available after ticket is closed
+          Customer ratings are available after ticket is closed
         </div>
       )}
 
