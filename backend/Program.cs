@@ -108,21 +108,30 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 var resolvedHost = host;
                 try 
                 {
+                    Console.WriteLine($"[Startup] Attempting DNS resolution for host: {host}");
                     var addresses = System.Net.Dns.GetHostAddresses(host);
+                    Console.WriteLine($"[Startup] Found {addresses.Length} addresses for {host}");
+                    
+                    foreach (var addr in addresses)
+                    {
+                        Console.WriteLine($"[Startup] Address: {addr} (Family: {addr.AddressFamily})");
+                    }
+                    
                     var ipv4Address = addresses.FirstOrDefault(addr => addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
                     if (ipv4Address != null)
                     {
                         resolvedHost = ipv4Address.ToString();
-                        Console.WriteLine($"[Startup] Resolved {host} to IPv4: {resolvedHost}");
+                        Console.WriteLine($"[Startup] Successfully resolved {host} to IPv4: {resolvedHost}");
                     }
                     else
                     {
-                        Console.WriteLine($"[Startup] No IPv4 address found for {host}, using hostname");
+                        Console.WriteLine($"[Startup] No IPv4 address found for {host}, using hostname (this may cause IPv6 connection issues)");
                     }
                 }
                 catch (Exception dnsEx)
                 {
-                    Console.WriteLine($"[Startup] DNS resolution failed: {dnsEx.Message}");
+                    Console.WriteLine($"[Startup] DNS resolution failed for {host}: {dnsEx.Message}");
+                    Console.WriteLine($"[Startup] Using original hostname: {host}");
                 }
                 
                 connectionString = $"Host={resolvedHost};Port={port};Database={db};Username={user};Password={pass};Ssl Mode={sslMode};Trust Server Certificate={trustServer};Include Error Detail=true;Timeout=30;Command Timeout=30";
