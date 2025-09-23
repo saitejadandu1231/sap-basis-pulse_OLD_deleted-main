@@ -18,6 +18,7 @@ Write-Host "DATABASE_URL provided: $($DatabaseUrl.Substring(0, [Math]::Min(50, $
 try {
     $uri = [System.Uri]::new($DatabaseUrl)
     $userInfo = $uri.UserInfo.Split(':')
+<<<<<<< HEAD
     $dbUser = [System.Uri]::UnescapeDataString($userInfo[0])
     $dbPass = if ($userInfo.Length -gt 1) { [System.Uri]::UnescapeDataString($userInfo[1]) } else { "" }
     $dbHost = $uri.Host
@@ -32,6 +33,22 @@ try {
     Write-Host "  Database: $dbName" -ForegroundColor White
     Write-Host "  Username: $dbUser" -ForegroundColor White
     Write-Host "  Password: $(if($dbPass) { '****' } else { 'Not provided' })" -ForegroundColor White
+=======
+    $user = [System.Uri]::UnescapeDataString($userInfo[0])
+    $pass = if ($userInfo.Length -gt 1) { [System.Uri]::UnescapeDataString($userInfo[1]) } else { "" }
+    $host = $uri.Host
+    $port = if ($uri.Port -gt 0) { $uri.Port } else { 5432 }
+    $db = $uri.AbsolutePath.TrimStart('/')
+    
+    $connectionString = "Host=$host;Port=$port;Database=$db;Username=$user;Password=$pass;Ssl Mode=Require;Trust Server Certificate=true"
+    
+    Write-Host "Parsed connection details:" -ForegroundColor Cyan
+    Write-Host "  Host: $host" -ForegroundColor White
+    Write-Host "  Port: $port" -ForegroundColor White
+    Write-Host "  Database: $db" -ForegroundColor White
+    Write-Host "  Username: $user" -ForegroundColor White
+    Write-Host "  Password: $(if($pass) { '****' } else { 'Not provided' })" -ForegroundColor White
+>>>>>>> 31661b9c5ee7a4659c8a001772398a4ee6657951
     
 } catch {
     Write-Host "ERROR: Failed to parse DATABASE_URL: $($_.Exception.Message)" -ForegroundColor Red

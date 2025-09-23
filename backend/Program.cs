@@ -10,7 +10,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SapBasisPulse.Api.Utilities;
 using Microsoft.AspNetCore.HttpOverrides;
+<<<<<<< HEAD
 using System.Linq;
+=======
+>>>>>>> 31661b9c5ee7a4659c8a001772398a4ee6657951
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,6 +106,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 var db = uri.AbsolutePath.TrimStart('/');
                 var sslMode = Environment.GetEnvironmentVariable("DB_SSLMODE") ?? "Require";
                 var trustServer = Environment.GetEnvironmentVariable("DB_TRUST_SERVER_CERTIFICATE") ?? "true";
+<<<<<<< HEAD
                 
                 // Try to resolve IPv4 address for Supabase if possible
                 var resolvedHost = host;
@@ -126,6 +130,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 }
                 
                 connectionString = $"Host={resolvedHost};Port={port};Database={db};Username={user};Password={pass};Ssl Mode={sslMode};Trust Server Certificate={trustServer};Include Error Detail=true;Timeout=30;Command Timeout=30";
+=======
+                connectionString = $"Host={host};Port={port};Database={db};Username={user};Password={pass};Ssl Mode={sslMode};Trust Server Certificate={trustServer}";
+>>>>>>> 31661b9c5ee7a4659c8a001772398a4ee6657951
             }
             catch (Exception ex)
             {

@@ -1,0 +1,25 @@
+{
+  "name": "SAP BASIS Pulse",
+  "short_name": "Basis Pulse", 
+  "description": "SAP BASIS Support Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1b23",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}

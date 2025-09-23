@@ -1,0 +1,1 @@
+SELECT "Id", "Email", "SsoProvider", "Status" FROM "Users" ORDER BY "Id" DESC LIMIT 5;
