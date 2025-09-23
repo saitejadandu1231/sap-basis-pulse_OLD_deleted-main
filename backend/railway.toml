@@ -1,0 +1,19 @@
+# Railway Deployment Configuration
+
+# This file tells Railway how to build and deploy your .NET application
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "dotnet SapBasisPulse.Api.dll"
+healthcheckPath = "/api/status"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[env]
+# These will be set through Railway dashboard
+# DATABASE_URL (provided by Railway PostgreSQL)
+# ASPNETCORE_ENVIRONMENT = "Production"
+# JWT_SECRET (secure production secret)
+# CORS_ORIGINS (your Vercel URL)

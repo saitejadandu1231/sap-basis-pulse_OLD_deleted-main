@@ -1,0 +1,55 @@
+# Railway Deployment Ignore
+# Ignore files that shouldn't be deployed to Railway
+
+# Development files
+appsettings.Development.json
+*.user
+*.suo
+*.cache
+*.log
+
+# Build outputs (will be rebuilt on Railway)
+bin/
+obj/
+dist/
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment files (use Railway dashboard for environment variables)
+.env
+.env.local
+.env.production
+.env.staging
+
+# Log files
+logs/
+*.log
+run.log
+run_err.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Package files
+*.nupkg
+*.snupkg

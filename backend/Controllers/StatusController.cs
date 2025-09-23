@@ -19,6 +19,18 @@ namespace SapBasisPulse.Api.Controllers
             _context = context;
         }
 
+        [HttpGet("health")]
+        [AllowAnonymous]
+        public IActionResult Health()
+        {
+            return Ok(new { 
+                status = "healthy", 
+                timestamp = DateTime.UtcNow,
+                version = "1.0.0",
+                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
+            });
+        }
+
         [HttpGet("options")]
         public async Task<IActionResult> GetStatusOptions()
         {

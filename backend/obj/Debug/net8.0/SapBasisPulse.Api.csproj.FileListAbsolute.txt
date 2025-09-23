@@ -152,3 +152,4 @@ E:\sap\sap-basis-pulse_OLD_deleted-main\backend\obj\Debug\net8.0\SapBasisPulse.A
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\obj\Debug\net8.0\ref\SapBasisPulse.Api.dll
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\package-lock.json
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\SapBasisPulse.Api.staticwebassets.runtime.json
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\appsettings.Production.json
