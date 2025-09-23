@@ -100,7 +100,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 var host = uri.Host;
                 var port = uri.Port > 0 ? uri.Port : 5432;
                 var db = uri.AbsolutePath.TrimStart('/');
-                var sslMode = Environment.GetEnvironmentVariable("DB_SSLMODE") ?? "Prefer";
+                var sslMode = Environment.GetEnvironmentVariable("DB_SSLMODE") ?? "Require";
                 var trustServer = Environment.GetEnvironmentVariable("DB_TRUST_SERVER_CERTIFICATE") ?? "true";
                 connectionString = $"Host={host};Port={port};Database={db};Username={user};Password={pass};Ssl Mode={sslMode};Trust Server Certificate={trustServer}";
             }

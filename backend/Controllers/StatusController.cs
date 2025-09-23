@@ -90,5 +90,79 @@ namespace SapBasisPulse.Api.Controllers
 
             return Ok(statusHistory);
         }
+
+        [HttpGet("db-check")]
+        [AllowAnonymous]
+        public async Task<IActionResult> DatabaseConnectionCheck()
+        {
+            try
+            {
+                var connectionString = _context.Database.GetConnectionString();
+                var result = new
+                {
+                    timestamp = DateTime.UtcNow,
+                    connectionString = MaskPassword(connectionString ?? "Not found"),
+                    canConnect = false,
+                    details = new Dictionary<string, object>()
+                };
+
+                // Test basic connection
+                using var connection = _context.Database.GetDbConnection();
+                await connection.OpenAsync();
+                
+                // Get server info
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT version(), current_database(), inet_server_addr(), inet_server_port()";
+                using var reader = await command.ExecuteReaderAsync();
+                
+                if (await reader.ReadAsync())
+                {
+                    ((Dictionary<string, object>)result.details)["serverVersion"] = reader.GetString(0);
+                    ((Dictionary<string, object>)result.details)["database"] = reader.GetString(1);
+                    ((Dictionary<string, object>)result.details)["serverAddress"] = reader.IsDBNull(2) ? "N/A" : reader.GetString(2);
+                    ((Dictionary<string, object>)result.details)["serverPort"] = reader.IsDBNull(3) ? "N/A" : reader.GetInt32(3).ToString();
+                }
+
+                return Ok(new
+                {
+                    result.timestamp,
+                    result.connectionString,
+                    canConnect = true,
+                    result.details
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new
+                {
+                    timestamp = DateTime.UtcNow,
+                    connectionString = MaskPassword(_context.Database.GetConnectionString() ?? "Not found"),
+                    canConnect = false,
+                    error = ex.Message,
+                    innerException = ex.InnerException?.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+        }
+
+        private static string MaskPassword(string connectionString)
+        {
+            try
+            {
+                var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    if (parts[i].Trim().StartsWith("Password=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        parts[i] = "Password=****";
+                    }
+                }
+                return string.Join(';', parts);
+            }
+            catch
+            {
+                return "[Masking failed]";
+            }
+        }
     }
 }
