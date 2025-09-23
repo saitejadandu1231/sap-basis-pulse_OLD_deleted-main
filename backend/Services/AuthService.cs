@@ -104,12 +104,24 @@ namespace SapBasisPulse.Api.Services
             }
             catch (DbUpdateException dbEx)
             {
-                // Don't expose DB internals to clients
-                return (false, "An error occurred while creating the user.", null);
+                // Provide detailed database error information for debugging
+                var errorDetails = $"Database Error: {dbEx.Message}";
+                if (dbEx.InnerException != null)
+                {
+                    errorDetails += $" | Inner Exception: {dbEx.InnerException.Message}";
+                }
+                return (false, errorDetails, null);
             }
             catch (Exception ex)
             {
-                return (false, "An unexpected error occurred.", null);
+                // Provide detailed exception information for debugging
+                var errorDetails = $"Registration Error: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorDetails += $" | Inner Exception: {ex.InnerException.Message}";
+                }
+                errorDetails += $" | Stack Trace: {ex.StackTrace}";
+                return (false, errorDetails, null);
             }
         }
 

@@ -133,9 +133,31 @@ app.UseExceptionHandler(errorApp =>
         context.Response.ContentType = "application/json";
         var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
         var ex = feature?.Error;
-        var result = JsonSerializer.Serialize(new { error = "An unexpected error occurred. Please try again later." });
+        
+        object result;
+        
+        // In development or when debugging, provide detailed error information
+        if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableDetailedErrors", false))
+        {
+            result = new 
+            { 
+                error = "Unhandled Exception Occurred",
+                message = ex?.Message,
+                stackTrace = ex?.StackTrace,
+                innerException = ex?.InnerException?.Message,
+                type = ex?.GetType().Name,
+                timestamp = DateTime.UtcNow,
+                source = ex?.Source
+            };
+        }
+        else
+        {
+            result = new { error = "An unexpected error occurred. Please try again later." };
+        }
+        
+        var jsonResult = JsonSerializer.Serialize(result);
         context.Response.StatusCode = 500;
-        await context.Response.WriteAsync(result);
+        await context.Response.WriteAsync(jsonResult);
     });
 });
 
