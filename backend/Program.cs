@@ -74,6 +74,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
     if (!string.IsNullOrWhiteSpace(databaseUrl))
     {
+        // Some platforms or manual copy/paste may prepend labels like "DATABASE_URL:" or "DATABASE_URL="
+        // Normalize by stripping everything before the first occurrence of "postgres" or "postgresql"
+        var markerIndex = databaseUrl.IndexOf("postgresql://", StringComparison.OrdinalIgnoreCase);
+        if (markerIndex < 0)
+            markerIndex = databaseUrl.IndexOf("postgres://", StringComparison.OrdinalIgnoreCase);
+        if (markerIndex > 0)
+        {
+            databaseUrl = databaseUrl.Substring(markerIndex);
+        }
+
         // Handle both already-formatted Npgsql connection strings and URL style
         if (databaseUrl.Contains("Host=") && databaseUrl.Contains("Database="))
         {
@@ -81,10 +91,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         }
         else
         {
-            // Expecting URL formats like:
-            // postgres://user:password@host:port/dbname
-            // postgresql://user:password@host:port/dbname
-            // Remove optional protocol prefixes
             try
             {
                 var uri = new Uri(databaseUrl);
@@ -94,11 +100,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                 var host = uri.Host;
                 var port = uri.Port > 0 ? uri.Port : 5432;
                 var db = uri.AbsolutePath.TrimStart('/');
-
-                // Allow SSL Mode options if provided via env var
-                var sslMode = Environment.GetEnvironmentVariable("DB_SSLMODE") ?? "Prefer"; // Prefer allows local dev without forcing
+                var sslMode = Environment.GetEnvironmentVariable("DB_SSLMODE") ?? "Prefer";
                 var trustServer = Environment.GetEnvironmentVariable("DB_TRUST_SERVER_CERTIFICATE") ?? "true";
-
                 connectionString = $"Host={host};Port={port};Database={db};Username={user};Password={pass};Ssl Mode={sslMode};Trust Server Certificate={trustServer}";
             }
             catch (Exception ex)
@@ -114,8 +117,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
             ?? "Host=localhost;Port=5432;Database=sap_basis_pulse;Username=postgres;Password=postgres";
     }
-
-    Console.WriteLine($"[Startup] Using PostgreSQL connection: {(connectionString.Contains("Password=") ? connectionString.Replace(pass: "Password=", newValue: "Password=****") : connectionString)}");
+    // Final logging with masking
+    string safeLogConn = connectionString;
+    try
+    {
+        var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (int i = 0; i < parts.Length; i++)
+        {
+            if (parts[i].StartsWith("Password=", StringComparison.OrdinalIgnoreCase))
+            {
+                parts[i] = "Password=****";
+            }
+        }
+        safeLogConn = string.Join(';', parts);
+    }
+    catch { }
+    Console.WriteLine($"[Startup] Using PostgreSQL connection: {safeLogConn}");
     
     options.UseNpgsql(connectionString);
 });
