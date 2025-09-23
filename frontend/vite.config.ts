@@ -19,4 +19,23 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: false, // Disable sourcemaps in production for smaller build
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['lucide-react'],
+          router: ['react-router-dom'],
+          query: ['@tanstack/react-query']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  define: {
+    // This helps with build optimization
+    'process.env.NODE_ENV': JSON.stringify(mode)
+  }
 }));

@@ -1,22 +1,52 @@
-# Welcome to your Lovable project
+# SAP Basis Pulse - Frontend
 
-## Project info
+Enterprise support ticketing system frontend built with React, TypeScript, and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/1482da48-c05b-4a1e-a6a3-b1a5b87480f1
+## 🚀 Vercel Deployment
 
-## How can I edit this code?
+This project is configured for deployment on Vercel with the following features:
 
-There are several ways of editing your application.
+- **Framework**: Vite + React + TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Routing**: React Router with proper SPA configuration
+- **API Integration**: Axios with environment-based API URLs
+- **Build Optimization**: Code splitting and chunk optimization
 
-**Use Lovable**
+## 📦 Environment Variables
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1482da48-c05b-4a1e-a6a3-b1a5b87480f1) and start prompting.
+Required environment variables for deployment:
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+VITE_API_URL=https://your-backend-api.railway.app
+```
 
-**Use your preferred IDE**
+## 🏗️ Build Configuration
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Output Directory**: `dist`
+- **Build Command**: `npm run build`
+- **Node Version**: 18.x or higher
+
+## 📁 Project Structure
+
+```
+frontend/
+├── src/
+│   ├── components/     # UI components
+│   ├── pages/         # Route pages
+│   ├── hooks/         # Custom hooks
+│   ├── lib/           # Utilities and API
+│   └── types/         # TypeScript types
+├── public/            # Static assets
+├── vercel.json        # Vercel configuration
+└── vite.config.ts     # Vite configuration
+```
+
+## 🚀 Deployment Steps
+
+1. Connect GitHub repository to Vercel
+2. Set root directory to `frontend`
+3. Configure environment variables
+4. Deploy automatically on push
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
