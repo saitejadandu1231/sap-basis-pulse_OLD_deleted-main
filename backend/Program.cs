@@ -16,12 +16,22 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-// CORS for local development
+// CORS configuration for development and production
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalDev", policy =>
     {
         policy.WithOrigins("http://localhost:8080", "http://localhost:8081", "http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+    
+    options.AddPolicy("AllowProduction", policy =>
+    {
+        // Get allowed origins from environment variable (Vercel URL)
+        var corsOrigins = builder.Configuration["CORS_ORIGINS"]?.Split(',') ?? new[] { "http://localhost:8080" };
+        policy.WithOrigins(corsOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -43,7 +53,15 @@ builder.Services.AddScoped<DevHelperService>();
 
 // Add DbContext, Identity, and custom services
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    // Use Railway's DATABASE_URL if available, otherwise fallback to DefaultConnection
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    var connectionString = !string.IsNullOrEmpty(databaseUrl) 
+        ? databaseUrl 
+        : builder.Configuration.GetConnectionString("DefaultConnection");
+    
+    options.UseNpgsql(connectionString);
+});
 builder.Services.AddIdentity<User, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
@@ -123,8 +141,9 @@ else
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Enable CORS
-app.UseCors("AllowLocalDev");
+// Enable CORS based on environment
+var corsPolicy = app.Environment.IsDevelopment() ? "AllowLocalDev" : "AllowProduction";
+app.UseCors(corsPolicy);
 
 // Map attribute-routed controllers
 app.MapControllers();
