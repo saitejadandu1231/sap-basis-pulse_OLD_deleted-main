@@ -70,9 +70,52 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     // Use Railway's DATABASE_URL if available, otherwise fallback to DefaultConnection
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-    var connectionString = !string.IsNullOrEmpty(databaseUrl) 
-        ? databaseUrl 
-        : builder.Configuration.GetConnectionString("DefaultConnection");
+    string connectionString;
+
+    if (!string.IsNullOrWhiteSpace(databaseUrl))
+    {
+        // Handle both already-formatted Npgsql connection strings and URL style
+        if (databaseUrl.Contains("Host=") && databaseUrl.Contains("Database="))
+        {
+            connectionString = databaseUrl; // Already in Npgsql format
+        }
+        else
+        {
+            // Expecting URL formats like:
+            // postgres://user:password@host:port/dbname
+            // postgresql://user:password@host:port/dbname
+            // Remove optional protocol prefixes
+            try
+            {
+                var uri = new Uri(databaseUrl);
+                var userInfo = uri.UserInfo.Split(':');
+                var user = Uri.UnescapeDataString(userInfo[0]);
+                var pass = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+                var host = uri.Host;
+                var port = uri.Port > 0 ? uri.Port : 5432;
+                var db = uri.AbsolutePath.TrimStart('/');
+
+                // Allow SSL Mode options if provided via env var
+                var sslMode = Environment.GetEnvironmentVariable("DB_SSLMODE") ?? "Prefer"; // Prefer allows local dev without forcing
+                var trustServer = Environment.GetEnvironmentVariable("DB_TRUST_SERVER_CERTIFICATE") ?? "true";
+
+                connectionString = $"Host={host};Port={port};Database={db};Username={user};Password={pass};Ssl Mode={sslMode};Trust Server Certificate={trustServer}";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Startup] Failed to parse DATABASE_URL. Raw value: '{databaseUrl}'. Error: {ex.Message}");
+                connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                    ?? "Host=localhost;Port=5432;Database=sap_basis_pulse;Username=postgres;Password=postgres";
+            }
+        }
+    }
+    else
+    {
+        connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? "Host=localhost;Port=5432;Database=sap_basis_pulse;Username=postgres;Password=postgres";
+    }
+
+    Console.WriteLine($"[Startup] Using PostgreSQL connection: {(connectionString.Contains("Password=") ? connectionString.Replace(pass: "Password=", newValue: "Password=****") : connectionString)}");
     
     options.UseNpgsql(connectionString);
 });
