@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using SapBasisPulse.Api.DTOs;
 using SapBasisPulse.Api.Entities;
 using SapBasisPulse.Api.Services;
+using System.Linq;
 
 namespace SapBasisPulse.Api.Controllers
 {
@@ -47,10 +48,78 @@ namespace SapBasisPulse.Api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            (bool success, string? error, object? response) = await _authService.RegisterAsync(dto);
-            if (!success) return BadRequest(new { error });
-            return Ok(response);
+            try
+            {
+                // Detailed validation and debugging
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.SelectMany(x => x.Value.Errors.Select(e => new 
+                    { 
+                        Field = x.Key, 
+                        Error = e.ErrorMessage 
+                    })).ToList();
+                    
+                    return BadRequest(new 
+                    { 
+                        error = "Validation failed", 
+                        details = errors,
+                        receivedData = new 
+                        {
+                            Email = dto?.Email,
+                            FirstName = dto?.FirstName,
+                            LastName = dto?.LastName,
+                            Role = dto?.Role,
+                            PasswordLength = dto?.Password?.Length ?? 0
+                        }
+                    });
+                }
+
+                // Normalize role to proper case
+                if (!string.IsNullOrEmpty(dto.Role))
+                {
+                    dto.Role = char.ToUpper(dto.Role[0]) + dto.Role.Substring(1).ToLower();
+                }
+
+                (bool success, string? error, object? response) = await _authService.RegisterAsync(dto);
+                
+                if (!success) 
+                {
+                    return BadRequest(new 
+                    { 
+                        error = error ?? "Registration failed",
+                        timestamp = DateTime.UtcNow,
+                        requestData = new 
+                        {
+                            Email = dto.Email,
+                            Role = dto.Role,
+                            FirstName = dto.FirstName,
+                            LastName = dto.LastName
+                        }
+                    });
+                }
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                // Detailed exception information for debugging
+                return StatusCode(500, new 
+                { 
+                    error = "Internal server error during registration",
+                    message = ex.Message,
+                    stackTrace = ex.StackTrace,
+                    innerException = ex.InnerException?.Message,
+                    timestamp = DateTime.UtcNow,
+                    requestData = new 
+                    {
+                        Email = dto?.Email,
+                        Role = dto?.Role,
+                        FirstName = dto?.FirstName,
+                        LastName = dto?.LastName,
+                        PasswordProvided = !string.IsNullOrEmpty(dto?.Password)
+                    }
+                });
+            }
         }
 
 
