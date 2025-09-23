@@ -9,8 +9,22 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SapBasisPulse.Api.Utilities;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure for Railway production environment
+if (builder.Environment.IsProduction())
+{
+    // Trust Railway proxy headers
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor 
+                                 | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+        options.KnownNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -105,6 +119,12 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 var app = builder.Build();
 
+// Configure forwarded headers for production (Railway proxy)
+if (app.Environment.IsProduction())
+{
+    app.UseForwardedHeaders();
+}
+
 // Global exception handler that returns JSON instead of stack traces
 app.UseExceptionHandler(errorApp =>
 {
@@ -141,9 +161,23 @@ else
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Disable HTTPS redirection in production (Railway handles TLS termination)
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+
 // Enable CORS based on environment
 var corsPolicy = app.Environment.IsDevelopment() ? "AllowLocalDev" : "AllowProduction";
 app.UseCors(corsPolicy);
+
+// Add simple health check endpoint for Railway
+app.MapGet("/health", () => Results.Ok(new { 
+    status = "healthy", 
+    timestamp = DateTime.UtcNow,
+    version = "1.0.0",
+    environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
+}));
 
 // Map attribute-routed controllers
 app.MapControllers();
