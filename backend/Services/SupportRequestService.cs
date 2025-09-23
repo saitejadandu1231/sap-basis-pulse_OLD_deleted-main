@@ -74,7 +74,8 @@ namespace SapBasisPulse.Api.Services
                 TimeSlotId = dto.TimeSlotId,
                 CreatedByUserId = createdByUserId,
                 CreatedAt = DateTime.UtcNow,
-                Status = "Open"
+                StatusId = 1, // Default to "New" status
+                StatusString = "New" // Keep backward compatibility
             };
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
@@ -90,6 +91,7 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.Consultant)
                 .Include(o => o.TimeSlot)
                 .Include(o => o.CreatedByUser)
+                .Include(o => o.Status)
                 .Where(o => o.CreatedByUserId == userId)
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(10)
@@ -112,6 +114,7 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.Consultant)
                 .Include(o => o.TimeSlot)
                 .Include(o => o.CreatedByUser)
+                .Include(o => o.Status)
                 .Where(o => o.ConsultantId == consultantId)
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(10)
@@ -134,6 +137,7 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.Consultant)
                 .Include(o => o.TimeSlot)
                 .Include(o => o.CreatedByUser)
+                .Include(o => o.Status)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
 
@@ -156,6 +160,7 @@ namespace SapBasisPulse.Api.Services
             if (o.TimeSlotId.HasValue)
                 await _context.Entry(o).Reference(x => x.TimeSlot).LoadAsync();
             await _context.Entry(o).Reference(x => x.CreatedByUser).LoadAsync();
+            await _context.Entry(o).Reference(x => x.Status).LoadAsync();
 
             // Check for existing conversation
             var conversation = await _context.Conversations
@@ -190,24 +195,47 @@ namespace SapBasisPulse.Api.Services
                 CreatedByUserId = o.CreatedByUserId,
                 CreatedByName = o.CreatedByUser != null ? o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName : "Unknown",
                 CreatedAt = o.CreatedAt,
-                Status = o.Status,
+                Status = o.Status.StatusName,
                 ConversationId = conversation?.Id,
                 HasConversation = conversation != null,
                 UnreadMessageCount = unreadCount
             };
         }
 
-        public async Task<bool> UpdateStatusAsync(Guid orderId, string status)
+                public async Task<bool> UpdateStatusAsync(Guid orderId, string status, Guid changedByUserId, string? comment = null)
         {
             // The orderId parameter is the Order ID from the frontend
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders
+                .Include(o => o.Status)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null) return false;
 
-            // Validate status
-            var validStatuses = new[] { "New", "InProgress", "PendingCustomerAction", "TopicClosed", "Closed", "ReOpened" };
-            if (!validStatuses.Contains(status)) return false;
+            // Find the status master record by status code
+            var statusMaster = await _context.StatusMaster.FirstOrDefaultAsync(sm => sm.StatusCode == status);
+            if (statusMaster == null) return false;
 
-            order.Status = status;
+            // Store the old status for logging
+            var oldStatusId = order.StatusId;
+            var oldStatus = order.Status;
+
+            // Update the order status
+            order.StatusId = statusMaster.Id;
+            order.StatusString = status; // Keep backward compatibility
+            order.LastUpdated = DateTime.UtcNow;
+            
+            // Create status change log entry
+            var statusChangeLog = new StatusChangeLog
+            {
+                Id = Guid.NewGuid(),
+                OrderId = orderId,
+                FromStatusId = oldStatusId,
+                ToStatusId = statusMaster.Id,
+                ChangedByUserId = changedByUserId,
+                Comment = comment,
+                ChangedAt = DateTime.UtcNow
+            };
+
+            _context.StatusChangeLogs.Add(statusChangeLog);
             await _context.SaveChangesAsync();
             return true;
         }

@@ -44,10 +44,23 @@ namespace SapBasisPulse.Api.Controllers
         [Authorize(Roles = "Consultant,Admin")]
         public async Task<IActionResult> CreateSlot([FromBody] CreateConsultantAvailabilitySlotDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            var slotsResponse = await _service.CreateSlotAsync(dto);
-            // Return the created slots
-            return Ok(slotsResponse);
+            if (!ModelState.IsValid) 
+                return BadRequest(ModelState);
+                
+            try
+            {
+                var slotsResponse = await _service.CreateSlotAsync(dto);
+                return Ok(slotsResponse);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here if you have logging configured
+                return StatusCode(500, new { error = "An error occurred while creating the availability slots." });
+            }
         }
 
         [HttpDelete("{id}")]

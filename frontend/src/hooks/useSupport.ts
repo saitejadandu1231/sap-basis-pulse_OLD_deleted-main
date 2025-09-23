@@ -290,13 +290,17 @@ export const useUpdateTicketStatus = () => {
     mutationFn: async (data: {
       orderId: string;
       status: 'New' | 'InProgress' | 'PendingCustomerAction' | 'TopicClosed' | 'Closed' | 'ReOpened';
+      comment?: string;
     }) => {
       const response = await apiFetch(`SupportRequests/${data.orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: data.status }),
+        body: JSON.stringify({ 
+          status: data.status,
+          comment: data.comment 
+        }),
       });
       
       if (!response.ok) {
@@ -306,8 +310,10 @@ export const useUpdateTicketStatus = () => {
       
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate both tickets list and status history for this specific order
       queryClient.invalidateQueries({ queryKey: ['recentTickets'] });
+      queryClient.invalidateQueries({ queryKey: ['status-history', variables.orderId] });
     },
   });
 };

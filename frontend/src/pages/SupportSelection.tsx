@@ -82,6 +82,19 @@ const SupportSelection = () => {
   const { data: supportSubOptionsData, isLoading: loadingSubOptions } = useSupportSubOptions(selectedSupport || undefined);
   const supportSubOptions = useMemo(() => selectedSupport ? supportSubOptionsData : [], [selectedSupport, supportSubOptionsData]);
 
+  // Auto-advance when SR identifier becomes valid
+  useEffect(() => {
+    if (currentStep === 1 && selectedSubOption && srIdentifier && srValidationResult?.isValid) {
+      const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
+      const needsSrIdentifier = selectedSubOptionObj?.name === 'Service Request (SR)';
+      
+      if (needsSrIdentifier) {
+        // Small delay to allow user to see the validation success message
+        setTimeout(() => nextStep(), 800);
+      }
+    }
+  }, [currentStep, selectedSubOption, srIdentifier, srValidationResult?.isValid, supportSubOptions]);
+
   // Get today's and next week's date strings for availability slot range
   const today = new Date();
   const nextWeek = new Date(today);
@@ -129,15 +142,44 @@ const SupportSelection = () => {
     setSrIdentifier('');
     setSelectedConsultant('');
     setSelectedTimeSlot('');
-    // Auto-advance to next step
-    setTimeout(() => nextStep(), 300);
+    // Don't auto-advance to allow sub-option selection
+  };
+
+  const handleSubOptionChange = (value: string) => {
+    setSelectedSubOption(value);
+    setSrIdentifier('');
+    setSelectedConsultant('');
+    setSelectedTimeSlot('');
+    
+    // Check if this sub-option requires SR identifier
+    const selectedSubOptionObj = supportSubOptions?.find(option => option.id === value);
+    const needsSrIdentifier = selectedSubOptionObj?.name === 'Service Request (SR)';
+    
+    // Only auto-advance if SR identifier is NOT required
+    if (!needsSrIdentifier) {
+      setTimeout(() => nextStep(), 300);
+    }
   };
 
   // Validation for each step
   const isStepValid = (stepIndex: number) => {
     switch (stepIndex) {
       case 0: return !!selectedSupport;
-      case 1: return !!selectedCategory;
+      case 1: {
+        if (!selectedCategory) return false;
+        // If there are sub-options available, one must be selected
+        if (supportSubOptions && supportSubOptions.length > 0) {
+          if (!selectedSubOption) return false;
+          // If SR Identifier is required for this sub-option, it must be provided and valid
+          const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
+          const needsSrIdentifier = selectedSubOptionObj?.name === 'Service Request (SR)';
+          if (needsSrIdentifier) {
+            if (!srIdentifier.trim()) return false;
+            if (!srValidationResult?.isValid) return false;
+          }
+        }
+        return true;
+      }
       case 2: return !!description && !!selectedPriority;
       case 3: return !!selectedConsultant && !!selectedTimeSlot;
       case 4: return true; // Review step
@@ -449,6 +491,76 @@ const SupportSelection = () => {
                 ))}
               </div>
             )}
+            
+            {/* Sub-options if category is selected */}
+            {selectedCategory && supportSubOptions && supportSubOptions.length > 0 && (
+              <div className="mt-8">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold">Select Sub-category</h3>
+                  <p className="text-muted-foreground">Choose the specific type for your request</p>
+                </div>
+                
+                {loadingSubOptions ? (
+                  <div className="text-center py-4">Loading sub-options...</div>
+                ) : (
+                  <div className="grid gap-3">
+                    {supportSubOptions.map(subOption => (
+                      <Card 
+                        key={subOption.id} 
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          selectedSubOption === subOption.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => handleSubOptionChange(subOption.id)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">{subOption.name}</h4>
+                              {subOption.description && (
+                                <p className="text-sm text-muted-foreground mt-1">{subOption.description}</p>
+                              )}
+                            </div>
+                            {selectedSubOption === subOption.id && (
+                              <Check className="w-4 h-4 text-primary" />
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* SR Identifier if needed */}
+            {selectedSubOption && selectedSubOptionObj?.name === 'Service Request (SR)' && (
+              <div className="mt-8">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold">Service Request Details</h3>
+                  <p className="text-muted-foreground">Enter your Service Request identifier</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="srIdentifier" className="text-base font-semibold">
+                    Service Request Identifier *
+                  </Label>
+                  <Input
+                    id="srIdentifier"
+                    placeholder="Enter SR number (e.g., SR123456789)"
+                    value={srIdentifier}
+                    onChange={(e) => setSrIdentifier(e.target.value)}
+                  />
+                  {validatingSrIdentifier && (
+                    <p className="text-sm text-muted-foreground">Validating...</p>
+                  )}
+                  {srIdentifier && srValidationResult && (
+                    <p className={`text-sm ${srValidationResult.isValid ? 'text-green-600' : 'text-red-600'}`}>
+                      {srValidationResult.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -585,28 +697,7 @@ const SupportSelection = () => {
                 />
               </div>
 
-              {/* SR Identifier if needed */}
-              {selectedSubOptionObj?.name === 'Service Request (SR)' && (
-                <div className="space-y-2">
-                  <Label htmlFor="srIdentifier" className="text-base font-semibold">
-                    Service Request Identifier *
-                  </Label>
-                  <Input
-                    id="srIdentifier"
-                    placeholder="Enter SR number (e.g., SR123456789)"
-                    value={srIdentifier}
-                    onChange={(e) => setSrIdentifier(e.target.value)}
-                  />
-                  {validatingSrIdentifier && (
-                    <p className="text-sm text-muted-foreground">Validating...</p>
-                  )}
-                  {srIdentifier && srValidationResult && (
-                    <p className={`text-sm ${srValidationResult.isValid ? 'text-green-600' : 'text-red-600'}`}>
-                      {srValidationResult.message}
-                    </p>
-                  )}
-                </div>
-              )}
+
             </div>
           </div>
         );
@@ -1178,7 +1269,7 @@ const SupportSelection = () => {
                   </div>
                   <div className="py-2 border-b">
                     <span className="font-medium">Description:</span>
-                    <p className="mt-2 text-muted-foreground">{description}</p>
+                    <div className="mt-2 text-muted-foreground whitespace-pre-wrap break-all overflow-hidden">{description}</div>
                   </div>
                   {srIdentifier && (
                     <div className="flex justify-between py-2 border-b">

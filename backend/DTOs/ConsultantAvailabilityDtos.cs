@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace SapBasisPulse.Api.DTOs
 {
@@ -13,8 +14,13 @@ namespace SapBasisPulse.Api.DTOs
 
     public class CreateConsultantAvailabilitySlotDto
     {
+        [Required]
         public Guid ConsultantId { get; set; }
+        
+        [Required]
         public DateTime SlotStartTime { get; set; }
+        
+        [Required]
         public DateTime SlotEndTime { get; set; }
     }
     

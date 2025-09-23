@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ThemeToggle from '@/components/ThemeToggle';
 import { 
   Users, 
   Shield, 
@@ -168,9 +169,12 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">Manage users and monitor system activity</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            <span className="font-medium">{user.firstName} {user.lastName}</span>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              <span className="font-medium">{user.firstName} {user.lastName}</span>
+            </div>
           </div>
         </div>
 

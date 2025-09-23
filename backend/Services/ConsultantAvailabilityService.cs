@@ -73,6 +73,12 @@ namespace SapBasisPulse.Api.Services
 
         public async Task<ConsultantAvailabilitySlotsResponse> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto)
         {
+            // Validate input times first
+            if (dto.SlotEndTime <= dto.SlotStartTime)
+            {
+                throw new ArgumentException($"End time ({dto.SlotEndTime:yyyy-MM-dd HH:mm:ss}) must be after start time ({dto.SlotStartTime:yyyy-MM-dd HH:mm:ss}).");
+            }
+
             // Ensure the dates are in UTC format for PostgreSQL
             var startTimeUtc = dto.SlotStartTime.Kind != DateTimeKind.Utc 
                 ? DateTime.SpecifyKind(dto.SlotStartTime, DateTimeKind.Utc)
@@ -82,9 +88,8 @@ namespace SapBasisPulse.Api.Services
                 ? DateTime.SpecifyKind(dto.SlotEndTime, DateTimeKind.Utc)
                 : dto.SlotEndTime;
 
-            // Break down into hourly slots
-            var currentTime = startTimeUtc;
             var createdSlots = new List<ConsultantAvailabilitySlot>();
+            var currentTime = startTimeUtc;
             
             // Generate hourly slots within the time block
             while (currentTime.AddHours(1) <= endTimeUtc)
@@ -117,10 +122,10 @@ namespace SapBasisPulse.Api.Services
                 createdSlots.Add(slot);
             }
             
-            // If no slots were created (e.g., if end time is before start time)
+            // Final validation - this should never happen now with proper input validation
             if (!createdSlots.Any())
             {
-                throw new ArgumentException("Invalid time range. End time must be after start time.");
+                throw new InvalidOperationException($"No slots were created for time range {startTimeUtc:yyyy-MM-dd HH:mm:ss} to {endTimeUtc:yyyy-MM-dd HH:mm:ss}. This should not happen.");
             }
             
             await _context.SaveChangesAsync();
@@ -156,6 +161,7 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.CreatedByUser)
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
+                .Include(o => o.Status)
                 .Select(o => new BookedSlotDto
                 {
                     Id = o.TimeSlot.Id,
@@ -169,7 +175,7 @@ namespace SapBasisPulse.Api.Services
                     SupportCategoryName = o.SupportCategory.Name,
                     Priority = o.Priority,
                     Description = o.Description,
-                    Status = o.Status,
+                    Status = o.Status.StatusName,
                     CreatedAt = o.CreatedAt
                 })
                 .OrderBy(b => b.SlotStartTime)

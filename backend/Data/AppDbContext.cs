@@ -22,6 +22,8 @@ namespace SapBasisPulse.Api.Data
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
+        public DbSet<StatusMaster> StatusMaster { get; set; }
+        public DbSet<StatusChangeLog> StatusChangeLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -147,6 +149,58 @@ namespace SapBasisPulse.Api.Data
             entity.Property(ma => ma.FilePath)
                 .HasMaxLength(500)
                 .IsRequired();
+        });
+
+        // StatusMaster configuration
+        modelBuilder.Entity<StatusMaster>(entity =>
+        {
+            entity.HasKey(sm => sm.Id);
+            
+            entity.HasIndex(sm => sm.StatusCode)
+                .IsUnique();
+                
+            entity.Property(sm => sm.StatusCode)
+                .HasMaxLength(50)
+                .IsRequired();
+                
+            entity.Property(sm => sm.StatusName)
+                .HasMaxLength(100)
+                .IsRequired();
+        });
+
+        // StatusChangeLog configuration
+        modelBuilder.Entity<StatusChangeLog>(entity =>
+        {
+            entity.HasKey(scl => scl.Id);
+            
+            entity.HasOne(scl => scl.Order)
+                .WithMany(o => o.StatusChangeLogs)
+                .HasForeignKey(scl => scl.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            entity.HasOne(scl => scl.FromStatus)
+                .WithMany()
+                .HasForeignKey(scl => scl.FromStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            entity.HasOne(scl => scl.ToStatus)
+                .WithMany(sm => sm.StatusChangeLogs)
+                .HasForeignKey(scl => scl.ToStatusId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            entity.HasOne(scl => scl.ChangedByUser)
+                .WithMany()
+                .HasForeignKey(scl => scl.ChangedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Update Order configuration to include Status relationship
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasOne(o => o.Status)
+                .WithMany(sm => sm.Orders)
+                .HasForeignKey(o => o.StatusId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         base.OnModelCreating(modelBuilder);

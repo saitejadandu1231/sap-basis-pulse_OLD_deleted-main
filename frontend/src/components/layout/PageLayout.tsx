@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import ThemeToggle from '@/components/ThemeToggle';
 import { 
   MessageSquare, 
   Settings, 
@@ -134,6 +135,9 @@ const PageLayout: React.FC<PageLayoutProps> = ({
               <span className="hidden sm:inline-block ml-1">Settings</span>
             </Button>
 
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             <Separator orientation="vertical" className="h-6" />
 
             {/* User Menu */}
@@ -163,7 +167,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
         </div>
       </header>
 
-      <div className="flex">
+      <div className="relative flex">
         {/* Sidebar */}
         {showSidebar && (
           <>
@@ -177,7 +181,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
 
             {/* Sidebar Content */}
             <aside className={cn(
-              "fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 transform border-r bg-background/95 backdrop-blur transition-transform md:relative md:top-0 md:h-[calc(100vh-4rem)] md:translate-x-0",
+              "fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 transform border-r bg-background/95 backdrop-blur transition-transform md:translate-x-0",
               sidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
               <div className="p-4 h-full overflow-y-auto">
@@ -188,7 +192,10 @@ const PageLayout: React.FC<PageLayoutProps> = ({
         )}
 
         {/* Main Content */}
-        <main className="flex-1 min-h-[calc(100vh-4rem)]">
+        <main className={cn(
+          "flex-1 min-h-[calc(100vh-4rem)]",
+          showSidebar ? "md:ml-64" : ""
+        )}>
           {/* Page Header */}
           {(title || description || actions) && (
             <div className="border-b bg-background/50 backdrop-blur">

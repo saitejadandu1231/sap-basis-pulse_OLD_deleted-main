@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.DTOs;
 using SapBasisPulse.Api.Entities;
+using SapBasisPulse.Api.Services;
 
 namespace SapBasisPulse.Api.Controllers
 {
@@ -16,10 +17,12 @@ namespace SapBasisPulse.Api.Controllers
     public class ServiceRequestIdentifiersController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IServiceRequestValidationService _validationService;
 
-        public ServiceRequestIdentifiersController(AppDbContext context)
+        public ServiceRequestIdentifiersController(AppDbContext context, IServiceRequestValidationService validationService)
         {
             _context = context;
+            _validationService = validationService;
         }
 
         // GET: api/ServiceRequestIdentifiers
@@ -63,6 +66,14 @@ namespace SapBasisPulse.Api.Controllers
             };
 
             return Ok(dto);
+        }
+
+        // GET: api/ServiceRequestIdentifiers/validate/{identifier}
+        [HttpGet("validate/{identifier}")]
+        public async Task<ActionResult<ServiceRequestValidationResult>> ValidateServiceRequestIdentifier(string identifier)
+        {
+            var result = await _validationService.ValidateServiceRequestIdentifierAsync(identifier);
+            return Ok(result);
         }
 
         // POST: api/ServiceRequestIdentifiers

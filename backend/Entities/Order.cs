@@ -33,6 +33,15 @@ namespace SapBasisPulse.Api.Entities
         public Guid CreatedByUserId { get; set; }
         public User CreatedByUser { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string Status { get; set; }
+        
+        // Status properties - keeping both for gradual migration
+        public string StatusString { get; set; } = "New"; // Keep existing string status for compatibility
+        public int StatusId { get; set; } // New foreign key
+        public StatusMaster Status { get; set; } = null!; // Navigation property
+        
+        public DateTime? LastUpdated { get; set; }
+        
+        // Navigation properties
+        public ICollection<StatusChangeLog> StatusChangeLogs { get; set; } = new List<StatusChangeLog>();
     }
 }

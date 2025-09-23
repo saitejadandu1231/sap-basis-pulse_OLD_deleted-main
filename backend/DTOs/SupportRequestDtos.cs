@@ -43,5 +43,6 @@ namespace SapBasisPulse.Api.DTOs
     public class UpdateStatusDto
     {
         public string Status { get; set; }
+        public string? Comment { get; set; }
     }
 }

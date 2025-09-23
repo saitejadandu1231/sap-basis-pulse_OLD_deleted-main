@@ -36,6 +36,7 @@ builder.Services.AddScoped<ISupportTaxonomyService, SupportTaxonomyService>();
 builder.Services.AddScoped<IConsultantAvailabilityService, ConsultantAvailabilityService>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValidationService>();
 
 // Add development helper service
 builder.Services.AddScoped<DevHelperService>();

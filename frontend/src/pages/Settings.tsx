@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,10 +8,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { User, Bell, Shield, Palette, Globe } from 'lucide-react';
+import { User, Bell, Shield, Palette, Globe, Sun, Moon, Monitor } from 'lucide-react';
 
 const Settings = () => {
   const { user, userRole, firstName, lastName } = useAuth();
+  const { theme, setTheme } = useTheme();
+
+  const themeOptions = [
+    {
+      value: 'light',
+      label: 'Light',
+      description: 'Clean and bright interface',
+      icon: Sun
+    },
+    {
+      value: 'dark',
+      label: 'Dark',
+      description: 'Easy on the eyes in low light',
+      icon: Moon
+    },
+    {
+      value: 'system',
+      label: 'System',
+      description: 'Follow your system preference',
+      icon: Monitor
+    }
+  ];
   
   return (
     <PageLayout
@@ -139,11 +162,44 @@ const Settings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Theme</Label>
-              <div className="flex gap-2 mt-2">
-                <Button variant="outline" size="sm">Light</Button>
-                <Button variant="outline" size="sm">Dark</Button>
-                <Button variant="outline" size="sm">Auto</Button>
+              <Label className="text-sm font-medium">Theme Preference</Label>
+              <p className="text-sm text-muted-foreground mb-3">
+                Choose your preferred theme for the application
+              </p>
+              <div className="grid grid-cols-1 gap-3">
+                {themeOptions.map((option) => {
+                  const IconComponent = option.icon;
+                  const isSelected = theme === option.value;
+                  
+                  return (
+                    <Button
+                      key={option.value}
+                      variant={isSelected ? "default" : "outline"}
+                      className={`h-auto p-4 justify-start text-left ${
+                        isSelected ? 'ring-2 ring-ring ring-offset-2' : ''
+                      }`}
+                      onClick={() => setTheme(option.value)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <IconComponent className={`w-5 h-5 mt-0.5 ${
+                          isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
+                        }`} />
+                        <div>
+                          <div className={`font-medium ${
+                            isSelected ? 'text-primary-foreground' : 'text-foreground'
+                          }`}>
+                            {option.label}
+                          </div>
+                          <div className={`text-sm ${
+                            isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                          }`}>
+                            {option.description}
+                          </div>
+                        </div>
+                      </div>
+                    </Button>
+                  );
+                })}
               </div>
             </div>
           </CardContent>

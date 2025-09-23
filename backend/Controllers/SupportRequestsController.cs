@@ -60,14 +60,21 @@ namespace SapBasisPulse.Api.Controllers
         public async Task<IActionResult> UpdateStatus(Guid orderId, [FromBody] UpdateStatusDto dto)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var result = await _service.UpdateStatusAsync(orderId, dto.Status);
+            var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment);
             
             if (!result)
             {
                 return BadRequest(new { error = "Invalid ticket ID or status" });
             }
 
-            await _auditLogService.LogAsync(userId, "UpdateTicketStatus", "Order", orderId.ToString(), $"Status changed to {dto.Status}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
+            // Create audit log message with comment if provided
+            var auditMessage = $"Status changed to {dto.Status}";
+            if (!string.IsNullOrWhiteSpace(dto.Comment))
+            {
+                auditMessage += $". Comment: {dto.Comment}";
+            }
+
+            await _auditLogService.LogAsync(userId, "UpdateTicketStatus", "Order", orderId.ToString(), auditMessage, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
             return Ok(new { message = "Status updated successfully" });
         }
     }

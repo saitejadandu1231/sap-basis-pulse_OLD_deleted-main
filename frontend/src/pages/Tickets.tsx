@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecentTickets, useUpdateTicketStatus, useTicketRatings } from '@/hooks/useSupport';
+import { useStatusOptions } from '@/hooks/useStatus';
 import PageLayout from '@/components/layout/PageLayout';
 import TicketStatusUpdater from '@/components/TicketStatusUpdater';
 import TicketRatingContainer from '@/components/TicketRatingContainer';
+import StatusHistory from '@/components/StatusHistory';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, TrendingUp } from 'lucide-react';
+import { TruncatedText } from '@/components/ui/truncated-text';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, TrendingUp, ChevronUp, ChevronRight, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { toast } from 'sonner';
@@ -56,15 +61,23 @@ const TicketRatingPreview: React.FC<{ ticketId: string }> = ({ ticketId }) => {
 };
 
 const Tickets = () => {
-  const { userRole } = useAuth();
+  const { user, userRole } = useAuth();
   const { data: tickets, isLoading, refetch } = useRecentTickets();
   const { data: featureFlags } = useFeatureFlags();
   const navigate = useNavigate();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [statusChangeDialog, setStatusChangeDialog] = useState({ open: false, ticketId: '', newStatus: '', oldStatus: '' });
+  const [statusComment, setStatusComment] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const updateTicketStatus = useUpdateTicketStatus();
+  const { data: statusOptionsData } = useStatusOptions();
 
-  const statusOptions = [
+  // Transform API data to match component expectations with fallback to hardcoded options
+  const statusOptions = statusOptionsData?.map(option => ({
+    value: option.statusCode,
+    label: option.statusName,
+    color: option.colorCode
+  })) || [
     { value: 'New', label: 'New', color: 'bg-blue-500' },
     { value: 'InProgress', label: 'In Progress', color: 'bg-yellow-500' },
     { value: 'PendingCustomerAction', label: 'Pending Customer', color: 'bg-orange-500' },
@@ -102,10 +115,9 @@ const Tickets = () => {
   };
 
   const handleTicketClick = (ticket: any) => {
-    if (userRole === 'consultant' || userRole === 'admin') {
-      setSelectedTicket(ticket);
-      setIsDialogOpen(true);
-    }
+    // Allow all user types to view ticket details
+    setSelectedTicket(ticket);
+    setIsDialogOpen(true);
   };
 
   const handleStatusUpdate = (ticketId: string, newStatus: string) => {
@@ -114,18 +126,29 @@ const Tickets = () => {
     setIsDialogOpen(false);
   };
 
-  const handleQuickStatusUpdate = async (ticketId: string, newStatus: string, currentStatus: string) => {
+  const handleQuickStatusUpdate = (ticketId: string, newStatus: string, currentStatus: string) => {
     if (newStatus === currentStatus) {
       return;
     }
 
+    // Open comment dialog for status change
+    setStatusChangeDialog({ open: true, ticketId, newStatus, oldStatus: currentStatus });
+    setStatusComment('');
+  };
+
+  const confirmStatusChange = async () => {
+    const { ticketId, newStatus } = statusChangeDialog;
+    
     try {
       await updateTicketStatus.mutateAsync({
         orderId: ticketId,
-        status: newStatus as any
+        status: newStatus as any,
+        comment: statusComment.trim() || undefined
       });
       toast.success('Status updated successfully');
       refetch();
+      setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' });
+      setStatusComment('');
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update status');
@@ -134,7 +157,7 @@ const Tickets = () => {
 
   const canManageTicket = (ticket: any) => {
     return userRole === 'admin' || 
-           (userRole === 'consultant' && ticket.consultantId === userRole); // You might need to add consultant ID check
+           (userRole === 'consultant' && ticket.consultantId === user?.id); // Fixed incorrect comparison
   };
 
   return (
@@ -177,9 +200,6 @@ const Tickets = () => {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center space-x-2">
                       <span>{ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}</span>
-                      {(userRole === 'consultant' || userRole === 'admin') && (
-                        <Settings className="w-4 h-4 text-muted-foreground" />
-                      )}
                     </CardTitle>
                     <div className="flex items-center space-x-2">
                       {getStatusIcon(ticket.status)}
@@ -189,10 +209,9 @@ const Tickets = () => {
                           value={ticket.status} 
                           onValueChange={(newStatus) => handleQuickStatusUpdate(ticket.id, newStatus, ticket.status)}
                         >
-                          <SelectTrigger className="w-auto h-6 text-xs border-none bg-transparent p-0">
+                          <SelectTrigger className="w-auto h-6 text-xs border-none bg-transparent p-0 focus:ring-0 focus:ring-offset-0">
                             <Badge variant={getStatusVariant(ticket.status)} className="text-xs cursor-pointer hover:bg-opacity-80">
                               {ticket.status.replace(/([A-Z])/g, ' $1').trim()}
-                              <ChevronDown className="w-3 h-3 ml-1" />
                             </Badge>
                           </SelectTrigger>
                           <SelectContent className="min-w-[200px]">
@@ -239,9 +258,16 @@ const Tickets = () => {
                     </div>
                     
                     {ticket.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {ticket.description}
-                      </p>
+                      <div className="group">
+                        <p className="text-sm text-muted-foreground line-clamp-2 group-hover:bg-muted/30 rounded transition-colors duration-200 relative">
+                          {ticket.description}
+                          {ticket.description.length > 120 && (
+                            <span className="inline-flex ml-1 items-center text-xs text-primary">
+                              <ChevronRight className="w-3 h-3" />
+                            </span>
+                          )}
+                        </p>
+                      </div>
                     )}
                     
                     {/* Rating Display */}
@@ -282,7 +308,7 @@ const Tickets = () => {
                         }}
                         className="flex-1"
                       >
-                        <Settings className="w-4 h-4 mr-2" />
+                        <Eye className="w-4 h-4 mr-2" />
                         {userRole === 'customer' ? 'View & Rate' : 'Details'}
                       </Button>
                     </div>
@@ -313,7 +339,7 @@ const Tickets = () => {
 
       {/* Ticket Management Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
         <DialogTitle className="flex items-center space-x-2">
           <Settings className="w-5 h-5" />
@@ -329,8 +355,9 @@ const Tickets = () => {
           
           {selectedTicket && (
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className={`grid w-full ${userRole === 'customer' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <TabsList className={`grid w-full ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-4'}`}>
             <TabsTrigger value="details">Ticket Details</TabsTrigger>
+            <TabsTrigger value="history">Status History</TabsTrigger>
             {(userRole === 'consultant' || userRole === 'admin') && (
               <TabsTrigger value="status">Status Management</TabsTrigger>
             )}
@@ -363,7 +390,7 @@ const Tickets = () => {
               </div>
               <div>
             <span className="font-medium text-muted-foreground">Customer:</span>
-            <p>{selectedTicket.customerName || 'Unknown'}</p>
+            <p>{selectedTicket.createdByName || 'Unknown'}</p>
               </div>
               <div>
             <span className="font-medium text-muted-foreground">Consultant:</span>
@@ -371,14 +398,28 @@ const Tickets = () => {
               </div>
             </div>
             
-            {selectedTicket.description && (
+            {selectedTicket?.description && (
               <div>
-            <span className="font-medium text-muted-foreground">Description:</span>
-            <p className="mt-1 text-sm bg-muted/20 rounded p-3">{selectedTicket.description}</p>
+                <span className="font-medium text-muted-foreground">Description:</span>
+                <div className="mt-1 text-sm bg-muted/20 rounded p-3">
+                  <TruncatedText 
+                    text={selectedTicket.description} 
+                    maxLength={200}
+                    className="text-sm"
+                    expandButtonClassName="h-6 px-2 py-1 text-xs"
+                    showMoreText="Show More"
+                    showLessText="Show Less"
+                  />
+                </div>
               </div>
             )}
           </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="history" className="space-y-6 mt-6">
+            {/* Status History */}
+            <StatusHistory orderId={selectedTicket.id} />
           </TabsContent>
           
           {(userRole === 'consultant' || userRole === 'admin') && (
@@ -462,6 +503,76 @@ const Tickets = () => {
           </div>
         </Tabs>
         )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Status Change Comment Dialog */}
+      <Dialog open={statusChangeDialog.open} onOpenChange={(open) => !open && setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Update Ticket Status</DialogTitle>
+            <DialogDescription>
+              Changing status from <Badge variant="outline" className="mx-1">{statusChangeDialog.oldStatus}</Badge> 
+              to <Badge variant="outline" className="mx-1">{statusChangeDialog.newStatus}</Badge>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="status-comment">Add a comment (optional)</Label>
+              <div className="text-xs text-muted-foreground mb-2 flex items-start space-x-1">
+                <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>This comment will be visible to both you and the customer in the ticket history</span>
+              </div>
+              
+              {/* Quick comment templates */}
+              <div className="flex flex-wrap gap-1 mb-2">
+                {[
+                  "Investigation completed, ready for implementation",
+                  "Waiting for customer confirmation",
+                  "Issue resolved, monitoring for 24 hours",
+                  "Requires system maintenance window",
+                  "Escalating to specialist team"
+                ].map((template) => (
+                  <Button
+                    key={template}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-6 px-2"
+                    onClick={() => setStatusComment(template)}
+                  >
+                    {template.length > 25 ? template.substring(0, 25) + '...' : template}
+                  </Button>
+                ))}
+              </div>
+              
+              <Textarea
+                id="status-comment"
+                placeholder="Explain why you're changing the status... (e.g., 'Waiting for system maintenance window' or 'Issue resolved after applying patch')"
+                value={statusComment}
+                onChange={(e) => setStatusComment(e.target.value)}
+                rows={3}
+                className="mt-2"
+                maxLength={1000}
+              />
+              <div className="text-xs text-muted-foreground mt-1">
+                {statusComment.length}/1000 characters
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}
+              >
+                Cancel
+              </Button>
+              <Button onClick={confirmStatusChange}>
+                Update Status
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </PageLayout>

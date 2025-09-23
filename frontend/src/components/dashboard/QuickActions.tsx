@@ -156,7 +156,7 @@ const QuickActions = () => {
                       <h3 className={`font-semibold text-base transition-colors ${
                         isPrimary 
                           ? 'text-blue-900 group-hover:text-blue-700' 
-                          : 'text-slate-900 group-hover:text-slate-700'
+                          : 'text-blue-900 group-hover:text-blue-700'
                       }`}>
                         {action.label}
                       </h3>
