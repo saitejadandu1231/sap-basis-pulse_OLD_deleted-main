@@ -1,0 +1,19 @@
+{
+  "Version": 1,
+  "Hash": "oymQKqt3Wgqj0hbushbmqs2bzKHfozzr2mYUg13mQqA=",
+  "Source": "SapBasisPulse.Api",
+  "BasePath": "_content/SapBasisPulse.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "SapBasisPulse.Api\\wwwroot",
+      "Source": "SapBasisPulse.Api",
+      "ContentRoot": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\wwwroot\\",
+      "BasePath": "_content/SapBasisPulse.Api",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": []
+}

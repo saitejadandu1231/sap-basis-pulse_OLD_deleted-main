@@ -1,0 +1,6 @@
+@SapBasisPulse.Api_HostAddress = http://localhost:5274
+
+GET {{SapBasisPulse.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

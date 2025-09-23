@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\SapBasisPulse.Api.props" />
+</Project>
