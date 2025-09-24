@@ -31,6 +31,24 @@ namespace SapBasisPulse.Api.Controllers
             });
         }
 
+        [HttpGet("jwt-secret-check")]
+        [AllowAnonymous]
+        public IActionResult JwtSecretCheck([FromServices] IConfiguration config)
+        {
+            var jwtSecret = config.GetSection("JwtSettings")["Secret"];
+            var secretLength = jwtSecret?.Length ?? 0;
+            var secretBits = secretLength * 8;
+            
+            return Ok(new { 
+                secretLength = secretLength,
+                secretBits = secretBits,
+                minimumRequired = 128,
+                isValid = secretBits >= 128,
+                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development",
+                timestamp = DateTime.UtcNow
+            });
+        }
+
         [HttpGet("options")]
         public async Task<IActionResult> GetStatusOptions()
         {
