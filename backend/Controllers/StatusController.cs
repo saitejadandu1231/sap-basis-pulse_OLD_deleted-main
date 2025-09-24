@@ -49,6 +49,22 @@ namespace SapBasisPulse.Api.Controllers
             });
         }
 
+        [HttpGet("auth-config-check")]
+        [AllowAnonymous]
+        public IActionResult AuthConfigCheck([FromServices] IConfiguration config)
+        {
+            var authSection = config.GetSection("Auth");
+            
+            return Ok(new { 
+                autoActivateInDevelopment = authSection["AutoActivateInDevelopment"],
+                bypassStatusCheckInDevelopment = authSection["BypassStatusCheckInDevelopment"],
+                consultantRegistrationEnabled = authSection["ConsultantRegistrationEnabled"],
+                messagingEnabled = authSection["MessagingEnabled"],
+                environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development",
+                timestamp = DateTime.UtcNow
+            });
+        }
+
         [HttpGet("options")]
         public async Task<IActionResult> GetStatusOptions()
         {
