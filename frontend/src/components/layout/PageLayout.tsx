@@ -61,7 +61,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden mr-1 sm:mr-2"
+              className="md:hidden mr-1 sm:mr-2 p-1 sm:p-2"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               {sidebarOpen ? (
@@ -98,7 +98,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           {/* Header Actions */}
           <div className="flex items-center space-x-1 sm:space-x-2 ml-auto">
             {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative px-2 sm:px-3">
+            <Button variant="ghost" size="sm" className="relative p-1 sm:p-2">
               <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
               {unreadCount && unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -113,7 +113,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/messages')}
-                className="relative px-2 sm:px-3"
+                className="relative p-1 sm:p-2"
               >
                 <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline-block ml-1">Messages</span>
@@ -130,7 +130,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => navigate('/settings')}
-              className="px-2 sm:px-3"
+              className="p-1 sm:p-2"
             >
               <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline-block ml-1">Settings</span>
@@ -149,7 +149,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
               </div>
               
               {/* Avatar */}
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-medium text-xs sm:text-sm">
                   {firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </span>
@@ -159,7 +159,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-muted-foreground hover:text-foreground px-2 sm:px-3"
+                className="p-1 sm:p-2 text-muted-foreground hover:text-foreground"
               >
                 <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>

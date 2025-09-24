@@ -166,7 +166,7 @@ const Tickets = () => {
       description={userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets'}
       actions={
         userRole === 'customer' ? (
-          <Button onClick={() => navigate('/support')} className="text-sm sm:text-base px-3 sm:px-4">
+          <Button onClick={() => navigate('/support')} className="text-sm sm:text-base px-2 sm:px-4">
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">New Ticket</span>
             <span className="sm:hidden">New</span>
