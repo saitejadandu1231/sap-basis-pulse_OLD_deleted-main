@@ -5,7 +5,6 @@
   "installCommand": "npm install",
   "outputDirectory": "dist",
   "framework": "vite",
-  "functions": {},
   "routes": [
     {
       "src": "/assets/.*\\.(js|css|woff2?|eot|ttf|otf|svg|png|jpe?g|gif|webp|mp4|mp3|ogg|pdf|html|ico)$",
