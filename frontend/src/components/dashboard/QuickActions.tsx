@@ -123,7 +123,7 @@ const QuickActions = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {actions.map((action) => {
             const Icon = action.icon;
             const isPrimary = action.variant === 'default';
@@ -142,18 +142,18 @@ const QuickActions = () => {
                 onClick={() => navigate(action.path)}
                 title={action.shortcut ? `${action.description} (${action.shortcut})` : action.description}
               >
-                <CardContent className="p-4 space-y-3">
+                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                   {/* Header with Icon and Title */}
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shadow-md transition-all duration-300 group-hover:scale-110 ${
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shadow-md transition-all duration-300 group-hover:scale-110 ${
                       isPrimary 
                         ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-blue-500/30' 
                         : 'bg-gradient-to-r from-slate-500 to-slate-700 text-white shadow-slate-500/30'
                     }`}>
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
                     <div className="flex-1">
-                      <h3 className={`font-semibold text-base transition-colors ${
+                      <h3 className={`font-semibold text-sm sm:text-base transition-colors ${
                         isPrimary 
                           ? 'text-blue-900 group-hover:text-blue-700' 
                           : 'text-blue-900 group-hover:text-blue-700'

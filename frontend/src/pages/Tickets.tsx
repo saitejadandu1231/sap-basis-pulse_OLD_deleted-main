@@ -339,7 +339,7 @@ const Tickets = () => {
 
       {/* Ticket Management Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
         <DialogTitle className="flex items-center space-x-2">
           <Settings className="w-5 h-5" />
@@ -355,18 +355,18 @@ const Tickets = () => {
           
           {selectedTicket && (
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className={`grid w-full ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-4'}`}>
-            <TabsTrigger value="details">Ticket Details</TabsTrigger>
-            <TabsTrigger value="history">Status History</TabsTrigger>
+          <TabsList className={`grid w-full text-xs sm:text-sm ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            <TabsTrigger value="details"><span className="hidden sm:inline">Ticket </span>Details</TabsTrigger>
+            <TabsTrigger value="history"><span className="hidden sm:inline">Status </span>History</TabsTrigger>
             {(userRole === 'consultant' || userRole === 'admin') && (
-              <TabsTrigger value="status">Status Management</TabsTrigger>
+              <TabsTrigger value="status"><span className="hidden sm:inline">Status </span>Manage</TabsTrigger>
             )}
             <TabsTrigger value="ratings">
-              {userRole === 'customer' ? 'Rate Consultant' : 'Ratings & Feedback'}
+              {userRole === 'customer' ? <><span className="hidden sm:inline">Rate </span>Consultant</> : <><span className="hidden sm:inline">Ratings & </span>Feedback</>}
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="details" className="space-y-6 mt-6">
+          <TabsContent value="details" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
             {/* Ticket Details */}
             <Card>
           <CardHeader>
@@ -378,8 +378,8 @@ const Tickets = () => {
             </CardTitle>
             <CardDescription>{selectedTicket.supportTypeName}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <CardContent className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
               <div>
             <span className="font-medium text-muted-foreground">Created:</span>
             <p>{new Date(selectedTicket.createdAt).toLocaleString()}</p>
@@ -401,7 +401,7 @@ const Tickets = () => {
             {selectedTicket?.description && (
               <div>
                 <span className="font-medium text-muted-foreground">Description:</span>
-                <div className="mt-1 text-sm bg-muted/20 rounded p-3">
+                <div className="mt-1 text-sm bg-muted/20 rounded p-2 sm:p-3">
                   <TruncatedText 
                     text={selectedTicket.description} 
                     maxLength={200}
@@ -417,13 +417,13 @@ const Tickets = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="history" className="space-y-6 mt-6">
+          <TabsContent value="history" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
             {/* Status History */}
             <StatusHistory orderId={selectedTicket.id} />
           </TabsContent>
           
           {(userRole === 'consultant' || userRole === 'admin') && (
-            <TabsContent value="status" className="space-y-6 mt-6">
+            <TabsContent value="status" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
               {/* Status Management */}
               <TicketStatusUpdater
             orderId={selectedTicket.id}
@@ -433,7 +433,7 @@ const Tickets = () => {
             </TabsContent>
           )}
           
-          <TabsContent value="ratings" className="space-y-6 mt-6">
+          <TabsContent value="ratings" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
             {/* Rating Management */}
             <Card>
           <CardHeader>
@@ -508,7 +508,7 @@ const Tickets = () => {
 
       {/* Status Change Comment Dialog */}
       <Dialog open={statusChangeDialog.open} onOpenChange={(open) => !open && setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Update Ticket Status</DialogTitle>
             <DialogDescription>

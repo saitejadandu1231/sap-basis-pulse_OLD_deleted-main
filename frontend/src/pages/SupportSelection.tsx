@@ -249,10 +249,10 @@ const SupportSelection = () => {
     switch (currentStep) {
       case 0: // Support Type
         return (
-          <div className="space-y-6">
-            <div className="mb-8">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="mb-6 sm:mb-8">
               {/* Enhanced Progress Bar */}
-              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+              <div className="bg-muted/30 rounded-xl p-3 sm:p-6 mb-4 sm:mb-6">
                 {/* Step indicators with connecting line */}
                 <div className="flex items-center justify-between mb-4">
                   {STEPS.map((step, index) => {
@@ -325,13 +325,13 @@ const SupportSelection = () => {
               </div>
               
               {/* Current Step Header */}
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Settings className="w-6 h-6 text-white" />
+              <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold">Select Support Type</h2>
-                  <p className="text-muted-foreground">Choose the type of support you need</p>
+                  <h2 className="text-xl sm:text-2xl font-bold">Select Support Type</h2>
+                  <p className="text-sm sm:text-base text-muted-foreground">Choose the type of support you need</p>
                 </div>
               </div>
             </div>
@@ -348,7 +348,7 @@ const SupportSelection = () => {
                     }`}
                     onClick={() => handleSupportTypeChange(type.id)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-semibold">{type.name}</h3>
@@ -657,7 +657,7 @@ const SupportSelection = () => {
               {/* Priority Selection */}
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Priority Level</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   {priorityOptions.map(priority => (
                     <Card 
                       key={priority.id} 
@@ -692,8 +692,8 @@ const SupportSelection = () => {
                   placeholder="Describe your issue in detail..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={6}
-                  className="min-h-[120px]"
+                  rows={4}
+                  className="min-h-[100px] sm:min-h-[120px] text-sm sm:text-base"
                 />
               </div>
 
@@ -799,7 +799,7 @@ const SupportSelection = () => {
                     <AlertCircle className="w-4 h-4 text-orange-600" />
                     <span>Set Priority Level *</span>
                   </Label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                     {priorityOptions.map(priority => {
                       const isSelected = selectedPriority === priority.id;
                       return (
@@ -1327,29 +1327,31 @@ const SupportSelection = () => {
       description="Submit a new support request with our step-by-step wizard"
       showSidebar={true}
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4">
         {/* Step Content */}
         <Card>
-          <CardContent className="p-8">
+          <CardContent className="p-3 sm:p-6 lg:p-8">
             {renderStepContent()}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t">
+            <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t">
               <Button
                 variant="outline"
                 onClick={prevStep}
                 disabled={currentStep === 0}
+                className="w-full sm:w-auto"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Back</span>
               </Button>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 {currentStep === STEPS.length - 1 ? (
                   <Button
                     onClick={handleSubmit}
                     disabled={createRequest.isPending}
-                    className="min-w-[120px]"
+                    className="w-full sm:w-auto sm:min-w-[120px]"
                   >
                     {createRequest.isPending ? 'Submitting...' : 'Submit Request'}
                   </Button>
@@ -1357,9 +1359,10 @@ const SupportSelection = () => {
                   <Button
                     onClick={nextStep}
                     disabled={!canProceedToNext()}
-                    className="min-w-[120px]"
+                    className="w-full sm:w-auto sm:min-w-[120px]"
                   >
-                    Next
+                    <span className="hidden sm:inline">Next</span>
+                    <span className="sm:hidden">Continue</span>
                     <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 )}
