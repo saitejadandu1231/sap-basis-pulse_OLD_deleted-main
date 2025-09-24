@@ -46,10 +46,9 @@ namespace SapBasisPulse.Api.Services
                     }
                 }
 
-                // In development, we can optionally skip the email verification
+                // Skip email verification if configured (works in any environment)
                 bool autoPendingVerification = true;
-                if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development" && 
-                    _config.GetSection("Auth")["AutoActivateInDevelopment"]?.ToLower() == "true")
+                if (_config.GetSection("Auth")["AutoActivateInDevelopment"]?.ToLower() == "true")
                 {
                     autoPendingVerification = false;
                 }
@@ -137,10 +136,9 @@ namespace SapBasisPulse.Api.Services
                 if (result == PasswordVerificationResult.Failed)
                     return (false, "Invalid credentials", null);
 
-                // In development, we can allow logins regardless of user status if configured
+                // Allow logins regardless of user status if configured (works in any environment)
                 bool bypassStatusCheck = false;
-                if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development" && 
-                    _config.GetSection("Auth")["BypassStatusCheckInDevelopment"]?.ToLower() == "true")
+                if (_config.GetSection("Auth")["BypassStatusCheckInDevelopment"]?.ToLower() == "true")
                 {
                     bypassStatusCheck = true;
                 }
