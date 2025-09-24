@@ -34,11 +34,11 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
 
   const renderStars = (currentRating: number, setter: (value: number) => void) => {
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-1 justify-center sm:justify-start">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-6 h-6 cursor-pointer transition-colors ${
+            className={`w-5 h-5 sm:w-6 sm:h-6 cursor-pointer transition-colors ${
               star <= currentRating
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300 hover:text-yellow-400'
@@ -78,12 +78,12 @@ const TicketRatingForm: React.FC<TicketRatingFormProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Rate Consultant</CardTitle>
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg sm:text-xl">Rate Consultant</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <CardContent className="p-4 sm:p-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div className="space-y-2">
             <Label>Resolution Quality</Label>
             {renderStars(resolutionQuality, setResolutionQuality)}

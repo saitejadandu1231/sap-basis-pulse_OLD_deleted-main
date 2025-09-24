@@ -252,9 +252,9 @@ const SupportSelection = () => {
           <div className="space-y-4 sm:space-y-6">
             <div className="mb-6 sm:mb-8">
               {/* Enhanced Progress Bar */}
-              <div className="bg-muted/30 rounded-xl p-3 sm:p-6 mb-4 sm:mb-6">
+              <div className="bg-muted/30 rounded-xl p-2 sm:p-6 mb-4 sm:mb-6">
                 {/* Step indicators with connecting line */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 overflow-x-auto">
                   {STEPS.map((step, index) => {
                     const StepIcon = step.icon;
                     const isActive = index === currentStep;
@@ -262,10 +262,10 @@ const SupportSelection = () => {
                     const isUpcoming = index > currentStep;
 
                     return (
-                      <div key={step.id} className="flex items-center">
+                      <div key={step.id} className="flex items-center min-w-0 flex-shrink-0">
                         <div className="flex flex-col items-center relative">
                           {/* Step Circle */}
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                          <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
                             isActive 
                               ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30 scale-110' 
                               : isCompleted 
@@ -273,25 +273,26 @@ const SupportSelection = () => {
                                 : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
                           }`}>
                             {isCompleted ? (
-                              <Check className="w-6 h-6" />
+                              <Check className="w-3 h-3 sm:w-6 sm:h-6" />
                             ) : (
-                              <StepIcon className="w-6 h-6" />
+                              <StepIcon className="w-3 h-3 sm:w-6 sm:h-6" />
                             )}
                           </div>
                           
                           {/* Step Label */}
-                          <div className="mt-3 text-center">
-                            <p className={`text-xs font-medium transition-colors ${
+                          <div className="mt-2 sm:mt-3 text-center max-w-[60px] sm:max-w-none">
+                            <p className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
                               isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
                             }`}>
-                              {step.title}
+                              <span className="hidden sm:inline">{step.title}</span>
+                              <span className="sm:hidden">{step.title.split(' ')[0]}</span>
                             </p>
                           </div>
                         </div>
                         
                         {/* Connecting Line */}
                         {index < STEPS.length - 1 && (
-                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                          <div className="flex-1 h-0.5 mx-1 sm:mx-4 mt-3 sm:mt-6 relative min-w-[20px] sm:min-w-[40px]">
                             <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
                             <div 
                               className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
@@ -305,8 +306,8 @@ const SupportSelection = () => {
                   })}
                 </div>
                 
-                {/* Progress Bar */}
-                <div className="space-y-2">
+                {/* Desktop Progress Bar */}
+                <div className="hidden sm:block space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-foreground">Progress</span>
                     <span className="text-sm text-muted-foreground font-medium">
@@ -324,14 +325,14 @@ const SupportSelection = () => {
                 </div>
               </div>
               
-              {/* Current Step Header */}
-              <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              {/* Current Step Header - Hidden on Mobile (info shown in progress) */}
+              <div className="hidden sm:flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Settings className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold">Select Support Type</h2>
-                  <p className="text-sm sm:text-base text-muted-foreground">Choose the type of support you need</p>
+                  <h2 className="text-2xl font-bold">Select Support Type</h2>
+                  <p className="text-base text-muted-foreground">Choose the type of support you need</p>
                 </div>
               </div>
             </div>
@@ -339,26 +340,30 @@ const SupportSelection = () => {
             {loadingTypes ? (
               <div className="text-center py-8">Loading support types...</div>
             ) : (
-              <div className="grid gap-4">
+              <div className="space-y-3">
                 {supportTypes?.map(type => (
                   <Card 
                     key={type.id} 
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedSupport === type.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.98] ${
+                      selectedSupport === type.id ? 'ring-2 ring-primary bg-primary/5 shadow-sm' : 'hover:bg-muted/50'
                     }`}
                     onClick={() => handleSupportTypeChange(type.id)}
                   >
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{type.name}</h3>
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base leading-tight">{type.name}</h3>
                           {type.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
+                            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{type.description}</p>
                           )}
                         </div>
-                        {selectedSupport === type.id && (
-                          <Check className="w-5 h-5 text-primary" />
-                        )}
+                        <div className="flex-shrink-0">
+                          {selectedSupport === type.id && (
+                            <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                              <Check className="w-4 h-4 text-primary-foreground" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -370,12 +375,36 @@ const SupportSelection = () => {
 
       case 1: // Category
         return (
-          <div className="space-y-6">
-            <div className="mb-8">
-              {/* Enhanced Progress Bar */}
-              <div className="bg-muted/30 rounded-xl p-6 mb-6">
-                {/* Step indicators with connecting line */}
-                <div className="flex items-center justify-between mb-4">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="mb-6 sm:mb-8">
+              {/* Mobile-First Progress Bar */}
+              <div className="bg-muted/30 rounded-xl p-3 sm:p-6 mb-4 sm:mb-6">
+                {/* Mobile: Simple current step indicator */}
+                <div className="block sm:hidden mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">{currentStep + 1}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">{STEPS[currentStep].title}</p>
+                        <p className="text-xs text-muted-foreground">{STEPS[currentStep].description}</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground font-medium">
+                      {currentStep + 1}/{STEPS.length}
+                    </div>
+                  </div>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-500 to-teal-600 rounded-full transition-all duration-700 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Desktop: Full step indicators */}
+                <div className="hidden sm:flex items-center justify-between mb-4">
                   {STEPS.map((step, index) => {
                     const StepIcon = step.icon;
                     const isActive = index === currentStep;
@@ -566,12 +595,12 @@ const SupportSelection = () => {
 
       case 2: // Details
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div className="mb-8">
               {/* Enhanced Progress Bar */}
-              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+              <div className="bg-muted/30 rounded-xl p-2 sm:p-6 mb-4 sm:mb-6">
                 {/* Step indicators with connecting line */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 overflow-x-auto">
                   {STEPS.map((step, index) => {
                     const StepIcon = step.icon;
                     const isActive = index === currentStep;
@@ -579,10 +608,10 @@ const SupportSelection = () => {
                     const isUpcoming = index > currentStep;
 
                     return (
-                      <div key={step.id} className="flex items-center">
+                      <div key={step.id} className="flex items-center min-w-0 flex-shrink-0">
                         <div className="flex flex-col items-center relative">
                           {/* Step Circle */}
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                          <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
                             isActive 
                               ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg shadow-orange-500/30 scale-110' 
                               : isCompleted 
@@ -590,25 +619,26 @@ const SupportSelection = () => {
                                 : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
                           }`}>
                             {isCompleted ? (
-                              <Check className="w-6 h-6" />
+                              <Check className="w-3 h-3 sm:w-6 sm:h-6" />
                             ) : (
-                              <StepIcon className="w-6 h-6" />
+                              <StepIcon className="w-3 h-3 sm:w-6 sm:h-6" />
                             )}
                           </div>
                           
                           {/* Step Label */}
-                          <div className="mt-3 text-center">
-                            <p className={`text-xs font-medium transition-colors ${
+                          <div className="mt-2 sm:mt-3 text-center max-w-[60px] sm:max-w-none">
+                            <p className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
                               isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
                             }`}>
-                              {step.title}
+                              <span className="hidden sm:inline">{step.title}</span>
+                              <span className="sm:hidden">{step.title.split(' ')[0]}</span>
                             </p>
                           </div>
                         </div>
                         
                         {/* Connecting Line */}
                         {index < STEPS.length - 1 && (
-                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                          <div className="flex-1 h-0.5 mx-1 sm:mx-4 mt-3 sm:mt-6 relative min-w-[20px] sm:min-w-[40px]">
                             <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
                             <div 
                               className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
@@ -704,12 +734,12 @@ const SupportSelection = () => {
 
       case 3: // Consultant Selection
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div className="mb-8">
               {/* Enhanced Progress Bar */}
-              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+              <div className="bg-muted/30 rounded-xl p-2 sm:p-6 mb-4 sm:mb-6">
                 {/* Step indicators with connecting line */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 overflow-x-auto">
                   {STEPS.map((step, index) => {
                     const StepIcon = step.icon;
                     const isActive = index === currentStep;
@@ -717,10 +747,10 @@ const SupportSelection = () => {
                     const isUpcoming = index > currentStep;
 
                     return (
-                      <div key={step.id} className="flex items-center">
+                      <div key={step.id} className="flex items-center min-w-0 flex-shrink-0">
                         <div className="flex flex-col items-center relative">
                           {/* Step Circle */}
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                          <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
                             isActive 
                               ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/30 scale-110' 
                               : isCompleted 
@@ -728,25 +758,26 @@ const SupportSelection = () => {
                                 : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
                           }`}>
                             {isCompleted ? (
-                              <Check className="w-6 h-6" />
+                              <Check className="w-3 h-3 sm:w-6 sm:h-6" />
                             ) : (
-                              <StepIcon className="w-6 h-6" />
+                              <StepIcon className="w-3 h-3 sm:w-6 sm:h-6" />
                             )}
                           </div>
                           
                           {/* Step Label */}
-                          <div className="mt-3 text-center">
-                            <p className={`text-xs font-medium transition-colors ${
+                          <div className="mt-2 sm:mt-3 text-center max-w-[60px] sm:max-w-none">
+                            <p className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
                               isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
                             }`}>
-                              {step.title}
+                              <span className="hidden sm:inline">{step.title}</span>
+                              <span className="sm:hidden">{step.title.split(' ')[0]}</span>
                             </p>
                           </div>
                         </div>
                         
                         {/* Connecting Line */}
                         {index < STEPS.length - 1 && (
-                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                          <div className="flex-1 h-0.5 mx-1 sm:mx-4 mt-3 sm:mt-6 relative min-w-[20px] sm:min-w-[40px]">
                             <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
                             <div 
                               className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
@@ -792,7 +823,7 @@ const SupportSelection = () => {
             </div>
 
             {/* Priority Selection - Quick Selector */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div className="space-y-4">
                 <div className=" from-orange-100 to-orange-200 border border-orange-300 rounded-lg p-4">
                   <Label className="text-base font-semibold flex items-center space-x-2 mb-3">
@@ -1162,12 +1193,12 @@ const SupportSelection = () => {
 
       case 4: // Review
         return (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <div className="mb-8">
               {/* Enhanced Progress Bar */}
-              <div className="bg-muted/30 rounded-xl p-6 mb-6">
+              <div className="bg-muted/30 rounded-xl p-2 sm:p-6 mb-4 sm:mb-6">
                 {/* Step indicators with connecting line */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 overflow-x-auto">
                   {STEPS.map((step, index) => {
                     const StepIcon = step.icon;
                     const isActive = index === currentStep;
@@ -1175,10 +1206,10 @@ const SupportSelection = () => {
                     const isUpcoming = index > currentStep;
 
                     return (
-                      <div key={step.id} className="flex items-center">
+                      <div key={step.id} className="flex items-center min-w-0 flex-shrink-0">
                         <div className="flex flex-col items-center relative">
                           {/* Step Circle */}
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
+                          <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 relative z-10 ${
                             isActive 
                               ? 'bg-gradient-to-r from-green-500 to-blue-600 text-white shadow-lg shadow-green-500/30 scale-110' 
                               : isCompleted 
@@ -1186,25 +1217,26 @@ const SupportSelection = () => {
                                 : 'bg-muted border-2 border-muted-foreground/20 text-muted-foreground'
                           }`}>
                             {isCompleted ? (
-                              <Check className="w-6 h-6" />
+                              <Check className="w-3 h-3 sm:w-6 sm:h-6" />
                             ) : (
-                              <StepIcon className="w-6 h-6" />
+                              <StepIcon className="w-3 h-3 sm:w-6 sm:h-6" />
                             )}
                           </div>
                           
                           {/* Step Label */}
-                          <div className="mt-3 text-center">
-                            <p className={`text-xs font-medium transition-colors ${
+                          <div className="mt-2 sm:mt-3 text-center max-w-[60px] sm:max-w-none">
+                            <p className={`text-[10px] sm:text-xs font-medium transition-colors leading-tight ${
                               isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
                             }`}>
-                              {step.title}
+                              <span className="hidden sm:inline">{step.title}</span>
+                              <span className="sm:hidden">{step.title.split(' ')[0]}</span>
                             </p>
                           </div>
                         </div>
                         
                         {/* Connecting Line */}
                         {index < STEPS.length - 1 && (
-                          <div className="flex-1 h-0.5 mx-4 mt-6 relative">
+                          <div className="flex-1 h-0.5 mx-1 sm:mx-4 mt-3 sm:mt-6 relative min-w-[20px] sm:min-w-[40px]">
                             <div className="absolute inset-0 bg-muted-foreground/20 rounded-full" />
                             <div 
                               className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
@@ -1327,10 +1359,10 @@ const SupportSelection = () => {
       description="Submit a new support request with our step-by-step wizard"
       showSidebar={true}
     >
-      <div className="max-w-4xl mx-auto px-2 sm:px-4">
+      <div className="max-w-4xl mx-auto px-1 sm:px-4">
         {/* Step Content */}
         <Card>
-          <CardContent className="p-3 sm:p-6 lg:p-8">
+          <CardContent className="p-2 sm:p-6 lg:p-8">
             {renderStepContent()}
 
             {/* Navigation Buttons */}

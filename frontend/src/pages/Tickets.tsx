@@ -48,7 +48,7 @@ const TicketRatingPreview: React.FC<{ ticketId: string }> = ({ ticketId }) => {
             className={`w-3 h-3 ${
               star <= Math.round(avgRating)
                 ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
+                : 'text-muted-foreground'
             }`}
           />
         ))}
@@ -82,7 +82,7 @@ const Tickets = () => {
     { value: 'InProgress', label: 'In Progress', color: 'bg-yellow-500' },
     { value: 'PendingCustomerAction', label: 'Pending Customer', color: 'bg-orange-500' },
     { value: 'TopicClosed', label: 'Topic Closed', color: 'bg-green-500' },
-    { value: 'Closed', label: 'Closed', color: 'bg-gray-500' },
+    { value: 'Closed', label: 'Closed', color: 'bg-muted' },
     { value: 'ReOpened', label: 'Re-Opened', color: 'bg-purple-500' }
   ];
 
@@ -179,12 +179,12 @@ const Tickets = () => {
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-2/3"></div>
                 </CardContent>
               </Card>
             ))}
@@ -339,7 +339,7 @@ const Tickets = () => {
 
       {/* Ticket Management Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
         <DialogTitle className="flex items-center space-x-2">
           <Settings className="w-5 h-5" />
@@ -355,58 +355,76 @@ const Tickets = () => {
           
           {selectedTicket && (
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className={`grid w-full text-xs sm:text-sm ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
-            <TabsTrigger value="details"><span className="hidden sm:inline">Ticket </span>Details</TabsTrigger>
-            <TabsTrigger value="history"><span className="hidden sm:inline">Status </span>History</TabsTrigger>
+          <TabsList className={`grid w-full text-xs sm:text-sm overflow-x-auto ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            <TabsTrigger value="details" className="min-w-0 px-2 sm:px-4">
+              <span className="truncate">
+                <span className="hidden sm:inline">Ticket </span>Details
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="history" className="min-w-0 px-2 sm:px-4">
+              <span className="truncate">
+                <span className="hidden sm:inline">Status </span>History
+              </span>
+            </TabsTrigger>
             {(userRole === 'consultant' || userRole === 'admin') && (
-              <TabsTrigger value="status"><span className="hidden sm:inline">Status </span>Manage</TabsTrigger>
+              <TabsTrigger value="status" className="min-w-0 px-2 sm:px-4">
+                <span className="truncate">
+                  <span className="hidden sm:inline">Status </span>Manage
+                </span>
+              </TabsTrigger>
             )}
-            <TabsTrigger value="ratings">
-              {userRole === 'customer' ? <><span className="hidden sm:inline">Rate </span>Consultant</> : <><span className="hidden sm:inline">Ratings & </span>Feedback</>}
+            <TabsTrigger value="ratings" className="min-w-0 px-2 sm:px-4">
+              <span className="truncate">
+                {userRole === 'customer' ? (
+                  <><span className="hidden sm:inline">Rate </span>Consultant</>
+                ) : (
+                  <><span className="hidden sm:inline">Ratings & </span>Feedback</>
+                )}
+              </span>
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
             {/* Ticket Details */}
             <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center justify-between">
-              <span>{selectedTicket.srIdentifier || `SR-${selectedTicket.id.substring(0, 8)}`}</span>
-              <Badge variant={getStatusVariant(selectedTicket.status)}>
-            {selectedTicket.status.replace(/([A-Z])/g, ' $1').trim()}
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="text-base sm:text-lg flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
+              <span className="break-all sm:break-normal">{selectedTicket.srIdentifier || `SR-${selectedTicket.id.substring(0, 8)}`}</span>
+              <Badge variant={getStatusVariant(selectedTicket.status)} className="self-start sm:self-center">
+                {selectedTicket.status.replace(/([A-Z])/g, ' $1').trim()}
               </Badge>
             </CardTitle>
-            <CardDescription>{selectedTicket.supportTypeName}</CardDescription>
+            <CardDescription className="text-sm">{selectedTicket.supportTypeName}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
-              <div>
-            <span className="font-medium text-muted-foreground">Created:</span>
-            <p>{new Date(selectedTicket.createdAt).toLocaleString()}</p>
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+              <div className="space-y-1">
+                <span className="font-medium text-muted-foreground text-xs sm:text-sm">Created:</span>
+                <p className="text-sm break-words">{new Date(selectedTicket.createdAt).toLocaleString()}</p>
               </div>
-              <div>
-            <span className="font-medium text-muted-foreground">Priority:</span>
-            <p>{selectedTicket.priority || 'Normal'}</p>
+              <div className="space-y-1">
+                <span className="font-medium text-muted-foreground text-xs sm:text-sm">Priority:</span>
+                <p className="text-sm">{selectedTicket.priority || 'Normal'}</p>
               </div>
-              <div>
-            <span className="font-medium text-muted-foreground">Customer:</span>
-            <p>{selectedTicket.createdByName || 'Unknown'}</p>
+              <div className="space-y-1">
+                <span className="font-medium text-muted-foreground text-xs sm:text-sm">Customer:</span>
+                <p className="text-sm break-words">{selectedTicket.createdByName || 'Unknown'}</p>
               </div>
-              <div>
-            <span className="font-medium text-muted-foreground">Consultant:</span>
-            <p>{selectedTicket.consultantName || 'Unassigned'}</p>
+              <div className="space-y-1">
+                <span className="font-medium text-muted-foreground text-xs sm:text-sm">Consultant:</span>
+                <p className="text-sm break-words">{selectedTicket.consultantName || 'Unassigned'}</p>
               </div>
             </div>
             
             {selectedTicket?.description && (
-              <div>
-                <span className="font-medium text-muted-foreground">Description:</span>
-                <div className="mt-1 text-sm bg-muted/20 rounded p-2 sm:p-3">
+              <div className="space-y-2">
+                <span className="font-medium text-muted-foreground text-xs sm:text-sm">Description:</span>
+                <div className="text-sm bg-muted/20 rounded p-2 sm:p-3">
                   <TruncatedText 
                     text={selectedTicket.description} 
-                    maxLength={200}
-                    className="text-sm"
-                    expandButtonClassName="h-6 px-2 py-1 text-xs"
+                    maxLength={150}
+                    className="text-sm leading-relaxed"
+                    expandButtonClassName="h-6 px-2 py-1 text-xs mt-2"
                     showMoreText="Show More"
                     showLessText="Show Less"
                   />
@@ -436,19 +454,19 @@ const Tickets = () => {
           <TabsContent value="ratings" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
             {/* Rating Management */}
             <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Star className="w-5 h-5" />
-              <span>{userRole === 'customer' ? 'Rate Your Consultant' : 'Ratings & Feedback'}</span>
-            </CardTitle>
-            <CardDescription>
-              {userRole === 'customer' 
-                ? 'Share your experience and rate your consultant\'s performance'
-                : 'View and manage customer ratings for consultant performance'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">{userRole === 'customer' ? 'Rate Your Consultant' : 'Ratings & Feedback'}</span>
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  {userRole === 'customer' 
+                    ? 'Share your experience and rate your consultant\'s performance'
+                    : 'View and manage customer ratings for consultant performance'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-6">
             <TicketRatingContainer
               orderId={selectedTicket.id}
               consultantId={selectedTicket.consultantId || ''}
@@ -464,39 +482,45 @@ const Tickets = () => {
           </TabsContent>
           
           {/* Action Buttons */}
-          <div className="flex justify-between pt-6 border-t">
-            <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row sm:justify-between pt-4 sm:pt-6 border-t space-y-3 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               {featureFlags?.messagingEnabled && (
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => {
                     setIsDialogOpen(false);
                     navigate(`/messages?orderId=${selectedTicket.id}`);
                   }}
+                  className="w-full sm:w-auto"
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Open Messages
+                  <span className="hidden sm:inline">Open </span>Messages
                 </Button>
               )}
               
               {selectedTicket && (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed') && (
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => {
                     // Focus on ratings tab  
                     const ratingsTab = document.querySelector('[data-value="ratings"]') as HTMLButtonElement;
                     ratingsTab?.click();
                   }}
+                  className="w-full sm:w-auto"
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
-                  View Analytics
+                  <span className="hidden sm:inline">View </span>Analytics
                 </Button>
               )}
             </div>
             
             <Button 
-              variant="secondary" 
+              variant="secondary"
+              size="sm"
               onClick={() => setIsDialogOpen(false)}
+              className="w-full sm:w-auto"
             >
               Close
             </Button>
@@ -526,7 +550,7 @@ const Tickets = () => {
               </div>
               
               {/* Quick comment templates */}
-              <div className="flex flex-wrap gap-1 mb-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                 {[
                   "Investigation completed, ready for implementation",
                   "Waiting for customer confirmation",
@@ -539,10 +563,10 @@ const Tickets = () => {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="text-xs h-6 px-2"
+                    className="text-xs h-8 px-2 justify-start truncate w-full"
                     onClick={() => setStatusComment(template)}
                   >
-                    {template.length > 25 ? template.substring(0, 25) + '...' : template}
+                    {template}
                   </Button>
                 ))}
               </div>
@@ -561,14 +585,18 @@ const Tickets = () => {
               </div>
             </div>
             
-            <div className="flex justify-end space-x-2">
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
               <Button 
                 variant="outline" 
                 onClick={() => setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button onClick={confirmStatusChange}>
+              <Button 
+                onClick={confirmStatusChange}
+                className="w-full sm:w-auto"
+              >
                 Update Status
               </Button>
             </div>

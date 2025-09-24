@@ -50,9 +50,9 @@ const statusOptions = [
   { 
     value: 'Closed', 
     label: 'Closed', 
-    color: 'bg-gray-500', 
-    textColor: 'text-gray-700',
-    bgColor: 'bg-gray-50',
+    color: 'bg-muted', 
+    textColor: 'text-muted-foreground',
+    bgColor: 'bg-muted/50',
     description: 'Ticket closed'
   },
   { 
@@ -109,32 +109,32 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   const canUpdate = isStatusChanged || hasComment;
 
   return (
-    <div className="space-y-6 p-2">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-4">
       {/* Status Change Section */}
       <div className="space-y-4">
         {/* Current vs New Status Display */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-muted/50 rounded-lg space-y-3 sm:space-y-0">
           <div className="flex flex-col items-center space-y-2 min-w-0">
-            <Label className="text-xs font-medium text-gray-600">Current Status</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Current Status</Label>
             <Badge 
               variant="secondary" 
-              className={`${getCurrentStatusInfo().bgColor} ${getCurrentStatusInfo().textColor} border-0 font-medium px-3 py-1 text-center`}
+              className={`${getCurrentStatusInfo().bgColor} ${getCurrentStatusInfo().textColor} border-0 font-medium px-3 py-1 text-center w-full sm:w-auto`}
             >
               {getCurrentStatusInfo().label}
             </Badge>
           </div>
           
           {isStatusChanged && (
-            <div className="flex items-center px-4">
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+            <div className="flex items-center justify-center px-4 sm:px-4">
+              <ArrowRight className="w-5 h-5 text-muted-foreground rotate-90 sm:rotate-0" />
             </div>
           )}
           
           {isStatusChanged && (
             <div className="flex flex-col items-center space-y-2 min-w-0">
-              <Label className="text-xs font-medium text-gray-600">New Status</Label>
+              <Label className="text-xs font-medium text-muted-foreground">New Status</Label>
               <Badge 
-                className={`${getSelectedStatusInfo().bgColor} ${getSelectedStatusInfo().textColor} border-0 font-medium px-3 py-1 text-center`}
+                className={`${getSelectedStatusInfo().bgColor} ${getSelectedStatusInfo().textColor} border-0 font-medium px-3 py-1 text-center w-full sm:w-auto`}
               >
                 {getSelectedStatusInfo().label}
               </Badge>
@@ -156,7 +156,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
                     <div className={`w-3 h-3 rounded-full ${option.color}`} />
                     <div className="flex flex-col">
                       <span className="font-medium">{option.label}</span>
-                      <span className="text-xs text-gray-500">{option.description}</span>
+                      <span className="text-xs text-muted-foreground">{option.description}</span>
                     </div>
                   </div>
                 </SelectItem>
@@ -169,21 +169,21 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
       {/* Comment Section */}
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <MessageSquare className="w-4 h-4 text-gray-600" />
+          <MessageSquare className="w-4 h-4 text-muted-foreground" />
           <Label className="text-sm font-medium">Add Comment</Label>
-          <span className="text-xs text-gray-500">(Optional)</span>
+          <span className="text-xs text-muted-foreground">(Optional)</span>
         </div>
         
         {/* Quick Comment Templates */}
         {isStatusChanged && (
           <div className="space-y-2">
-            <Label className="text-xs font-medium text-gray-600">Quick Templates</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <Label className="text-xs font-medium text-muted-foreground">Quick Templates</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs justify-start truncate"
+                className="h-9 sm:h-8 text-xs justify-start truncate w-full"
                 onClick={() => setComment("Investigation completed, issue has been resolved. Please verify the fix.")}
               >
                 Investigation completed
@@ -192,7 +192,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs justify-start truncate"
+                className="h-9 sm:h-8 text-xs justify-start truncate w-full"
                 onClick={() => setComment("Waiting for customer confirmation before proceeding with the next steps.")}
               >
                 Waiting for customer conf.
@@ -201,7 +201,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs justify-start truncate"
+                className="h-9 sm:h-8 text-xs justify-start truncate w-full"
                 onClick={() => setComment("Issue resolved, monitoring the system to ensure stability.")}
               >
                 Issue resolved, monitoring
@@ -210,7 +210,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs justify-start truncate"
+                className="h-9 sm:h-8 text-xs justify-start truncate w-full"
                 onClick={() => setComment("Requires system maintenance window to implement the fix safely.")}
               >
                 Requires system maintenance
@@ -219,7 +219,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs justify-start truncate"
+                className="h-9 sm:h-8 text-xs justify-start truncate w-full"
                 onClick={() => setComment("Escalating to specialist team for advanced technical analysis.")}
               >
                 Escalating to specialist
@@ -228,7 +228,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs justify-start truncate"
+                className="h-9 sm:h-8 text-xs justify-start truncate w-full"
                 onClick={() => setComment("Working on your request. Will update you with progress soon.")}
               >
                 Working on request
@@ -246,11 +246,11 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
             maxLength={1000}
             className="resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] w-full"
           />
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-gray-500">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-1 sm:space-y-0">
+            <p className="text-xs text-muted-foreground">
               This comment will be visible to both you and the customer in the ticket history
             </p>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground/70">
               {comment.length}/1000 characters
             </span>
           </div>

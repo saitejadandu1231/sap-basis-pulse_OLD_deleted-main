@@ -143,7 +143,7 @@ const Login = () => {
     try {
       // Call backend register endpoint directly
       const payload = { email, password, firstName, lastName, role: selectedRole };
-  const res = await apiFetch('auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await apiFetch('auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
       const error = res.ok ? null : { message: result?.error ?? 'Registration failed' };
       
@@ -189,14 +189,14 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-2 sm:p-4">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center relative z-10">
+      <div className="w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-4 lg:gap-8 items-center relative z-10">
         
         {/* Left side - Branding & Features */}
         <div className="hidden lg:block">
@@ -285,8 +285,9 @@ const Login = () => {
           </div>
 
           <Card className="glass-card border-border/50">
-            <Tabs defaultValue="signin" className="w-full">
-              <div className="p-1 bg-secondary/10 rounded-xl mb-6 border border-border/30">
+            <div className="p-3 sm:p-6">
+              <Tabs defaultValue="signin" className="w-full">
+                <div className="p-1 bg-secondary/10 rounded-xl mb-4 sm:mb-6 border border-border/30">
                 <TabsList className="grid w-full grid-cols-2 bg-transparent h-12 p-1">
                   <TabsTrigger 
                     value="signin" 
@@ -568,6 +569,7 @@ const Login = () => {
                 </CardContent>
               </TabsContent>
             </Tabs>
+            </div>
           </Card>
 
           <div className="text-center mt-6">

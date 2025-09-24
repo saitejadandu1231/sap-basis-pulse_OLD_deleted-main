@@ -200,17 +200,17 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           {/* Page Header */}
           {(title || description || actions) && (
             <div className="border-b bg-background/50 backdrop-blur">
-              <div className="flex items-center justify-between p-6">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-3 sm:p-6">
+                <div className="min-w-0 flex-1">
                   {title && (
-                    <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
                   )}
                   {description && (
-                    <p className="text-muted-foreground mt-1">{description}</p>
+                    <p className="text-muted-foreground mt-1 text-sm sm:text-base">{description}</p>
                   )}
                 </div>
                 {actions && (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-shrink-0">
                     {actions}
                   </div>
                 )}
@@ -219,7 +219,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           )}
 
           {/* Page Content */}
-          <div className={cn("p-6", className)}>
+          <div className={cn("p-3 sm:p-6", className)}>
             {children}
           </div>
         </main>
