@@ -55,13 +55,13 @@ const PageLayout: React.FC<PageLayoutProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center px-4">
+        <div className="flex h-16 items-center px-2 sm:px-4">
           {/* Mobile Menu Button */}
           {showSidebar && (
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden mr-2"
+              className="md:hidden mr-1 sm:mr-2"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               {sidebarOpen ? (
@@ -96,10 +96,10 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           </div>
 
           {/* Header Actions */}
-          <div className="flex items-center space-x-2 ml-auto">
+          <div className="flex items-center space-x-1 sm:space-x-2 ml-auto">
             {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-4 w-4" />
+            <Button variant="ghost" size="sm" className="relative px-2 sm:px-3">
+              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
               {unreadCount && unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -113,13 +113,13 @@ const PageLayout: React.FC<PageLayoutProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/messages')}
-                className="relative"
+                className="relative px-2 sm:px-3"
               >
-                <MessageSquare className="h-4 w-4" />
+                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline-block ml-1">Messages</span>
                 {unreadCount && unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-2 h-5 px-2">
-                    {unreadCount}
+                  <Badge variant="destructive" className="ml-1 sm:ml-2 h-4 sm:h-5 px-1 sm:px-2 text-xs">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </Badge>
                 )}
               </Button>
@@ -130,26 +130,27 @@ const PageLayout: React.FC<PageLayoutProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => navigate('/settings')}
+              className="px-2 sm:px-3"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline-block ml-1">Settings</span>
             </Button>
 
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            <Separator orientation="vertical" className="h-6" />
+            <Separator orientation="vertical" className="h-4 sm:h-6 hidden sm:block" />
 
             {/* User Menu */}
-            <div className="flex items-center space-x-2">
-              <div className="hidden sm:block text-right">
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <div className="hidden md:block text-right">
                 <p className="text-sm font-medium">{displayName}</p>
                 <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
               </div>
               
               {/* Avatar */}
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-sm">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-medium text-xs sm:text-sm">
                   {firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </span>
               </div>
@@ -158,9 +159,9 @@ const PageLayout: React.FC<PageLayoutProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground px-2 sm:px-3"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>

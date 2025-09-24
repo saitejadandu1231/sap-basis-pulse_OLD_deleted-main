@@ -104,8 +104,8 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
       {/* Navigation Header */}
       <header className="fixed top-0 w-full z-50 glass-card border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-primary to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">Y</span>
@@ -119,21 +119,24 @@ const Index = () => {
               <a href="#services" className="text-muted-foreground hover:text-foreground transition-colors">Services</a>
               <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">About</a>
             </nav>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <ThemeToggle />
               {user ? (
-                <Button onClick={() => navigate('/dashboard')} className="btn-glow">
-                  Dashboard
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                <Button onClick={() => navigate('/dashboard')} className="btn-glow text-sm sm:text-base px-3 sm:px-4">
+                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="sm:hidden">Go</span>
+                  <ArrowRight className="ml-1 sm:ml-2 w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
               ) : (
                 <>
-                  <Button variant="ghost" onClick={() => navigate('/login')}>
-                    Sign In
+                  <Button variant="ghost" onClick={() => navigate('/login')} className="text-sm sm:text-base px-2 sm:px-4">
+                    <span className="hidden sm:inline">Sign In</span>
+                    <span className="sm:hidden">Login</span>
                   </Button>
-                  <Button onClick={() => navigate('/login')} className="btn-glow">
-                    Get Started
-                    <ArrowRight className="ml-2 w-4 h-4" />
+                  <Button onClick={() => navigate('/login')} className="btn-glow text-sm sm:text-base px-3 sm:px-4">
+                    <span className="hidden sm:inline">Get Started</span>
+                    <span className="sm:hidden">Start</span>
+                    <ArrowRight className="ml-1 sm:ml-2 w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </>
               )}

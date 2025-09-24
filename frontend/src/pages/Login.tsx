@@ -49,6 +49,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin");
 
   // Redirect if already logged in
   useEffect(() => {
@@ -154,6 +155,12 @@ const Login = () => {
             description: "An account with this email already exists. Please sign in instead.",
             variant: "destructive"
           });
+          // Switch to signin tab and keep the email
+          setActiveTab("signin");
+          setPassword("");
+          setConfirmPassword("");
+          setFirstName("");
+          setLastName("");
         } else {
           toast({
             title: "Sign Up Failed",
@@ -166,7 +173,7 @@ const Login = () => {
 
       toast({
         title: "Account Created!",
-        description: "Please check your email to verify your account before signing in."
+        description: "Your account has been created successfully. You can now sign in."
       });
       
       // Clear form
@@ -176,6 +183,9 @@ const Login = () => {
       setFirstName("");
       setLastName("");
       setSelectedRole("customer");
+      
+      // Switch to signin tab
+      setActiveTab("signin");
       
     } catch (error: any) {
       toast({
@@ -285,7 +295,7 @@ const Login = () => {
           </div>
 
           <Card className="glass-card border-border/50">
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="p-1 bg-secondary/10 rounded-xl mb-6 border border-border/30">
                 <TabsList className="grid w-full grid-cols-2 bg-transparent h-12 p-1">
                   <TabsTrigger 

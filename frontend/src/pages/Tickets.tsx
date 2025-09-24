@@ -166,9 +166,10 @@ const Tickets = () => {
       description={userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets'}
       actions={
         userRole === 'customer' ? (
-          <Button onClick={() => navigate('/support')}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Ticket
+          <Button onClick={() => navigate('/support')} className="text-sm sm:text-base px-3 sm:px-4">
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">New Ticket</span>
+            <span className="sm:hidden">New</span>
           </Button>
         ) : null
       }
@@ -339,7 +340,7 @@ const Tickets = () => {
 
       {/* Ticket Management Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
         <DialogTitle className="flex items-center space-x-2">
           <Settings className="w-5 h-5" />
@@ -355,7 +356,7 @@ const Tickets = () => {
           
           {selectedTicket && (
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className={`grid w-full ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-4'}`}>
+          <TabsList className={`grid w-full text-xs sm:text-sm ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
             <TabsTrigger value="details">Ticket Details</TabsTrigger>
             <TabsTrigger value="history">Status History</TabsTrigger>
             {(userRole === 'consultant' || userRole === 'admin') && (
@@ -366,7 +367,7 @@ const Tickets = () => {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="details" className="space-y-6 mt-6">
+          <TabsContent value="details" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {/* Ticket Details */}
             <Card>
           <CardHeader>
@@ -417,13 +418,13 @@ const Tickets = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="history" className="space-y-6 mt-6">
+          <TabsContent value="history" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {/* Status History */}
             <StatusHistory orderId={selectedTicket.id} />
           </TabsContent>
           
           {(userRole === 'consultant' || userRole === 'admin') && (
-            <TabsContent value="status" className="space-y-6 mt-6">
+            <TabsContent value="status" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
               {/* Status Management */}
               <TicketStatusUpdater
             orderId={selectedTicket.id}
@@ -433,7 +434,7 @@ const Tickets = () => {
             </TabsContent>
           )}
           
-          <TabsContent value="ratings" className="space-y-6 mt-6">
+          <TabsContent value="ratings" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {/* Rating Management */}
             <Card>
           <CardHeader>
@@ -464,8 +465,8 @@ const Tickets = () => {
           </TabsContent>
           
           {/* Action Buttons */}
-          <div className="flex justify-between pt-6 border-t">
-            <div className="flex space-x-2">
+          <div className="flex flex-col sm:flex-row sm:justify-between pt-4 sm:pt-6 border-t space-y-2 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
               {featureFlags?.messagingEnabled && (
                 <Button
                   variant="outline"
@@ -473,9 +474,11 @@ const Tickets = () => {
                     setIsDialogOpen(false);
                     navigate(`/messages?orderId=${selectedTicket.id}`);
                   }}
+                  className="w-full sm:w-auto text-sm"
                 >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Open Messages
+                  <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Open Messages</span>
+                  <span className="sm:hidden">Messages</span>
                 </Button>
               )}
               
@@ -487,9 +490,11 @@ const Tickets = () => {
                     const ratingsTab = document.querySelector('[data-value="ratings"]') as HTMLButtonElement;
                     ratingsTab?.click();
                   }}
+                  className="w-full sm:w-auto text-sm"
                 >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  View Analytics
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">View Analytics</span>
+                  <span className="sm:hidden">Analytics</span>
                 </Button>
               )}
             </div>
@@ -497,6 +502,7 @@ const Tickets = () => {
             <Button 
               variant="secondary" 
               onClick={() => setIsDialogOpen(false)}
+              className="w-full sm:w-auto mt-2 sm:mt-0"
             >
               Close
             </Button>
@@ -508,7 +514,7 @@ const Tickets = () => {
 
       {/* Status Change Comment Dialog */}
       <Dialog open={statusChangeDialog.open} onOpenChange={(open) => !open && setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Update Ticket Status</DialogTitle>
             <DialogDescription>
@@ -561,14 +567,15 @@ const Tickets = () => {
               </div>
             </div>
             
-            <div className="flex justify-end space-x-2">
+            <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
               <Button 
                 variant="outline" 
                 onClick={() => setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
-              <Button onClick={confirmStatusChange}>
+              <Button onClick={confirmStatusChange} className="w-full sm:w-auto">
                 Update Status
               </Button>
             </div>
