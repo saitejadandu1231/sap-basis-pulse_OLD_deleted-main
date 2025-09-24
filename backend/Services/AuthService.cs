@@ -127,42 +127,56 @@ namespace SapBasisPulse.Api.Services
 
         public async Task<(bool Success, string? Error, AuthResponseDto? Response)> LoginAsync(LoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
-            if (user == null)
-                return (false, "Invalid credentials", null);
-
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
-            if (result == PasswordVerificationResult.Failed)
-                return (false, "Invalid credentials", null);
-
-            // In development, we can allow logins regardless of user status if configured
-            bool bypassStatusCheck = false;
-            if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development" && 
-                _config.GetSection("Auth")["BypassStatusCheckInDevelopment"]?.ToLower() == "true")
+            try
             {
-                bypassStatusCheck = true;
+                var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
+                if (user == null)
+                    return (false, "Invalid credentials", null);
+
+                var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+                if (result == PasswordVerificationResult.Failed)
+                    return (false, "Invalid credentials", null);
+
+                // In development, we can allow logins regardless of user status if configured
+                bool bypassStatusCheck = false;
+                if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development" && 
+                    _config.GetSection("Auth")["BypassStatusCheckInDevelopment"]?.ToLower() == "true")
+                {
+                    bypassStatusCheck = true;
+                }
+
+                if (!bypassStatusCheck && user.Status != UserStatus.Active)
+                {
+                    // If the user exists but is not active, provide a more helpful message
+                    if (user.Status == UserStatus.PendingVerification)
+                        return (false, "Please verify your email before logging in", null);
+                    else
+                        return (false, "User is not active", null);
+                }
+
+                var token = GenerateJwtToken(user);
+                return (true, null, new AuthResponseDto
+                {
+                    Token = token.Token,
+                    ExpiresAt = token.ExpiresAt,
+                    RefreshToken = "", // TODO: Implement refresh tokens
+                    Role = user.Role.ToString(),
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email
+                });
             }
-
-            if (!bypassStatusCheck && user.Status != UserStatus.Active)
+            catch (Exception ex)
             {
-                // If the user exists but is not active, provide a more helpful message
-                if (user.Status == UserStatus.PendingVerification)
-                    return (false, "Please verify your email before logging in", null);
-                else
-                    return (false, "User is not active", null);
+                // Provide detailed exception information for debugging (similar to RegisterAsync)
+                var errorDetails = $"Login Error: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorDetails += $" | Inner Exception: {ex.InnerException.Message}";
+                }
+                errorDetails += $" | Stack Trace: {ex.StackTrace}";
+                return (false, errorDetails, null);
             }
-
-            var token = GenerateJwtToken(user);
-            return (true, null, new AuthResponseDto
-            {
-                Token = token.Token,
-                ExpiresAt = token.ExpiresAt,
-                RefreshToken = "", // TODO: Implement refresh tokens
-                Role = user.Role.ToString(),
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email
-            });
         }
 
         public async Task<(bool Success, string? Error)> ConfirmEmailAsync(string token)

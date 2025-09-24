@@ -217,7 +217,9 @@ if (app.Environment.IsProduction())
     app.UseForwardedHeaders();
 }
 
-// Global exception handler that returns JSON instead of stack traces
+// TEMPORARY: Bypass custom error handling to show raw exceptions for debugging
+// Comment out custom error handler to get exact stack traces
+/*
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -252,6 +254,10 @@ app.UseExceptionHandler(errorApp =>
         await context.Response.WriteAsync(jsonResult);
     });
 });
+*/
+
+// TEMPORARY: Enable developer exception page in production for debugging
+app.UseDeveloperExceptionPage();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
