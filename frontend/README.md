@@ -17,7 +17,7 @@ This project is configured for deployment on Vercel with the following features:
 Required environment variables for deployment:
 
 ```bash
-VITE_API_URL=https://your-backend-api.railway.app
+VITE_API_URL=https://sap-basis-pulseolddeleted-main-production.up.railway.app/api/
 ```
 
 ## 🏗️ Build Configuration

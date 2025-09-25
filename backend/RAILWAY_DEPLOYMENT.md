@@ -72,7 +72,7 @@ if (app.Environment.IsProduction())
 
 ### 1. Update Vercel Environment Variables
 In your Vercel dashboard:
-- Update `VITE_API_URL` from `http://localhost:5274` to `https://your-api-name.railway.app`
+- Update `VITE_API_URL` from `http://localhost:5274` to `https://sap-basis-pulseolddeleted-main-production.up.railway.app/api/`
 - Redeploy frontend: `vercel --prod`
 
 ### 2. Test API Endpoints

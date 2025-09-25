@@ -62,7 +62,7 @@ SMTP_ENABLE_SSL=true
 ### Frontend (Vercel)
 ```bash
 # Backend API URL (Update after Railway deployment)
-VITE_API_URL=https://your-railway-app.railway.app
+VITE_API_URL=https://sap-basis-pulseolddeleted-main-production.up.railway.app/api/
 
 # Supabase Configuration
 VITE_SUPABASE_URL=https://zbsfyxakypvuftxntywm.supabase.co
@@ -109,7 +109,7 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 1. **Update Frontend Environment**
    Create `.env.production` with Railway backend URL:
    ```bash
-   VITE_API_URL=https://your-railway-app.railway.app
+   VITE_API_URL=https://sap-basis-pulseolddeleted-main-production.up.railway.app/api
    VITE_SUPABASE_URL=https://zbsfyxakypvuftxntywm.supabase.co
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
