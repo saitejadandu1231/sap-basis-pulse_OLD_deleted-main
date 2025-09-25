@@ -21,7 +21,7 @@ COPY . .
 WORKDIR "/src"
 
 # Build application
-RUN dotnet build "SapBasisPulse.Api.csproj" -c Release -o /app/build --no-restore
+RUN dotnet build "SapBasisPulse.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish
 # Publish application with optimizations
