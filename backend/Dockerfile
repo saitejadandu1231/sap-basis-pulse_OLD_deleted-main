@@ -28,8 +28,6 @@ FROM build AS publish
 RUN dotnet publish "SapBasisPulse.Api.csproj" \
     -c Release \
     -o /app/publish \
-    --no-restore \
-    --no-build \
     /p:UseAppHost=false \
     /p:PublishTrimmed=false \
     /p:PublishSingleFile=false
