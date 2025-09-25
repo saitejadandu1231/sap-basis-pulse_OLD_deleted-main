@@ -24,6 +24,7 @@ namespace SapBasisPulse.Api.Data
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
         public DbSet<StatusMaster> StatusMaster { get; set; }
         public DbSet<StatusChangeLog> StatusChangeLogs { get; set; }
+        public DbSet<SSOConfiguration> SSOConfigurations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -201,6 +202,21 @@ namespace SapBasisPulse.Api.Data
                 .WithMany(sm => sm.Orders)
                 .HasForeignKey(o => o.StatusId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // SSOConfiguration configuration
+        modelBuilder.Entity<SSOConfiguration>(entity =>
+        {
+            entity.HasKey(sso => sso.Id);
+            
+            entity.Property(sso => sso.GoogleEnabled)
+                .HasDefaultValue(false);
+                
+            entity.Property(sso => sso.AppleEnabled)
+                .HasDefaultValue(false);
+                
+            entity.Property(sso => sso.SupabaseEnabled)
+                .HasDefaultValue(false);
         });
 
         base.OnModelCreating(modelBuilder);

@@ -200,7 +200,7 @@ namespace SapBasisPulse.Api.Services
             }
         }
 
-        private (string Token, DateTime ExpiresAt) GenerateJwtToken(User user)
+        public (string Token, DateTime ExpiresAt) GenerateJwtToken(User user)
         {
             var jwtSettings = _config.GetSection("JwtSettings");
             var secret = jwtSettings["Secret"];

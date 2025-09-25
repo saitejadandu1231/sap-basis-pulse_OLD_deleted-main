@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\wwwroot\\.gitkeep",
+      "PackagePath": "staticwebassets\\.gitkeep"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.SapBasisPulse.Api.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.SapBasisPulse.Api.props",
+      "PackagePath": "build\\SapBasisPulse.Api.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.SapBasisPulse.Api.props",
+      "PackagePath": "buildMultiTargeting\\SapBasisPulse.Api.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.SapBasisPulse.Api.props",
+      "PackagePath": "buildTransitive\\SapBasisPulse.Api.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

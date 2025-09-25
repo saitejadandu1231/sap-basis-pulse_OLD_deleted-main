@@ -153,3 +153,14 @@ E:\sap\sap-basis-pulse_OLD_deleted-main\backend\obj\Debug\net8.0\ref\SapBasisPul
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\package-lock.json
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\SapBasisPulse.Api.staticwebassets.runtime.json
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\appsettings.Production.json
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Microsoft.IO.RecyclableMemoryStream.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\MimeMapping.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Supabase.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Supabase.Core.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Supabase.Functions.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Supabase.Gotrue.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Supabase.Postgrest.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Supabase.Realtime.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Supabase.Storage.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\System.Reactive.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\Websocket.Client.dll
