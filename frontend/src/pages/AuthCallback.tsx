@@ -60,7 +60,7 @@ const AuthCallback = () => {
       if (result.authData) {
         console.log('[AuthCallback] Auth data received, redirecting to dashboard');
         // Sign in successful
-        await signIn(result.authData.email, '', result.authData);
+  await signIn(result.authData.email, '', result.authData);
         navigate('/dashboard', { replace: true });
       }
     } catch (error: any) {
@@ -119,7 +119,7 @@ const AuthCallback = () => {
       }
 
       // Sign in successful
-      await signIn(result.authData.email, '', result.authData);
+  await signIn(result.authData.email, '', result.authData);
       toast.success('Account created successfully!');
       navigate('/dashboard', { replace: true });
     } catch (error: any) {

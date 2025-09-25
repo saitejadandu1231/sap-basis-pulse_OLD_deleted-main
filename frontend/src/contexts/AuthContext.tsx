@@ -27,7 +27,7 @@ interface AuthContextType {
   userRole: string | null;
   firstName: string | null;
   lastName: string | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, oauthData?: AuthResponse) => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
