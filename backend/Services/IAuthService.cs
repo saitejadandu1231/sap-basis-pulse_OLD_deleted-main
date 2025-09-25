@@ -11,5 +11,6 @@ namespace SapBasisPulse.Api.Services
     Task<(bool Success, string? Error, AuthResponseDto? Response)> AppleSsoAsync(string idToken);
     Task<(bool Success, string? Error)> ConfirmEmailAsync(string token);
     Task<(bool Success, string? Error, AuthResponseDto? Response)> RefreshTokenAsync(string refreshToken);
+    (string Token, DateTime ExpiresAt) GenerateJwtToken(SapBasisPulse.Api.Entities.User user);
     }
 }

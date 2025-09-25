@@ -1,11 +1,39 @@
 {
   "Version": 1,
-  "Hash": "DBi0t+UNFve3DdOKWxkhpywjYsQ7neKfMDNX1/MARmo=",
+  "Hash": "LdYrO9St/JzkiLr0jfiCk6GtLqa7l5n1Uh4fhoBnIeU=",
   "Source": "SapBasisPulse.Api",
   "BasePath": "_content/SapBasisPulse.Api",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
+  "DiscoveryPatterns": [
+    {
+      "Name": "SapBasisPulse.Api\\wwwroot",
+      "Source": "SapBasisPulse.Api",
+      "ContentRoot": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\wwwroot\\",
+      "BasePath": "_content/SapBasisPulse.Api",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\wwwroot\\.gitkeep",
+      "SourceId": "SapBasisPulse.Api",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\wwwroot\\",
+      "BasePath": "_content/SapBasisPulse.Api",
+      "RelativePath": ".gitkeep",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\.gitkeep"
+    }
+  ]
 }

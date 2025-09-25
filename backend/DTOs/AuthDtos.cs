@@ -30,4 +30,43 @@ namespace SapBasisPulse.Api.DTOs
         [Required]
         public string Password { get; set; }
     }
+
+    public class SupabaseCallbackDto
+    {
+        [Required]
+        public string AccessToken { get; set; }
+        
+        [Required]
+        public string Provider { get; set; }
+    }
+
+    public class CompleteSupabaseSignupDto
+    {
+        [Required]
+        public string SupabaseUserId { get; set; }
+        
+        [Required]
+        public string Role { get; set; }
+        
+        // Optional - will use Google-provided names if not specified
+        public string? FirstName { get; set; }
+        
+        // Optional - will use Google-provided names if not specified  
+        public string? LastName { get; set; }
+        
+        // Required - for secure account access
+        [Required]
+        public string Password { get; set; }
+        
+        // Required - confirm password
+        [Required]
+        public string ConfirmPassword { get; set; }
+    }
+
+    public class SSOConfigDto
+    {
+        public bool GoogleEnabled { get; set; }
+        public bool AppleEnabled { get; set; }
+        public bool SupabaseEnabled { get; set; }
+    }
 }

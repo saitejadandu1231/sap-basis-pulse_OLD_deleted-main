@@ -62,6 +62,10 @@ builder.Services.AddScoped<IConsultantAvailabilityService, ConsultantAvailabilit
 builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValidationService>();
+builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
+
+// Add HttpClient for Supabase API calls
+builder.Services.AddHttpClient();
 
 // Add development helper service
 builder.Services.AddScoped<DevHelperService>();
@@ -324,6 +328,9 @@ if (app.Environment.IsDevelopment())
             
             // Add or update Service Request Identifiers
             SapBasisPulse.Api.Utilities.ServiceRequestIdentifierManager.AddOrUpdateServiceRequestIdentifiers(scope.ServiceProvider);
+            
+            // Initialize default SSO configuration
+            await InitializeDefaultSSOConfigurationAsync(scope.ServiceProvider);
         }
         catch (Exception ex)
         {
@@ -354,6 +361,42 @@ app.MapGet("/weatherforecast", () =>
 .WithOpenApi();
 
 app.Run();
+
+static async Task InitializeDefaultSSOConfigurationAsync(IServiceProvider serviceProvider)
+{
+    using var scope = serviceProvider.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        var existingConfig = await context.SSOConfigurations.FirstOrDefaultAsync();
+        if (existingConfig == null)
+        {
+            var defaultConfig = new SSOConfiguration
+            {
+                SupabaseEnabled = true,
+                GoogleEnabled = true,
+                AppleEnabled = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            context.SSOConfigurations.Add(defaultConfig);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Default SSO configuration created with all providers enabled.");
+        }
+        else
+        {
+            logger.LogInformation("SSO configuration already exists. Current state: Supabase={SupabaseEnabled}, Google={GoogleEnabled}, Apple={AppleEnabled}", 
+                existingConfig.SupabaseEnabled, existingConfig.GoogleEnabled, existingConfig.AppleEnabled);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to initialize default SSO configuration.");
+    }
+}
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {

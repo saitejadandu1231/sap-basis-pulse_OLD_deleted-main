@@ -27,7 +27,7 @@ interface AuthContextType {
   userRole: string | null;
   firstName: string | null;
   lastName: string | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, oauthData?: AuthResponse) => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -95,8 +95,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, oauthData?: AuthResponse) => {
     try {
+      // If OAuth data is provided, use it directly without API call
+      if (oauthData) {
+        // Create user object from OAuth response
+        const userData: User = {
+          id: decodeJwt(oauthData.token).sub || '',
+          email: oauthData.email,
+          role: oauthData.role.toLowerCase(),
+          firstName: oauthData.firstName,
+          lastName: oauthData.lastName
+        };
+
+        // First save to localStorage to ensure persistence
+        localStorage.setItem('authToken', oauthData.token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Then update state
+        setToken(oauthData.token);
+        setUserRole(userData.role);
+        setFirstName(userData.firstName);
+        setLastName(userData.lastName);
+        setUser(userData);
+        
+        return { error: null };
+      }
+
+      // Regular email/password login
       const response = await apiFetch('auth/login', {
         method: 'POST',
         headers: {

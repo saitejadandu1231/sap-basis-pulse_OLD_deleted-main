@@ -158,5 +158,84 @@ namespace SapBasisPulse.Api.Controllers
             if (!success) return BadRequest(new { error });
             return Ok(response);
         }
+
+        [HttpPost("supabase-callback")]
+        public async Task<IActionResult> SupabaseCallback([FromBody] SupabaseCallbackDto dto, [FromServices] ISupabaseAuthService supabaseAuthService)
+        {
+            try
+            {
+                Console.WriteLine($"[SSO] Callback received - DTO: {dto != null}, AccessToken: {dto?.AccessToken?.Length ?? 0} chars, Provider: {dto?.Provider}");
+                
+                if (dto == null || string.IsNullOrEmpty(dto.AccessToken) || string.IsNullOrEmpty(dto.Provider))
+                {
+                    Console.WriteLine("[SSO] Callback validation failed - missing required fields");
+                    return BadRequest(new { error = "Access token and provider are required" });
+                }
+
+                var (success, error, response, requiresAdditionalInfo, supabaseUserId, firstName, lastName) = 
+                    await supabaseAuthService.HandleSupabaseAuthAsync(dto.AccessToken, dto.Provider);
+
+                if (!success)
+                {
+                    return BadRequest(new { error });
+                }
+
+                if (requiresAdditionalInfo)
+                {
+                    return Ok(new { requiresAdditionalInfo = true, supabaseUserId, firstName, lastName });
+                }
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Supabase authentication failed", details = ex.Message });
+            }
+        }
+
+        [HttpPost("complete-supabase-signup")]
+        public async Task<IActionResult> CompleteSupabaseSignup([FromBody] CompleteSupabaseSignupDto dto, [FromServices] ISupabaseAuthService supabaseAuthService)
+        {
+            try
+            {
+                if (dto == null || string.IsNullOrEmpty(dto.SupabaseUserId) || string.IsNullOrEmpty(dto.Role))
+                {
+                    return BadRequest(new { error = "SupabaseUserId and Role are required" });
+                }
+
+                // Validate role
+                if (!Enum.TryParse<UserRole>(dto.Role, out _))
+                {
+                    return BadRequest(new { error = "Invalid role specified" });
+                }
+
+                // Validate required password
+                if (string.IsNullOrWhiteSpace(dto.Password))
+                    return BadRequest(new { error = "Password is required" });
+                    
+                if (string.IsNullOrWhiteSpace(dto.ConfirmPassword))
+                    return BadRequest(new { error = "Password confirmation is required" });
+                
+                if (dto.Password != dto.ConfirmPassword)
+                    return BadRequest(new { error = "Passwords do not match" });
+                
+                if (dto.Password.Length < 6)
+                    return BadRequest(new { error = "Password must be at least 6 characters long" });
+
+                var (success, error, response) = 
+                    await supabaseAuthService.CompleteSupabaseSignupAsync(dto.SupabaseUserId, dto.Role, dto.FirstName, dto.LastName, dto.Password);
+
+                if (!success)
+                {
+                    return BadRequest(new { error });
+                }
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to complete Supabase signup", details = ex.Message });
+            }
+        }
     }
 }

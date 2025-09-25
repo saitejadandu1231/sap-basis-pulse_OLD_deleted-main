@@ -18,11 +18,13 @@ import { MessagingPage } from "./pages/Messaging";
 import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
 import NotFound from "./pages/NotFound";
 import Tickets from "./pages/Tickets";
+import AuthCallback from "./pages/AuthCallback";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import AdminUsers from "./pages/admin/Users";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSSOSettings from "./pages/AdminSSOSettings";
 import "@/lib/pwa"; // Initialize PWA functionality
 
 const queryClient = new QueryClient();
@@ -38,6 +40,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
@@ -86,6 +89,11 @@ const App = () => (
             <Route path="/admin/settings" element={
               <ProtectedRoute>
                 <AdminSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/sso-settings" element={
+              <ProtectedRoute>
+                <AdminSSOSettings />
               </ProtectedRoute>
             } />
             <Route path="/messages" element={

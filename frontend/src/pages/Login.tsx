@@ -28,6 +28,7 @@ import {
   Building2
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import SSOButtons from "@/components/SSOButtons";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -317,6 +318,18 @@ const Login = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* SSO Buttons */}
+                  <SSOButtons disabled={loading} />
+                  
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                    </div>
+                  </div>
+                  
                   <form onSubmit={handleSignIn} className="space-y-6">
                     <div className="space-y-2">
                       <Label htmlFor="signin-email" className="text-sm font-medium">Email Address</Label>
@@ -387,6 +400,18 @@ const Login = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* SSO Buttons */}
+                  <SSOButtons disabled={loading} />
+                  
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                    </div>
+                  </div>
+                  
                   <form onSubmit={handleSignUp} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
