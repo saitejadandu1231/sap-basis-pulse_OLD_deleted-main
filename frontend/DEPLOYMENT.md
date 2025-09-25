@@ -15,7 +15,7 @@
 
 #### Environment Variables:
 ```bash
-VITE_API_URL=http://localhost:5274  # Will be updated after backend deployment
+VITE_API_URL=https://sap-basis-pulseolddeleted-main-production.up.railway.app/api/  # Will be updated after backend deployment
 ```
 
 #### Vercel Settings:
