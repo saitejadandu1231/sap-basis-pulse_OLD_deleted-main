@@ -25,6 +25,11 @@ import AdminUsers from "./pages/admin/Users";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSSOSettings from "./pages/AdminSSOSettings";
+import ContactUs from "./pages/ContactUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CancellationRefundPolicy from "./pages/CancellationRefundPolicy";
+import ShippingDeliveryPolicy from "./pages/ShippingDeliveryPolicy";
+import TermsConditions from "./pages/TermsConditions";
 import "@/lib/pwa"; // Initialize PWA functionality
 
 const queryClient = new QueryClient();
@@ -41,6 +46,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/contact-us" element={<ContactUs />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/cancellation-refund-policy" element={<CancellationRefundPolicy />} />
+            <Route path="/shipping-delivery-policy" element={<ShippingDeliveryPolicy />} />
+            <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
