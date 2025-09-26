@@ -30,6 +30,9 @@ import {
     useCreateSupportRequest,
     useAvailableConsultants 
 } from '@/hooks/useSupport';
+// payment creation is deferred until consultant closes the ticket (pay-on-close)
+// We still show the computed amount in the review step, but do not create Razorpay orders here
+import { useConsultantPublicProfile } from '@/hooks/useConsultantProfile';
 import { useValidateServiceRequestIdentifier } from '@/hooks/useServiceRequestIdentifier';
 
 const priorityOptions = [
@@ -108,6 +111,9 @@ const SupportSelection = () => {
     endDate
   );
   const timeSlots = useMemo(() => selectedConsultant ? timeSlotsData : [], [selectedConsultant, timeSlotsData]);
+
+  // Load consultant public profile to get hourly rate when a consultant is selected
+  const { data: consultantProfile } = useConsultantPublicProfile(selectedConsultant || null);
 
   const createRequest = useCreateSupportRequest();
 
@@ -219,7 +225,7 @@ const SupportSelection = () => {
     }
 
     try {
-      await createRequest.mutateAsync({
+      const created = await createRequest.mutateAsync({
         supportTypeId: selectedSupport,
         supportCategoryId: selectedCategory,
         supportSubOptionId: selectedSubOption || undefined,
@@ -229,7 +235,10 @@ const SupportSelection = () => {
         consultantId: selectedConsultant,
         timeSlotId: selectedTimeSlot
       });
-      toast.success('Support request created successfully!');
+
+      // Pay-on-close flow: do not create Razorpay order or open checkout now.
+      // The customer will be charged when the consultant closes the ticket.
+      toast.success('Support request submitted. You will be asked to pay once the consultant closes the ticket.');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Error creating support request:', error);
@@ -1340,6 +1349,31 @@ const SupportSelection = () => {
                       )}
                     </div>
                   </div>
+                </div>
+                {/* Payment note for single-slot v1 */}
+                <div className="flex justify-between py-2 border-t">
+                  <span className="font-medium">Payment:</span>
+                  <span className="text-muted-foreground">
+                    {(() => {
+                      try {
+                        if (!selectedTimeSlotObj || !consultantProfile) {
+                          return 'You’ll be asked to pay to confirm this slot';
+                        }
+                        const start = new Date(selectedTimeSlotObj.slotStartTime).getTime();
+                        const end = new Date(selectedTimeSlotObj.slotEndTime).getTime();
+                        const minutes = Math.max(0, Math.round((end - start) / 60000));
+                        const hours = minutes / 60;
+                        const rate = Number(consultantProfile.hourlyRate || 0);
+                        if (!rate || hours <= 0) {
+                          return 'You’ll be asked to pay to confirm this slot';
+                        }
+                        const amount = rate * hours;
+                        return `You’ll be asked to pay ₹${amount.toFixed(2)} (INR) to confirm this ${minutes} min slot`;
+                      } catch {
+                        return 'You’ll be asked to pay to confirm this slot';
+                      }
+                    })()}
+                  </span>
                 </div>
               </CardContent>
             </Card>

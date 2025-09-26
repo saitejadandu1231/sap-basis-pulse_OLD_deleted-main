@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useUpdateTicketStatus } from '@/hooks/useSupport';
+import { useCreatePaymentOrderOnClose } from '@/hooks/usePayments';
 import { toast } from 'sonner';
 import { ArrowRight, MessageSquare, CheckCircle } from 'lucide-react';
 
@@ -73,6 +74,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
   const [comment, setComment] = React.useState('');
   const updateStatus = useUpdateTicketStatus();
+  const createOrderOnClose = useCreatePaymentOrderOnClose();
 
   const handleStatusUpdate = async () => {
     if (selectedStatus === currentStatus && !comment.trim()) {
@@ -86,6 +88,17 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
         status: selectedStatus as any,
         comment: comment.trim() || undefined
       });
+
+      // If consultant closed the ticket, trigger create-order-on-close
+      if ((selectedStatus === 'Closed' || selectedStatus === 'TopicClosed') && createOrderOnClose) {
+        try {
+          await createOrderOnClose.mutateAsync({ orderId });
+          toast.success('Created payment order for this ticket. Customer will be asked to pay.');
+        } catch (err) {
+          console.error('Failed to create payment order on close:', err);
+          toast.error('Status updated but failed to create payment order. Please retry from admin panel.');
+        }
+      }
 
       toast.success('Ticket status updated successfully');
       setComment(''); // Clear comment after successful update

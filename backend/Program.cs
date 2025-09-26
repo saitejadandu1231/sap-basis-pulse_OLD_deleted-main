@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.Entities;
 using SapBasisPulse.Api.Services;
+using SapBasisPulse.Api.Services.Payments;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -31,6 +32,9 @@ if (builder.Environment.IsProduction())
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Payments: HttpClient and payment service
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IPaymentService, RazorpayPaymentService>();
 // CORS configuration for development and production
 builder.Services.AddCors(options =>
 {
@@ -64,8 +68,7 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValidationService>();
 builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
 
-// Add HttpClient for Supabase API calls
-builder.Services.AddHttpClient();
+// Add HttpClient for Supabase API calls (already added above)
 
 // Add development helper service
 builder.Services.AddScoped<DevHelperService>();
@@ -219,6 +222,26 @@ var app = builder.Build();
 if (app.Environment.IsProduction())
 {
     app.UseForwardedHeaders();
+}
+
+// Optionally apply EF Core migrations automatically (useful for Railway)
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        // Auto-migrate in production by default; can be disabled via env/config AutoMigrate=false
+        var autoMigrate = app.Configuration.GetValue<bool>("AutoMigrate", app.Environment.IsProduction());
+        if (autoMigrate)
+        {
+            db.Database.Migrate();
+            Console.WriteLine("[Startup] Applied pending EF Core migrations");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Startup] Migration apply failed: {ex.Message}");
 }
 
 // TEMPORARY: Bypass custom error handling to show raw exceptions for debugging

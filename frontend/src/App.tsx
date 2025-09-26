@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SupportSelection from "./pages/SupportSelection";
+import PaymentPage from "./pages/Payment";
 import ConsultantAvailability from "./pages/ConsultantAvailability";
 import AdminDashboard from "./pages/AdminDashboard";
 import { MessagingPage } from "./pages/Messaging";
@@ -49,6 +50,11 @@ const App = () => (
             <Route path="/support" element={
               <ProtectedRoute>
                 <SupportSelection />
+              </ProtectedRoute>
+            } />
+            <Route path="/payment" element={
+              <ProtectedRoute>
+                <PaymentPage />
               </ProtectedRoute>
             } />
             <Route path="/tickets" element={

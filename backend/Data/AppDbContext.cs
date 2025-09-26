@@ -25,6 +25,9 @@ namespace SapBasisPulse.Api.Data
         public DbSet<StatusMaster> StatusMaster { get; set; }
         public DbSet<StatusChangeLog> StatusChangeLogs { get; set; }
         public DbSet<SSOConfiguration> SSOConfigurations { get; set; }
+    public DbSet<Payment> Payments { get; set; }
+    public DbSet<ConsultantProfile> ConsultantProfiles { get; set; }
+    public DbSet<AdminPaymentSettings> AdminPaymentSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -217,6 +220,45 @@ namespace SapBasisPulse.Api.Data
                 
             entity.Property(sso => sso.SupabaseEnabled)
                 .HasDefaultValue(false);
+        });
+
+        // Payment configuration
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.HasIndex(p => p.OrderId);
+            entity.HasIndex(p => p.RazorpayOrderId).IsUnique();
+            entity.Property(p => p.Currency).HasMaxLength(5).HasDefaultValue("INR");
+            entity.Property(p => p.RazorpayOrderId).HasMaxLength(100).IsRequired();
+            entity.Property(p => p.RazorpayPaymentId).HasMaxLength(100);
+            entity.Property(p => p.RazorpaySignature).HasMaxLength(256);
+
+            entity.HasOne(p => p.Order)
+                .WithMany()
+                .HasForeignKey(p => p.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ConsultantProfile configuration (1:1 with User)
+        modelBuilder.Entity<ConsultantProfile>(entity =>
+        {
+            entity.HasKey(cp => cp.ConsultantId);
+            entity.Property(cp => cp.UPIId).HasMaxLength(100);
+            entity.Property(cp => cp.HourlyRate).HasPrecision(18, 2);
+
+            entity.HasOne(cp => cp.Consultant)
+                .WithOne()
+                .HasForeignKey<ConsultantProfile>(cp => cp.ConsultantId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AdminPaymentSettings configuration
+        modelBuilder.Entity<AdminPaymentSettings>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Currency).HasMaxLength(5).HasDefaultValue("INR");
+            entity.Property(s => s.PlatformCommissionPercent).HasPrecision(5, 2).HasDefaultValue(10m);
+            entity.Property(s => s.RazorpayKeyIdHint).HasMaxLength(50);
         });
 
         base.OnModelCreating(modelBuilder);

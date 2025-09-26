@@ -299,18 +299,34 @@ const Tickets = () => {
                         </Button>
                       )}
                       
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTicketClick(ticket);
-                        }}
-                        className="flex-1"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        {userRole === 'customer' ? 'View & Rate' : 'Details'}
-                      </Button>
+                      <div className="flex-1 grid grid-cols-2 gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTicketClick(ticket);
+                          }}
+                          className="w-full"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          {userRole === 'customer' ? 'View & Rate' : 'Details'}
+                        </Button>
+                        {userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'TopicClosed') && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Navigate to payment page where the user can complete payment for a created order
+                              navigate(`/payment?orderId=${ticket.id}`);
+                            }}
+                            className="w-full"
+                          >
+                            Pay
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

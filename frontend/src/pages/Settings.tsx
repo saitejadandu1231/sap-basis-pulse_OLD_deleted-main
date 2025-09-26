@@ -8,10 +8,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { User, Bell, Shield, Palette, Globe, Sun, Moon, Monitor } from 'lucide-react';
+import { User, Bell, Shield, Palette, Globe, Sun, Moon, Monitor, IndianRupee } from 'lucide-react';
+import { useConsultantSelfProfile, useUpdateConsultantSelfProfile } from '@/hooks/useConsultantProfile';
+import { toast } from 'sonner';
 
 const Settings = () => {
   const { user, userRole, firstName, lastName } = useAuth();
+  const isConsultant = userRole?.toLowerCase() === 'consultant';
+  const { data: profile, isLoading: loadingProfile } = useConsultantSelfProfile();
+  const updateProfile = useUpdateConsultantSelfProfile();
+  const [rate, setRate] = React.useState<string>('');
+  const [upi, setUpi] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (profile) {
+      setRate(profile.hourlyRate?.toString() || '');
+      setUpi(profile.upiId || '');
+    }
+  }, [profile]);
   const { theme, setTheme } = useTheme();
 
   const themeOptions = [
@@ -41,6 +55,69 @@ const Settings = () => {
       description="Manage your account settings and preferences"
     >
       <div className="space-y-6">
+        {/* Consultant Rates & Payouts */}
+        {isConsultant && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <IndianRupee className="w-5 h-5 mr-2" />
+                Rates & Payouts
+              </CardTitle>
+              <CardDescription>
+                Set your hourly rate and UPI ID for payouts. Customers will see your rate on booking.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <Label htmlFor="hourlyRate">Hourly Rate (INR)</Label>
+                  <Input
+                    id="hourlyRate"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={0.01}
+                    placeholder="e.g. 1500"
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    disabled={loadingProfile || updateProfile.isPending}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">This is used to calculate price for booked slots.</p>
+                </div>
+                <div>
+                  <Label htmlFor="upi">UPI ID (for payouts)</Label>
+                  <Input
+                    id="upi"
+                    placeholder="e.g. name@bank"
+                    value={upi}
+                    onChange={(e) => setUpi(e.target.value)}
+                    disabled={loadingProfile || updateProfile.isPending}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={async () => {
+                    const val = parseFloat(rate || '0');
+                    if (isNaN(val) || val <= 0) {
+                      toast.error('Please enter a valid hourly rate greater than 0');
+                      return;
+                    }
+                    try {
+                      await updateProfile.mutateAsync({ hourlyRate: val, upiId: upi || null });
+                      toast.success('Rates & payouts updated');
+                    } catch (e: any) {
+                      toast.error(e?.message || 'Failed to update');
+                    }
+                  }}
+                  disabled={loadingProfile || updateProfile.isPending}
+                >
+                  {updateProfile.isPending ? 'Saving…' : 'Save'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {/* Profile Settings */}
         <Card>
           <CardHeader>

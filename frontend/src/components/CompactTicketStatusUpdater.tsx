@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateTicketStatus } from '@/hooks/useSupport';
 import { toast } from 'sonner';
+import { useCreatePaymentOrderOnClose } from '@/hooks/usePayments';
 
 interface CompactTicketStatusUpdaterProps {
   orderId: string;
@@ -26,6 +27,7 @@ const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
 }) => {
   const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
   const updateStatus = useUpdateTicketStatus();
+  const createOrderOnClose = useCreatePaymentOrderOnClose();
 
   const handleStatusUpdate = async () => {
     if (selectedStatus === currentStatus) {
@@ -38,6 +40,17 @@ const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
         orderId,
         status: selectedStatus as any
       });
+
+      // If ticket closed, create payment order
+      if (selectedStatus === 'Closed' || selectedStatus === 'TopicClosed') {
+        try {
+          await createOrderOnClose.mutateAsync({ orderId });
+          toast.success('Created payment order for this ticket. Customer will be asked to pay.');
+        } catch (err) {
+          console.error('Failed to create payment order on close:', err);
+          toast.error('Status updated but failed to create payment order.');
+        }
+      }
 
       toast.success('Ticket status updated successfully');
       onStatusUpdate?.(selectedStatus);
