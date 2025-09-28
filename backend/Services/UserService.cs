@@ -41,7 +41,8 @@ namespace SapBasisPulse.Api.Services
                     FirstName = u.FirstName,
                     LastName = u.LastName,
                     Role = u.Role.ToString(),
-                    Status = u.Status.ToString()
+                    Status = u.Status.ToString(),
+                    HourlyRate = u.HourlyRate
                 })
                 .ToListAsync();
         }
@@ -79,7 +80,8 @@ namespace SapBasisPulse.Api.Services
                         .Average(r => (double?)((r.CommunicationProfessionalism + r.ResolutionQuality + r.ResponseTime) / 3.0)),
                     TotalRatings = _context.TicketRatings
                         .Where(r => r.RatedUserId == u.Id && r.RatingForRole == "consultant")
-                        .Count()
+                        .Count(),
+                    HourlyRate = u.HourlyRate
                 })
                 .OrderByDescending(u => u.AverageRating ?? 0)
                 .ThenByDescending(u => u.TotalRatings)
@@ -98,7 +100,8 @@ namespace SapBasisPulse.Api.Services
                 FirstName = u.FirstName,
                 LastName = u.LastName,
                 Role = u.Role.ToString(),
-                Status = u.Status.ToString()
+                Status = u.Status.ToString(),
+                HourlyRate = u.HourlyRate
             };
         }
 
@@ -154,6 +157,22 @@ namespace SapBasisPulse.Api.Services
             var user = await _context.Users.FindAsync(id);
             if (user == null) return (false, "User not found");
             _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return (true, null);
+        }
+
+        public async Task<(bool Success, string? Error)> UpdateHourlyRateAsync(Guid userId, decimal hourlyRate)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return (false, "User not found");
+            
+            if (user.Role != UserRole.Consultant) 
+                return (false, "Only consultants can set hourly rates");
+            
+            if (hourlyRate <= 0) 
+                return (false, "Hourly rate must be greater than zero");
+            
+            user.HourlyRate = hourlyRate;
             await _context.SaveChangesAsync();
             return (true, null);
         }

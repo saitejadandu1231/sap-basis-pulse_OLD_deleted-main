@@ -41,6 +41,7 @@ namespace SapBasisPulse.Api.DTOs
         public string LastName { get; set; }
         public string Role { get; set; }
         public string Status { get; set; }
+        public decimal? HourlyRate { get; set; }
     }
 
     public class ConsultantWithRatingDto
@@ -53,5 +54,6 @@ namespace SapBasisPulse.Api.DTOs
         public string Status { get; set; }
         public double? AverageRating { get; set; }
         public int TotalRatings { get; set; }
+        public decimal? HourlyRate { get; set; }
     }
 }

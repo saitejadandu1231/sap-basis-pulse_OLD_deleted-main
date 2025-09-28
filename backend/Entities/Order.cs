@@ -28,8 +28,14 @@ namespace SapBasisPulse.Api.Entities
         public string Description { get; set; }
         public string SrIdentifier { get; set; }
         public string Priority { get; set; }
-    public Guid? TimeSlotId { get; set; }
-    public ConsultantAvailabilitySlot TimeSlot { get; set; }
+        
+        // Time slots - now supporting multiple slots
+        public ICollection<OrderTimeSlot> OrderTimeSlots { get; set; } = new List<OrderTimeSlot>();
+        
+        // Legacy single time slot for backward compatibility (can be removed later)
+        public Guid? TimeSlotId { get; set; }
+        public ConsultantAvailabilitySlot TimeSlot { get; set; }
+        
         public Guid CreatedByUserId { get; set; }
         public User CreatedByUser { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -40,6 +46,13 @@ namespace SapBasisPulse.Api.Entities
         public StatusMaster Status { get; set; } = null!; // Navigation property
         
         public DateTime? LastUpdated { get; set; }
+        
+        // Payment fields
+        public decimal TotalAmount { get; set; } = 0; // Total amount to be paid
+        public string PaymentStatus { get; set; } = "Pending"; // Pending, Paid, Failed
+        public string? RazorpayOrderId { get; set; } // Razorpay order ID
+        public string? RazorpayPaymentId { get; set; } // Razorpay payment ID
+        public DateTime? PaymentCompletedAt { get; set; } // When payment was completed
         
         // Navigation properties
         public ICollection<StatusChangeLog> StatusChangeLogs { get; set; } = new List<StatusChangeLog>();

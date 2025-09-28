@@ -8,6 +8,7 @@ interface User {
   role: string;
   firstName: string;
   lastName: string;
+  hourlyRate?: number;
 }
 
 interface AuthResponse {
@@ -30,6 +31,7 @@ interface AuthContextType {
   signIn: (email: string, password: string, oauthData?: AuthResponse) => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -99,14 +101,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // If OAuth data is provided, use it directly without API call
       if (oauthData) {
-        // Create user object from OAuth response
-        const userData: User = {
-          id: decodeJwt(oauthData.token).sub || '',
-          email: oauthData.email,
-          role: oauthData.role.toLowerCase(),
-          firstName: oauthData.firstName,
-          lastName: oauthData.lastName
-        };
+        // Fetch full user data including hourlyRate
+        const userResponse = await apiFetch(`users/${decodeJwt(oauthData.token).sub}`, {
+          headers: {
+            'Authorization': `Bearer ${oauthData.token}`,
+          },
+        });
+        
+        let userData: User;
+        if (userResponse.ok) {
+          const fullUserData = await userResponse.json();
+          userData = {
+            id: fullUserData.id,
+            email: fullUserData.email,
+            role: fullUserData.role.toLowerCase(),
+            firstName: fullUserData.firstName,
+            lastName: fullUserData.lastName,
+            hourlyRate: fullUserData.hourlyRate
+          };
+        } else {
+          // Fallback to basic user data from OAuth response
+          userData = {
+            id: decodeJwt(oauthData.token).sub || '',
+            email: oauthData.email,
+            role: oauthData.role.toLowerCase(),
+            firstName: oauthData.firstName,
+            lastName: oauthData.lastName
+          };
+        }
 
         // First save to localStorage to ensure persistence
         localStorage.setItem('authToken', oauthData.token);
@@ -138,14 +160,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const authData: AuthResponse = await response.json();
       
-      // Create user object from response
-      const userData: User = {
-        id: decodeJwt(authData.token).sub || '',
-        email: authData.email,
-        role: authData.role.toLowerCase(),
-        firstName: authData.firstName,
-        lastName: authData.lastName
-      };
+      // Fetch full user data including hourlyRate
+      const userResponse = await apiFetch(`users/${decodeJwt(authData.token).sub}`, {
+        headers: {
+          'Authorization': `Bearer ${authData.token}`,
+        },
+      });
+      
+      let userData: User;
+      if (userResponse.ok) {
+        const fullUserData = await userResponse.json();
+        userData = {
+          id: fullUserData.id,
+          email: fullUserData.email,
+          role: fullUserData.role.toLowerCase(),
+          firstName: fullUserData.firstName,
+          lastName: fullUserData.lastName,
+          hourlyRate: fullUserData.hourlyRate
+        };
+      } else {
+        // Fallback to basic user data from auth response
+        userData = {
+          id: decodeJwt(authData.token).sub || '',
+          email: authData.email,
+          role: authData.role.toLowerCase(),
+          firstName: authData.firstName,
+          lastName: authData.lastName
+        };
+      }
 
       // First save to localStorage to ensure persistence
       localStorage.setItem('authToken', authData.token);
@@ -195,6 +237,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
   };
 
+  const refreshUser = async () => {
+    if (!token || !user) return;
+
+    try {
+      const userResponse = await apiFetch(`users/${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (userResponse.ok) {
+        const fullUserData = await userResponse.json();
+        const updatedUserData: User = {
+          id: fullUserData.id,
+          email: fullUserData.email,
+          role: fullUserData.role.toLowerCase(),
+          firstName: fullUserData.firstName,
+          lastName: fullUserData.lastName,
+          hourlyRate: fullUserData.hourlyRate
+        };
+
+        // Update localStorage
+        localStorage.setItem('user', JSON.stringify(updatedUserData));
+
+        // Update state
+        setUser(updatedUserData);
+        setUserRole(updatedUserData.role);
+        setFirstName(updatedUserData.firstName);
+        setLastName(updatedUserData.lastName);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  };
+
   const value = {
     user,
     token,
@@ -205,6 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signUp,
     signOut,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

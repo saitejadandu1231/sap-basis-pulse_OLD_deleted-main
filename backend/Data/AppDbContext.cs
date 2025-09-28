@@ -11,6 +11,7 @@ namespace SapBasisPulse.Api.Data
         public DbSet<ConsultantAvailabilitySlot> ConsultantAvailabilitySlots { get; set; }
         public DbSet<CustomerChoice> CustomerChoices { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderTimeSlot> OrderTimeSlots { get; set; }
         public DbSet<TicketRating> TicketRatings { get; set; }
         public DbSet<SupportType> SupportTypes { get; set; }
         public DbSet<SupportCategory> SupportCategories { get; set; }
@@ -68,6 +69,22 @@ namespace SapBasisPulse.Api.Data
                 .WithMany()
                 .HasForeignKey(o => o.TimeSlotId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure OrderTimeSlot entity
+        modelBuilder.Entity<OrderTimeSlot>(entity =>
+        {
+            entity.HasOne(ots => ots.Order)
+                .WithMany(o => o.OrderTimeSlots)
+                .HasForeignKey(ots => ots.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ots => ots.TimeSlot)
+                .WithMany()
+                .HasForeignKey(ots => ots.TimeSlotId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(ots => new { ots.OrderId, ots.TimeSlotId }).IsUnique();
         });
 
         // Apply the ServiceRequestIdentifier configuration

@@ -23,7 +23,7 @@ namespace SapBasisPulse.Api.Controllers
             var users = await _userService.GetAllAsync();
             return Ok(users);
         }
-        
+
         [HttpGet("consultants")]
         [Authorize]
         public async Task<IActionResult> GetAllConsultants()
@@ -69,5 +69,25 @@ namespace SapBasisPulse.Api.Controllers
             if (!success) return BadRequest(new { error });
             return NoContent();
         }
+
+        [HttpPut("{id}/hourly-rate")]
+        [Authorize(Roles = "Consultant")]
+        public async Task<IActionResult> UpdateHourlyRate(Guid id, [FromBody] UpdateHourlyRateDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            // Ensure user can only update their own rate
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
+            if (id != userId) return Forbid();
+
+            var (success, error) = await _userService.UpdateHourlyRateAsync(id, dto.HourlyRate);
+            if (!success) return BadRequest(new { error });
+            return Ok(new { message = "Hourly rate updated successfully" });
+        }
+    }
+
+    public class UpdateHourlyRateDto
+    {
+        public decimal HourlyRate { get; set; }
     }
 }

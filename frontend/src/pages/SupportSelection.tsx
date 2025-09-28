@@ -62,7 +62,7 @@ const SupportSelection = () => {
   const [srIdentifier, setSrIdentifier] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [consultantShowingReviews, setConsultantShowingReviews] = useState<string | null>(null);
   
   // Validate SR Identifier if it's entered
@@ -131,7 +131,7 @@ const SupportSelection = () => {
     setSelectedSubOption('');
     setSrIdentifier('');
     setSelectedConsultant('');
-    setSelectedTimeSlot('');
+    setSelectedTimeSlots([]);
     // Auto-advance to next step
     setTimeout(() => nextStep(), 300);
   };
@@ -141,7 +141,7 @@ const SupportSelection = () => {
     setSelectedSubOption('');
     setSrIdentifier('');
     setSelectedConsultant('');
-    setSelectedTimeSlot('');
+    setSelectedTimeSlots([]);
     // Don't auto-advance to allow sub-option selection
   };
 
@@ -149,7 +149,7 @@ const SupportSelection = () => {
     setSelectedSubOption(value);
     setSrIdentifier('');
     setSelectedConsultant('');
-    setSelectedTimeSlot('');
+    setSelectedTimeSlots([]);
     
     // Check if this sub-option requires SR identifier
     const selectedSubOptionObj = supportSubOptions?.find(option => option.id === value);
@@ -181,7 +181,7 @@ const SupportSelection = () => {
         return true;
       }
       case 2: return !!description && !!selectedPriority;
-      case 3: return !!selectedConsultant && !!selectedTimeSlot;
+      case 3: return !!selectedConsultant && selectedTimeSlots.length > 0;
       case 4: return true; // Review step
       default: return false;
     }
@@ -193,7 +193,7 @@ const SupportSelection = () => {
 
   // Form submission
   const handleSubmit = async () => {
-    if (!selectedSupport || !selectedCategory || !description.trim() || !selectedPriority || !selectedConsultant || !selectedTimeSlot) {
+    if (!selectedSupport || !selectedCategory || !description.trim() || !selectedPriority || !selectedConsultant || selectedTimeSlots.length === 0) {
       toast.error('Please complete all steps before submitting.');
       return;
     }
@@ -227,7 +227,7 @@ const SupportSelection = () => {
         srIdentifier: needsSrIdentifier ? srIdentifier.trim() : undefined,
         priority: selectedPriority,
         consultantId: selectedConsultant,
-        timeSlotId: selectedTimeSlot
+        timeSlotIds: selectedTimeSlots
       });
       toast.success('Support request created successfully!');
       navigate('/dashboard');
@@ -244,7 +244,7 @@ const SupportSelection = () => {
     const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
     const selectedPriorityObj = priorityOptions.find(p => p.id === selectedPriority);
     const selectedConsultantObj = consultants?.find(c => c.id === selectedConsultant);
-    const selectedTimeSlotObj = timeSlots?.find(slot => slot.id === selectedTimeSlot);
+    const selectedTimeSlotObj = timeSlots?.find(slot => selectedTimeSlots.length > 0 && slot.id === selectedTimeSlots[0]);
 
     switch (currentStep) {
       case 0: // Support Type
@@ -1115,9 +1115,10 @@ const SupportSelection = () => {
                   ) : timeSlots && timeSlots.length > 0 ? (
                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {timeSlots.map(slot => {
-                        const isSelected = selectedTimeSlot === slot.id;
+                        const isSelected = selectedTimeSlots.includes(slot.id);
                         const startTime = new Date(slot.slotStartTime);
                         const endTime = new Date(slot.slotEndTime);
+                        const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
                         const isToday = startTime.toDateString() === new Date().toDateString();
                         const isTomorrow = startTime.toDateString() === new Date(Date.now() + 86400000).toDateString();
                         
@@ -1128,6 +1129,14 @@ const SupportSelection = () => {
                         });
                         if (isToday) dateLabel = 'Today';
                         else if (isTomorrow) dateLabel = 'Tomorrow';
+                        
+                        const handleSlotToggle = () => {
+                          if (isSelected) {
+                            setSelectedTimeSlots(prev => prev.filter(id => id !== slot.id));
+                          } else {
+                            setSelectedTimeSlots(prev => [...prev, slot.id]);
+                          }
+                        };
                         
                         return (
                           <Card
@@ -1143,32 +1152,41 @@ const SupportSelection = () => {
                             } : {
                               backgroundColor: 'hsl(var(--card))'
                             }}
-                            onClick={() => setSelectedTimeSlot(slot.id)}
+                            onClick={handleSlotToggle}
                           >
                             <CardContent className="p-3">
                               <div className="space-y-2">
-                                {/* Date */}
+                                {/* Checkbox and Date */}
                                 <div className="flex items-center justify-between">
                                   <span className={`text-sm font-medium ${
                                     isSelected ? 'text-purple-900' : 'text-foreground'
                                   }`}>
                                     {dateLabel}
                                   </span>
-                                  {isSelected && (
-                                    <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                    isSelected 
+                                      ? 'bg-purple-600 border-purple-600' 
+                                      : 'border-muted-foreground'
+                                  }`}>
+                                    {isSelected && (
                                       <Check className="w-2.5 h-2.5 text-white" />
-                                    </div>
-                                  )}
+                                    )}
+                                  </div>
                                 </div>
                                 
-                                {/* Time */}
-                                <div className={`text-xs flex items-center space-x-1 ${
+                                {/* Time and Duration */}
+                                <div className={`text-xs space-y-1 ${
                                   isSelected ? 'text-purple-700' : 'text-muted-foreground'
                                 }`}>
-                                  <Clock className="w-3 h-3" />
-                                  <span>
-                                    {startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                  </span>
+                                  <div className="flex items-center space-x-1">
+                                    <Clock className="w-3 h-3" />
+                                    <span>
+                                      {startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs opacity-75">
+                                    {duration} hour{duration !== 1 ? 's' : ''}
+                                  </div>
                                 </div>
                               </div>
                             </CardContent>
@@ -1309,33 +1327,86 @@ const SupportSelection = () => {
                       <span>{srIdentifier}</span>
                     </div>
                   )}
-                  <div className="flex justify-between py-2">
-                    <span className="font-medium">Consultant & Time:</span>
-                    <div className="text-right">
+                  <div className="py-2 border-b">
+                    <span className="font-medium">Consultant & Time Slots:</span>
+                    <div className="mt-2 text-right">
                       {selectedConsultantObj ? (
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                           <p className="font-medium">{selectedConsultantObj.firstName} {selectedConsultantObj.lastName}</p>
                           <p className="text-sm text-muted-foreground">{selectedConsultantObj.role || 'SAP Consultant'}</p>
-                          {selectedTimeSlotObj && (
-                            <div className="text-sm">
-                              <p className="text-muted-foreground">
-                                {new Date(selectedTimeSlotObj.slotStartTime).toLocaleDateString('en-US', { 
-                                  weekday: 'long',
-                                  month: 'short', 
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                })}
-                              </p>
-                              <p className="font-medium text-purple-600">
-                                {new Date(selectedTimeSlotObj.slotStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(selectedTimeSlotObj.slotEndTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                              </p>
+                          
+                          {/* Selected Time Slots */}
+                          <div className="space-y-1 mt-3">
+                            <p className="text-sm font-medium text-left">Selected Time Slots:</p>
+                            {selectedTimeSlots.map(slotId => {
+                              const slot = timeSlots?.find(s => s.id === slotId);
+                              if (!slot) return null;
+                              
+                              const startTime = new Date(slot.slotStartTime);
+                              const endTime = new Date(slot.slotEndTime);
+                              const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
+                              
+                              return (
+                                <div key={slotId} className="text-sm bg-muted/50 rounded p-2">
+                                  <div className="flex justify-between items-center">
+                                    <span>
+                                      {startTime.toLocaleDateString('en-US', { 
+                                        weekday: 'short',
+                                        month: 'short', 
+                                        day: 'numeric'
+                                      })}
+                                    </span>
+                                    <span className="font-medium">
+                                      {startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                      <span className="text-muted-foreground ml-2">({duration}h)</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Pricing Calculation */}
+                          {selectedConsultantObj.hourlyRate && selectedTimeSlots.length > 0 && (
+                            <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg dark:bg-primary/5 dark:border-primary/10">
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-sm">
+                                  <span>Hourly Rate:</span>
+                                  <span>₹{selectedConsultantObj.hourlyRate.toFixed(2)}/hour</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span>Total Hours:</span>
+                                  <span>
+                                    {selectedTimeSlots.reduce((total, slotId) => {
+                                      const slot = timeSlots?.find(s => s.id === slotId);
+                                      if (!slot) return total;
+                                      const duration = (new Date(slot.slotEndTime).getTime() - new Date(slot.slotStartTime).getTime()) / (1000 * 60 * 60);
+                                      return total + duration;
+                                    }, 0)} hours
+                                  </span>
+                                </div>
+                                <div className="flex justify-between font-semibold text-primary border-t border-primary/30 pt-1 mt-2 dark:border-primary/20">
+                                  <span>Total Amount:</span>
+                                  <span>
+                                    ₹{(
+                                      selectedConsultantObj.hourlyRate * 
+                                      selectedTimeSlots.reduce((total, slotId) => {
+                                        const slot = timeSlots?.find(s => s.id === slotId);
+                                        if (!slot) return total;
+                                        const duration = (new Date(slot.slotEndTime).getTime() - new Date(slot.slotStartTime).getTime()) / (1000 * 60 * 60);
+                                        return total + duration;
+                                      }, 0)
+                                    ).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
                       ) : (
                         <div>
                           <p>Consultant ID: {selectedConsultant}</p>
-                          <p>Time Slot: {selectedTimeSlot}</p>
+                          <p>Time Slots: {selectedTimeSlots.join(', ')}</p>
                         </div>
                       )}
                     </div>

@@ -33,8 +33,14 @@ interface TimeSlot {
 
 interface Consultant {
   id: string;
+  email: string;
   firstName: string | null;
   lastName: string | null;
+  role: string;
+  status: string;
+  averageRating?: number | null;
+  totalRatings: number;
+  hourlyRate?: number | null;
 }
 
 interface Order {
@@ -198,7 +204,7 @@ export const useCreateSupportRequest = () => {
       srIdentifier?: string;
       priority: string;
       consultantId: string;
-      timeSlotId: string;
+      timeSlotIds: string[];
     }) => {
       const response = await apiFetch('SupportRequests', {
         method: 'POST',

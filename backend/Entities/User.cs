@@ -14,6 +14,7 @@ namespace SapBasisPulse.Api.Entities
         public UserRole Role { get; set; }
         public UserStatus Status { get; set; }
         public string? SsoProvider { get; set; }
+        public decimal? HourlyRate { get; set; } // Consultant's hourly rate in currency units
         public ICollection<ConsultantAvailabilitySlot> ConsultantSlots { get; set; } = new List<ConsultantAvailabilitySlot>();
         public ICollection<CustomerChoice> CustomerChoices { get; set; } = new List<CustomerChoice>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();

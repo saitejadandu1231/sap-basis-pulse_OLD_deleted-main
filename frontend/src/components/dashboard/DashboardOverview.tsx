@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import QuickActions from './QuickActions';
+import ConsultantSettings from './ConsultantSettings';
 
 const DashboardOverview = () => {
   const { user, userRole } = useAuth();
@@ -107,6 +108,21 @@ const DashboardOverview = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
         <QuickActions />
+
+        {/* Consultant Settings - Only for consultants */}
+        {userRole === 'consultant' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Consultant Settings</CardTitle>
+              <CardDescription>
+                Manage your consulting rates and availability
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConsultantSettings />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Activity */}
         <Card>
