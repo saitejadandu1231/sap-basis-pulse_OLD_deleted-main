@@ -1,0 +1,1 @@
+UPDATE "Payments" SET "Status" = 8, "EscrowReleaseCondition" = 'AdminApproval' WHERE "Status" = 7 AND "IsInEscrow" = true;

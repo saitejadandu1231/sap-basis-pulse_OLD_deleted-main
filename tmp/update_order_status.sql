@@ -1,0 +1,1 @@
+UPDATE "Orders" SET "StatusString" = 'InProgress', "StatusId" = 2 WHERE "Id" = (SELECT "Id" FROM "Orders" WHERE "StatusString" = 'Closed' LIMIT 1);

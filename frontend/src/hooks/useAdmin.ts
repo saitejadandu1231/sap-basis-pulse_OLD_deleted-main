@@ -39,6 +39,19 @@ interface AdminSupportRequest {
   unreadMessageCount: number;
 }
 
+interface AdminPayment {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  consultantName: string;
+  amount: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+  consultantEarning: number;
+}
+
 // Get all users
 export const useAdminUsers = () => {
   return useQuery({
@@ -171,6 +184,77 @@ export const useDeleteUser = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+};
+
+// Get payments ready for admin payout
+export const useAdminPaymentsReadyForPayout = () => {
+  return useQuery({
+    queryKey: ['admin', 'payments', 'ready-for-payout'],
+    queryFn: async () => {
+      const response = await apiFetch('Admin/payments/ready-for-payout');
+      if (!response.ok) {
+        throw new Error('Failed to fetch payments ready for payout');
+      }
+      return await response.json() as AdminPayment[];
+    },
+  });
+};
+
+// Update payment status
+export const useUpdatePaymentStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: { paymentId: string; status: string }) => {
+      const response = await apiFetch(`Admin/payments/${data.paymentId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data.status),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update payment status');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'payments', 'ready-for-payout'] });
+    },
+  });
+};
+
+// Bulk update payment status
+export const useBulkUpdatePaymentStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: { paymentIds: string[]; status: string }) => {
+      const response = await apiFetch('Admin/payments/bulk-status-update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          PaymentIds: data.paymentIds,
+          Status: data.status
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to bulk update payment status');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'payments', 'ready-for-payout'] });
     },
   });
 };

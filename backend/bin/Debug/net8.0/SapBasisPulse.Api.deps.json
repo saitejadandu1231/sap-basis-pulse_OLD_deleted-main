@@ -9,17 +9,28 @@
       "SapBasisPulse.Api/1.0.0": {
         "dependencies": {
           "Google.Apis.Auth": "1.71.0",
+          "Hangfire.AspNetCore": "1.8.21",
+          "Hangfire.PostgreSql": "1.20.12",
           "Microsoft.AspNetCore.Authentication.Google": "8.0.0",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.10",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "8.0.0",
           "Microsoft.AspNetCore.OpenApi": "8.0.20",
           "Microsoft.EntityFrameworkCore.Design": "9.0.9",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.4",
+          "PDFsharp": "6.2.2",
           "Supabase": "1.1.1",
           "Swashbuckle.AspNetCore": "9.0.4"
         },
         "runtime": {
           "SapBasisPulse.Api.dll": {}
+        }
+      },
+      "Dapper/2.0.123": {
+        "runtime": {
+          "lib/net5.0/Dapper.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.123.33578"
+          }
         }
       },
       "Google.Apis/1.71.0": {
@@ -54,6 +65,100 @@
           "lib/net6.0/Google.Apis.Core.dll": {
             "assemblyVersion": "1.71.0.0",
             "fileVersion": "1.71.0.0"
+          }
+        }
+      },
+      "Hangfire.AspNetCore/1.8.21": {
+        "dependencies": {
+          "Hangfire.NetCore": "1.8.21"
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {
+            "assemblyVersion": "1.8.21.0",
+            "fileVersion": "1.8.21.0"
+          }
+        }
+      },
+      "Hangfire.Core/1.8.21": {
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.3"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.Core.dll": {
+            "assemblyVersion": "1.8.21.0",
+            "fileVersion": "1.8.21.0"
+          }
+        },
+        "resources": {
+          "lib/netstandard2.0/ca/Hangfire.Core.resources.dll": {
+            "locale": "ca"
+          },
+          "lib/netstandard2.0/de/Hangfire.Core.resources.dll": {
+            "locale": "de"
+          },
+          "lib/netstandard2.0/es/Hangfire.Core.resources.dll": {
+            "locale": "es"
+          },
+          "lib/netstandard2.0/fa/Hangfire.Core.resources.dll": {
+            "locale": "fa"
+          },
+          "lib/netstandard2.0/fr/Hangfire.Core.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/netstandard2.0/nb/Hangfire.Core.resources.dll": {
+            "locale": "nb"
+          },
+          "lib/netstandard2.0/nl/Hangfire.Core.resources.dll": {
+            "locale": "nl"
+          },
+          "lib/netstandard2.0/pt-BR/Hangfire.Core.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/netstandard2.0/pt-PT/Hangfire.Core.resources.dll": {
+            "locale": "pt-PT"
+          },
+          "lib/netstandard2.0/pt/Hangfire.Core.resources.dll": {
+            "locale": "pt"
+          },
+          "lib/netstandard2.0/sv/Hangfire.Core.resources.dll": {
+            "locale": "sv"
+          },
+          "lib/netstandard2.0/tr-TR/Hangfire.Core.resources.dll": {
+            "locale": "tr-TR"
+          },
+          "lib/netstandard2.0/zh-TW/Hangfire.Core.resources.dll": {
+            "locale": "zh-TW"
+          },
+          "lib/netstandard2.0/zh/Hangfire.Core.resources.dll": {
+            "locale": "zh"
+          }
+        }
+      },
+      "Hangfire.NetCore/1.8.21": {
+        "dependencies": {
+          "Hangfire.Core": "1.8.21",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.9",
+          "Microsoft.Extensions.Hosting.Abstractions": "3.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.9"
+        },
+        "runtime": {
+          "lib/netstandard2.1/Hangfire.NetCore.dll": {
+            "assemblyVersion": "1.8.21.0",
+            "fileVersion": "1.8.21.0"
+          }
+        }
+      },
+      "Hangfire.PostgreSql/1.20.12": {
+        "dependencies": {
+          "Dapper": "2.0.123",
+          "Hangfire.Core": "1.8.21",
+          "Microsoft.CSharp": "4.7.0",
+          "Npgsql": "9.0.3"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.PostgreSql.dll": {
+            "assemblyVersion": "1.20.12.0",
+            "fileVersion": "1.20.12.0"
           }
         }
       },
@@ -409,6 +514,7 @@
           }
         }
       },
+      "Microsoft.CSharp/4.7.0": {},
       "Microsoft.EntityFrameworkCore/9.0.9": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Abstractions": "9.0.9",
@@ -536,6 +642,19 @@
             "assemblyVersion": "9.0.0.9",
             "fileVersion": "9.0.925.41916"
           }
+        }
+      },
+      "Microsoft.Extensions.FileProviders.Abstractions/3.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "9.0.9"
+        }
+      },
+      "Microsoft.Extensions.Hosting.Abstractions/3.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "9.0.9",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.9",
+          "Microsoft.Extensions.FileProviders.Abstractions": "3.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.9"
         }
       },
       "Microsoft.Extensions.Identity.Core/8.0.0": {
@@ -726,6 +845,50 @@
           "lib/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll": {
             "assemblyVersion": "9.0.4.0",
             "fileVersion": "9.0.4.0"
+          }
+        }
+      },
+      "PDFsharp/6.2.2": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging": "9.0.9",
+          "System.Security.Cryptography.Pkcs": "8.0.1"
+        },
+        "runtime": {
+          "lib/net8.0/PdfSharp.BarCodes.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.Charting.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.Cryptography.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.Quality.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.Shared.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.Snippets.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.System.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.WPFonts.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
+          },
+          "lib/net8.0/PdfSharp.dll": {
+            "assemblyVersion": "6.2.2.0",
+            "fileVersion": "6.2.2.7569"
           }
         }
       },
@@ -986,6 +1149,22 @@
         }
       },
       "System.Runtime.CompilerServices.Unsafe/6.0.0": {},
+      "System.Security.Cryptography.Pkcs/8.0.1": {
+        "runtime": {
+          "lib/net8.0/System.Security.Cryptography.Pkcs.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1024.46610"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.1024.46610"
+          }
+        }
+      },
       "System.Text.Encodings.Web/9.0.9": {
         "runtime": {
           "lib/net8.0/System.Text.Encodings.Web.dll": {
@@ -1037,6 +1216,13 @@
       "serviceable": false,
       "sha512": ""
     },
+    "Dapper/2.0.123": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RDFF4rBLLmbpi6pwkY7q/M6UXHRJEOerplDGE5jwEkP/JGJnBauAClYavNKJPW1yOTWRPIyfj4is3EaJxQXILQ==",
+      "path": "dapper/2.0.123",
+      "hashPath": "dapper.2.0.123.nupkg.sha512"
+    },
     "Google.Apis/1.71.0": {
       "type": "package",
       "serviceable": true,
@@ -1057,6 +1243,34 @@
       "sha512": "sha512-tCsg4USOGBVCIrSOyLht1akZe/+ioH7+LVWix6XuxP5fFiw5kEFSBXL+Of93aK/ztJa1dQI+p03dJ+AKgViRuw==",
       "path": "google.apis.core/1.71.0",
       "hashPath": "google.apis.core.1.71.0.nupkg.sha512"
+    },
+    "Hangfire.AspNetCore/1.8.21": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-G3yP92rPC313zRA1DIaROmF6UYB9NRtMHy64CCq4StqWmyUuFQQsYgZxo+Kp6gd2CbjaSI8JN8canTMYSGfrMw==",
+      "path": "hangfire.aspnetcore/1.8.21",
+      "hashPath": "hangfire.aspnetcore.1.8.21.nupkg.sha512"
+    },
+    "Hangfire.Core/1.8.21": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-UfIDfDKJTue82ShKV/HHEBScAIJMnuiS8c5jcLHThY8i8O0eibCcNjFkVqlvY9cnDiOBZ7EBGWJ8horH9Ykq+g==",
+      "path": "hangfire.core/1.8.21",
+      "hashPath": "hangfire.core.1.8.21.nupkg.sha512"
+    },
+    "Hangfire.NetCore/1.8.21": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-NR8BvQqgvVstgY/YZVisuV/XdkKSZGiD+5b+NABuGxu/xDEhycFHS1uIC9zhIYkPr1tThGoThRIH07JWxPZTvQ==",
+      "path": "hangfire.netcore/1.8.21",
+      "hashPath": "hangfire.netcore.1.8.21.nupkg.sha512"
+    },
+    "Hangfire.PostgreSql/1.20.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-KvozigeVgbYSinFmaj5qQWRaBG7ey/S73UP6VLIOPcP1UrZO0/6hSw4jN53TKpWP2UsiMuYONRmQbFDxGAi4ug==",
+      "path": "hangfire.postgresql/1.20.12",
+      "hashPath": "hangfire.postgresql.1.20.12.nupkg.sha512"
     },
     "Humanizer.Core/2.14.1": {
       "type": "package",
@@ -1170,6 +1384,13 @@
       "path": "microsoft.codeanalysis.workspaces.msbuild/4.8.0",
       "hashPath": "microsoft.codeanalysis.workspaces.msbuild.4.8.0.nupkg.sha512"
     },
+    "Microsoft.CSharp/4.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA==",
+      "path": "microsoft.csharp/4.7.0",
+      "hashPath": "microsoft.csharp.4.7.0.nupkg.sha512"
+    },
     "Microsoft.EntityFrameworkCore/9.0.9": {
       "type": "package",
       "serviceable": true,
@@ -1253,6 +1474,20 @@
       "sha512": "sha512-fNGvKct2De8ghm0Bpfq0iWthtzIWabgOTi+gJhNOPhNJIowXNEUE2eZNW/zNCzrHVA3PXg2yZ+3cWZndC2IqYA==",
       "path": "microsoft.extensions.dependencymodel/9.0.9",
       "hashPath": "microsoft.extensions.dependencymodel.9.0.9.nupkg.sha512"
+    },
+    "Microsoft.Extensions.FileProviders.Abstractions/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kahEeykb6FyQytoZNNXuz74X85B4weIEt8Kd+0klK48bkXDWOIHAOvNjlGsPMcS9CL935Te8QGQS83JqCbpdHA==",
+      "path": "microsoft.extensions.fileproviders.abstractions/3.0.0",
+      "hashPath": "microsoft.extensions.fileproviders.abstractions.3.0.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Hosting.Abstractions/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-qeDWS5ErmkUN96BdQqpmeCmLk5HJWQ/SPw3ux5v5/Qb0hKZS5wojBMulnBC7JUEiBwg7Ir71Yjf1lFiRT5MdtQ==",
+      "path": "microsoft.extensions.hosting.abstractions/3.0.0",
+      "hashPath": "microsoft.extensions.hosting.abstractions.3.0.0.nupkg.sha512"
     },
     "Microsoft.Extensions.Identity.Core/8.0.0": {
       "type": "package",
@@ -1386,6 +1621,13 @@
       "sha512": "sha512-mw5vcY2IEc7L+IeGrxpp/J5OSnCcjkjAgJYCm/eD52wpZze8zsSifdqV7zXslSMmfJG2iIUGZyo3KuDtEFKwMQ==",
       "path": "npgsql.entityframeworkcore.postgresql/9.0.4",
       "hashPath": "npgsql.entityframeworkcore.postgresql.9.0.4.nupkg.sha512"
+    },
+    "PDFsharp/6.2.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-azgX2bTtQhhGyw2dfTph4rzqFR50BDD3KiPRedNg4cPwZMrVDeQ/D0lH2oIBbTbzWVmRIyTNJTeN9ux1XUdltg==",
+      "path": "pdfsharp/6.2.2",
+      "hashPath": "pdfsharp.6.2.2.nupkg.sha512"
     },
     "Supabase/1.1.1": {
       "type": "package",
@@ -1568,6 +1810,13 @@
       "sha512": "sha512-/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg==",
       "path": "system.runtime.compilerservices.unsafe/6.0.0",
       "hashPath": "system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512"
+    },
+    "System.Security.Cryptography.Pkcs/8.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-CoCRHFym33aUSf/NtWSVSZa99dkd0Hm7OCZUxORBjRB16LNhIEOf8THPqzIYlvKM0nNDAPTRBa1FxEECrgaxxA==",
+      "path": "system.security.cryptography.pkcs/8.0.1",
+      "hashPath": "system.security.cryptography.pkcs.8.0.1.nupkg.sha512"
     },
     "System.Text.Encodings.Web/9.0.9": {
       "type": "package",

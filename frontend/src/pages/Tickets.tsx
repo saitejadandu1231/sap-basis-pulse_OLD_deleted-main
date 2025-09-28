@@ -249,12 +249,20 @@ const Tickets = () => {
                         <Calendar className="w-3 h-3" />
                         <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
                       </div>
-                      {ticket.consultantName && (
-                        <div className="flex items-center space-x-1">
-                          <User className="w-3 h-3" />
-                          <span className="truncate">{ticket.consultantName}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center space-x-2">
+                        {ticket.orderSlots && ticket.orderSlots.length > 0 && (
+                          <div className="flex items-center space-x-1 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded">
+                            <Clock className="w-3 h-3" />
+                            <span>{ticket.orderSlots.length} slot{ticket.orderSlots.length !== 1 ? 's' : ''}</span>
+                          </div>
+                        )}
+                        {ticket.consultantName && (
+                          <div className="flex items-center space-x-1">
+                            <User className="w-3 h-3" />
+                            <span className="truncate">{ticket.consultantName}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     {ticket.description && (
@@ -275,16 +283,22 @@ const Tickets = () => {
                       <div className="space-y-2">
                         <TicketRatingPreview ticketId={ticket.id} />
                         {userRole === 'customer' && (
-                          <div className="flex items-center space-x-1 text-xs text-purple-600 bg-purple-50 rounded px-2 py-1">
+                          <div className="flex items-center space-x-1 text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 rounded px-2 py-1">
                             <Star className="w-3 h-3" />
                             <span>Click "View & Rate" to rate your consultant</span>
+                          </div>
+                        )}
+                        {userRole === 'consultant' && ticket.consultantEarning && (
+                          <div className="flex items-center space-x-1 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded px-2 py-1">
+                            <TrendingUp className="w-3 h-3" />
+                            <span>Earnings: ₹{ticket.consultantEarning.toFixed(2)}</span>
                           </div>
                         )}
                       </div>
                     )}
                     
-                    <div className="flex space-x-2">
-                      {featureFlags?.messagingEnabled && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {featureFlags?.messagingEnabled ? (
                         <Button
                           variant="outline"
                           size="sm"
@@ -292,41 +306,68 @@ const Tickets = () => {
                             e.stopPropagation();
                             navigate(`/messages?orderId=${ticket.id}`);
                           }}
-                          className="flex-1"
+                          className="w-full"
                         >
-                          <MessageSquare className="w-4 h-4 mr-2" />
+                          <MessageSquare className="w-4 h-4" />
                           Message
                         </Button>
+                      ) : (
+                        <div></div>
                       )}
                       
-                      <div className="flex-1 grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTicketClick(ticket);
+                        }}
+                        className="w-full"
+                      >
+                        <Eye className="w-4 h-4" />
+                        {userRole === 'customer' ? 'View & Rate' : 'Details'}
+                      </Button>
+                      {userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'TopicClosed') && !['Paid', 'InEscrow', 'EscrowReadyForRelease', 'EscrowReleased', 'PayoutCompleted'].includes(ticket.paymentStatus || '') ? (
                         <Button
-                          variant="secondary"
+                          variant="default"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleTicketClick(ticket);
+                            // Navigate to payment page where the user can complete payment for a created order
+                            navigate(`/payment?orderId=${ticket.id}`);
                           }}
                           className="w-full"
                         >
-                          <Eye className="w-4 h-4 mr-2" />
-                          {userRole === 'customer' ? 'View & Rate' : 'Details'}
+                          Pay
                         </Button>
-                        {userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'TopicClosed') && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Navigate to payment page where the user can complete payment for a created order
-                              navigate(`/payment?orderId=${ticket.id}`);
-                            }}
-                            className="w-full"
-                          >
-                            Pay
-                          </Button>
-                        )}
-                      </div>
+                      ) : userRole === 'customer' && ['Paid', 'InEscrow', 'EscrowReadyForRelease', 'EscrowReleased', 'PayoutCompleted'].includes(ticket.paymentStatus || '') ? (
+                        <div className="flex items-center justify-center w-full h-9 px-3 py-2 text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Paid
+                        </div>
+                      ) : userRole === 'consultant' && (ticket.status === 'Closed' || ticket.status === 'TopicClosed') && !['Paid', 'InEscrow', 'EscrowReadyForRelease', 'EscrowReleased', 'PayoutCompleted'].includes(ticket.paymentStatus || '') ? (
+                        <div className="flex items-center justify-center w-full h-9 px-3 py-2 text-sm font-medium text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md">
+                          <Clock className="w-4 h-4 mr-2" />
+                          Pending Payment
+                        </div>
+                      ) : userRole === 'consultant' && ticket.paymentStatus === 'PayoutInitiated' ? (
+                        <div className="flex items-center justify-center w-full h-9 px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                          <Clock className="w-4 h-4 mr-2" />
+                          Ready for Payout
+                        </div>
+                      ) : userRole === 'consultant' && ticket.paymentStatus === 'PayoutFailed' ? (
+                        <div className="flex items-center justify-center w-full h-9 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          Payout Failed
+                        </div>
+                      ) : userRole === 'consultant' && ['Paid', 'InEscrow', 'EscrowReadyForRelease', 'EscrowReleased', 'PayoutCompleted'].includes(ticket.paymentStatus || '') ? (
+                        <div className="flex items-center justify-center w-full h-9 px-3 py-2 text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Paid
+                        </div>
+                      ) : (
+                        <div></div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -431,6 +472,116 @@ const Tickets = () => {
                 <p className="text-sm break-words">{selectedTicket.consultantName || 'Unassigned'}</p>
               </div>
             </div>
+            
+            {/* Time Slots Display */}
+            {selectedTicket?.orderSlots && selectedTicket.orderSlots.length > 0 && (
+              <div className="space-y-2">
+                <span className="font-medium text-muted-foreground text-xs sm:text-sm">Scheduled Time Slots:</span>
+                <div className="space-y-2">
+                  {selectedTicket.orderSlots.map((slot: any, index: number) => (
+                    <div key={slot.id} className="flex items-center space-x-2 text-sm bg-muted/20 rounded p-2 sm:p-3">
+                      <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {new Date(slot.slotStartTime).toLocaleDateString()} at {new Date(slot.slotStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Duration: {Math.round((new Date(slot.slotEndTime).getTime() - new Date(slot.slotStartTime).getTime()) / (1000 * 60))} minutes
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {selectedTicket.orderSlots.length > 1 && (
+                    <div className="text-xs text-muted-foreground mt-2 pl-6">
+                      Total Duration: {selectedTicket.orderSlots.reduce((total: number, slot: any) => 
+                        total + Math.round((new Date(slot.slotEndTime).getTime() - new Date(slot.slotStartTime).getTime()) / (1000 * 60)), 0
+                      )} minutes
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Payment Details for Consultants */}
+            {userRole === 'consultant' && (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed') && (
+              <div className="space-y-3">
+                <span className="font-medium text-muted-foreground text-xs sm:text-sm">Payment Details:</span>
+                <div className="bg-muted/20 rounded p-3 sm:p-4 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground">Order Amount</span>
+                      <p className="text-lg font-semibold text-green-600">
+                        ₹{selectedTicket.totalAmount ? selectedTicket.totalAmount.toFixed(2) : '0.00'}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground">Your Earnings</span>
+                      <p className="text-lg font-semibold text-blue-600">
+                        ₹{selectedTicket.consultantEarning ? selectedTicket.consultantEarning.toFixed(2) : '0.00'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <span className="text-xs text-muted-foreground">Payment Status</span>
+                    <div className="flex items-center space-x-2">
+                      {selectedTicket.paymentStatus === 'PayoutInitiated' && (
+                        <>
+                          <Clock className="w-4 h-4 text-orange-500" />
+                          <span className="text-sm font-medium text-orange-700 dark:text-orange-400">Pending Payment</span>
+                          <Badge variant="outline" className="text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400">
+                            Ready for Admin Payout
+                          </Badge>
+                        </>
+                      )}
+                      {selectedTicket.paymentStatus === 'PayoutCompleted' && (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-medium text-green-700 dark:text-green-400">Payment Completed</span>
+                          <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                            Paid by Admin
+                          </Badge>
+                        </>
+                      )}
+                      {selectedTicket.paymentStatus === 'PayoutFailed' && (
+                        <>
+                          <AlertCircle className="w-4 h-4 text-red-500" />
+                          <span className="text-sm font-medium text-red-700 dark:text-red-400">Payment Failed</span>
+                          <Badge variant="outline" className="text-xs bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+                            Retry Needed
+                          </Badge>
+                        </>
+                      )}
+                      {(!selectedTicket.paymentStatus || selectedTicket.paymentStatus === 'Paid' || selectedTicket.paymentStatus === 'InEscrow' || selectedTicket.paymentStatus === 'EscrowReadyForRelease' || selectedTicket.paymentStatus === 'EscrowReleased') && (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-medium text-green-700 dark:text-green-400">Payment Processed</span>
+                          <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                            Completed
+                          </Badge>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {selectedTicket.paymentStatus === 'PayoutInitiated' && (
+                    <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 rounded p-3">
+                      <p className="text-xs text-orange-800 dark:text-orange-200">
+                        <strong>Note:</strong> Your payment is pending admin approval. The admin will process your payout externally and mark it as completed once paid.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {selectedTicket.paymentStatus === 'PayoutCompleted' && (
+                    <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded p-3">
+                      <p className="text-xs text-green-800 dark:text-green-200">
+                        <strong>Payment Completed:</strong> The admin has processed your payment. Please check your account for the credited amount.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             {selectedTicket?.description && (
               <div className="space-y-2">

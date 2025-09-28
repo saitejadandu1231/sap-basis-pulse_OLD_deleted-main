@@ -64,7 +64,7 @@ const ConsultantAvailability = () => {
             id: slot.id,
             slot_start_time: slot.slotStartTime,
             slot_end_time: slot.slotEndTime,
-            booked_by_customer_choice_id: null // Backend uses isBooked flag instead
+            booked_by_customer_choice_id: slot.isBooked ? "booked" : null // Use isBooked flag from backend
           })) : [];
           
           setSlots(formattedSlots);

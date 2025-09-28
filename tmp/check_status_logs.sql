@@ -1,0 +1,1 @@
+SELECT * FROM "StatusChangeLogs" ORDER BY "ChangedAt" DESC LIMIT 10;

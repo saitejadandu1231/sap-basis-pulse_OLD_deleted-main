@@ -50,6 +50,14 @@
               "target": "Package",
               "version": "[1.71.0, )"
             },
+            "Hangfire.AspNetCore": {
+              "target": "Package",
+              "version": "[1.8.21, )"
+            },
+            "Hangfire.PostgreSql": {
+              "target": "Package",
+              "version": "[1.20.12, )"
+            },
             "Microsoft.AspNetCore.Authentication.Google": {
               "target": "Package",
               "version": "[8.0.0, )"
@@ -75,6 +83,10 @@
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
               "version": "[9.0.4, )"
+            },
+            "PdfSharp": {
+              "target": "Package",
+              "version": "[6.2.2, )"
             },
             "Supabase": {
               "target": "Package",

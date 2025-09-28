@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { apiFetch } from '@/lib/api';
@@ -21,6 +22,7 @@ const PaymentPage: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
   const verify = useVerifyPayment();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!orderId) return;
@@ -93,6 +95,10 @@ const PaymentPage: React.FC = () => {
             razorpay_signature: response.razorpay_signature
           });
           toast.success('Payment successful');
+          
+          // Invalidate tickets query to refresh payment status
+          queryClient.invalidateQueries({ queryKey: ['recentTickets'] });
+          
           navigate('/tickets');
         } catch (err) {
           console.error(err);

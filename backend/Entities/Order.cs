@@ -28,8 +28,9 @@ namespace SapBasisPulse.Api.Entities
         public string Description { get; set; }
         public string SrIdentifier { get; set; }
         public string Priority { get; set; }
-    public Guid? TimeSlotId { get; set; }
-    public ConsultantAvailabilitySlot TimeSlot { get; set; }
+        public Guid? TimeSlotId { get; set; } // Keep for backward compatibility
+        public ConsultantAvailabilitySlot TimeSlot { get; set; } // Keep for backward compatibility
+        public ICollection<OrderSlot> OrderSlots { get; set; } = new List<OrderSlot>();
         public Guid CreatedByUserId { get; set; }
         public User CreatedByUser { get; set; }
         public DateTime CreatedAt { get; set; }

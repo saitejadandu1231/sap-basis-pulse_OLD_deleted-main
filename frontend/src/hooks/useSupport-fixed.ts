@@ -191,7 +191,7 @@ export const useCreateSupportRequest = () => {
       srIdentifier?: string;
       priority: string;
       consultantId: string;
-      timeSlotId: string;
+      timeSlotIds: string[];
     }) => {
       const response = await apiFetch('SupportRequests', {
         method: 'POST',

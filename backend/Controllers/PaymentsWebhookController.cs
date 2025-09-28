@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.Entities;
 using SapBasisPulse.Api.DTOs;
+using SapBasisPulse.Api.Services;
 
 namespace SapBasisPulse.Api.Controllers
 {
@@ -21,12 +22,16 @@ namespace SapBasisPulse.Api.Controllers
         private readonly AppDbContext _db;
         private readonly IConfiguration _config;
         private readonly ILogger<PaymentsWebhookController> _logger;
+        private readonly IEscrowNotificationService _notificationService;
+        private readonly IEscrowService _escrowService;
 
-        public PaymentsWebhookController(AppDbContext db, IConfiguration config, ILogger<PaymentsWebhookController> logger)
+        public PaymentsWebhookController(AppDbContext db, IConfiguration config, ILogger<PaymentsWebhookController> logger, IEscrowNotificationService notificationService, IEscrowService escrowService)
         {
             _db = db;
             _config = config;
             _logger = logger;
+            _notificationService = notificationService;
+            _escrowService = escrowService;
         }
 
         [HttpPost]

@@ -65,7 +65,7 @@ const SupportSelection = () => {
   const [srIdentifier, setSrIdentifier] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [selectedConsultant, setSelectedConsultant] = useState('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [consultantShowingReviews, setConsultantShowingReviews] = useState<string | null>(null);
   
   // Validate SR Identifier if it's entered
@@ -110,7 +110,7 @@ const SupportSelection = () => {
     startDate,
     endDate
   );
-  const timeSlots = useMemo(() => selectedConsultant ? timeSlotsData : [], [selectedConsultant, timeSlotsData]);
+  const timeSlots = useMemo(() => selectedConsultant ? timeSlotsData?.filter(slot => !slot.isBooked) : [], [selectedConsultant, timeSlotsData]);
 
   // Load consultant public profile to get hourly rate when a consultant is selected
   const { data: consultantProfile } = useConsultantPublicProfile(selectedConsultant || null);
@@ -137,7 +137,7 @@ const SupportSelection = () => {
     setSelectedSubOption('');
     setSrIdentifier('');
     setSelectedConsultant('');
-    setSelectedTimeSlot('');
+    setSelectedTimeSlots([]);
     // Auto-advance to next step
     setTimeout(() => nextStep(), 300);
   };
@@ -147,7 +147,7 @@ const SupportSelection = () => {
     setSelectedSubOption('');
     setSrIdentifier('');
     setSelectedConsultant('');
-    setSelectedTimeSlot('');
+    setSelectedTimeSlots([]);
     // Don't auto-advance to allow sub-option selection
   };
 
@@ -155,7 +155,7 @@ const SupportSelection = () => {
     setSelectedSubOption(value);
     setSrIdentifier('');
     setSelectedConsultant('');
-    setSelectedTimeSlot('');
+    setSelectedTimeSlots([]);
     
     // Check if this sub-option requires SR identifier
     const selectedSubOptionObj = supportSubOptions?.find(option => option.id === value);
@@ -187,7 +187,7 @@ const SupportSelection = () => {
         return true;
       }
       case 2: return !!description && !!selectedPriority;
-      case 3: return !!selectedConsultant && !!selectedTimeSlot;
+      case 3: return !!selectedConsultant && selectedTimeSlots.length > 0;
       case 4: return true; // Review step
       default: return false;
     }
@@ -199,7 +199,7 @@ const SupportSelection = () => {
 
   // Form submission
   const handleSubmit = async () => {
-    if (!selectedSupport || !selectedCategory || !description.trim() || !selectedPriority || !selectedConsultant || !selectedTimeSlot) {
+    if (!selectedSupport || !selectedCategory || !description.trim() || !selectedPriority || !selectedConsultant || selectedTimeSlots.length === 0) {
       toast.error('Please complete all steps before submitting.');
       return;
     }
@@ -233,7 +233,7 @@ const SupportSelection = () => {
         srIdentifier: needsSrIdentifier ? srIdentifier.trim() : undefined,
         priority: selectedPriority,
         consultantId: selectedConsultant,
-        timeSlotId: selectedTimeSlot
+        timeSlotIds: selectedTimeSlots
       });
 
       // Pay-on-close flow: do not create Razorpay order or open checkout now.
@@ -253,7 +253,7 @@ const SupportSelection = () => {
     const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
     const selectedPriorityObj = priorityOptions.find(p => p.id === selectedPriority);
     const selectedConsultantObj = consultants?.find(c => c.id === selectedConsultant);
-    const selectedTimeSlotObj = timeSlots?.find(slot => slot.id === selectedTimeSlot);
+    const selectedTimeSlotObjs = timeSlots?.filter(slot => selectedTimeSlots.includes(slot.id)) || [];
 
     switch (currentStep) {
       case 0: // Support Type
@@ -1124,7 +1124,7 @@ const SupportSelection = () => {
                   ) : timeSlots && timeSlots.length > 0 ? (
                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {timeSlots.map(slot => {
-                        const isSelected = selectedTimeSlot === slot.id;
+                        const isSelected = selectedTimeSlots.includes(slot.id);
                         const startTime = new Date(slot.slotStartTime);
                         const endTime = new Date(slot.slotEndTime);
                         const isToday = startTime.toDateString() === new Date().toDateString();
@@ -1152,7 +1152,13 @@ const SupportSelection = () => {
                             } : {
                               backgroundColor: 'hsl(var(--card))'
                             }}
-                            onClick={() => setSelectedTimeSlot(slot.id)}
+                            onClick={() => {
+                              setSelectedTimeSlots(prev => 
+                                prev.includes(slot.id) 
+                                  ? prev.filter(id => id !== slot.id)
+                                  : [...prev, slot.id]
+                              );
+                            }}
                           >
                             <CardContent className="p-3">
                               <div className="space-y-2">
@@ -1325,52 +1331,59 @@ const SupportSelection = () => {
                         <div className="space-y-1">
                           <p className="font-medium">{selectedConsultantObj.firstName} {selectedConsultantObj.lastName}</p>
                           <p className="text-sm text-muted-foreground">{selectedConsultantObj.role || 'SAP Consultant'}</p>
-                          {selectedTimeSlotObj && (
-                            <div className="text-sm">
-                              <p className="text-muted-foreground">
-                                {new Date(selectedTimeSlotObj.slotStartTime).toLocaleDateString('en-US', { 
-                                  weekday: 'long',
-                                  month: 'short', 
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                })}
-                              </p>
-                              <p className="font-medium text-purple-600">
-                                {new Date(selectedTimeSlotObj.slotStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(selectedTimeSlotObj.slotEndTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                              </p>
+                          {selectedTimeSlotObjs && selectedTimeSlotObjs.length > 0 && (
+                            <div className="text-sm space-y-1">
+                              <p className="text-muted-foreground font-medium">Selected Time Slots ({selectedTimeSlotObjs.length}):</p>
+                              {selectedTimeSlotObjs.map(slot => (
+                                <div key={slot.id} className="border-l-2 border-purple-200 pl-2">
+                                  <p className="text-muted-foreground">
+                                    {new Date(slot.slotStartTime).toLocaleDateString('en-US', { 
+                                      weekday: 'short',
+                                      month: 'short', 
+                                      day: 'numeric'
+                                    })}
+                                  </p>
+                                  <p className="font-medium text-purple-600">
+                                    {new Date(slot.slotStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(slot.slotEndTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  </p>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
                       ) : (
                         <div>
                           <p>Consultant ID: {selectedConsultant}</p>
-                          <p>Time Slot: {selectedTimeSlot}</p>
+                          <p>Time Slots: {selectedTimeSlots.length} selected</p>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-                {/* Payment note for single-slot v1 */}
+                {/* Payment note for multiple slots */}
                 <div className="flex justify-between py-2 border-t">
                   <span className="font-medium">Payment:</span>
                   <span className="text-muted-foreground">
                     {(() => {
                       try {
-                        if (!selectedTimeSlotObj || !consultantProfile) {
-                          return 'You’ll be asked to pay to confirm this slot';
+                        if (!selectedTimeSlotObjs || selectedTimeSlotObjs.length === 0 || !consultantProfile) {
+                          return 'You\'ll be asked to pay to confirm these slots';
                         }
-                        const start = new Date(selectedTimeSlotObj.slotStartTime).getTime();
-                        const end = new Date(selectedTimeSlotObj.slotEndTime).getTime();
-                        const minutes = Math.max(0, Math.round((end - start) / 60000));
-                        const hours = minutes / 60;
+                        const totalMinutes = selectedTimeSlotObjs.reduce((total, slot) => {
+                          const start = new Date(slot.slotStartTime).getTime();
+                          const end = new Date(slot.slotEndTime).getTime();
+                          const minutes = Math.max(0, Math.round((end - start) / 60000));
+                          return total + minutes;
+                        }, 0);
+                        const totalHours = totalMinutes / 60;
                         const rate = Number(consultantProfile.hourlyRate || 0);
-                        if (!rate || hours <= 0) {
-                          return 'You’ll be asked to pay to confirm this slot';
+                        if (!rate || totalHours <= 0) {
+                          return 'You\'ll be asked to pay to confirm these slots';
                         }
-                        const amount = rate * hours;
-                        return `You’ll be asked to pay ₹${amount.toFixed(2)} (INR) to confirm this ${minutes} min slot`;
+                        const amount = rate * totalHours;
+                        return `You'll be asked to pay ₹${amount.toFixed(2)} (INR) to confirm these ${totalMinutes} min slots`;
                       } catch {
-                        return 'You’ll be asked to pay to confirm this slot';
+                        return 'You\'ll be asked to pay to confirm these slots';
                       }
                     })()}
                   </span>

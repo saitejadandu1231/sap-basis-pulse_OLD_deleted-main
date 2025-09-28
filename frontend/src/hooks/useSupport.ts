@@ -198,7 +198,7 @@ export const useCreateSupportRequest = () => {
       srIdentifier?: string;
       priority: string;
       consultantId: string;
-      timeSlotId: string;
+      timeSlotIds: string[];
     }) => {
       const response = await apiFetch('SupportRequests', {
         method: 'POST',
@@ -217,6 +217,7 @@ export const useCreateSupportRequest = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recentTickets'] });
+      queryClient.invalidateQueries({ queryKey: ['consultantSlots'] });
     },
   });
 };

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ThemeToggle from '@/components/ThemeToggle';
+import PageLayout from '@/components/layout/PageLayout';
 import { 
   Users, 
   Shield, 
@@ -24,7 +25,11 @@ import {
   CheckCircle,
   MessageSquare,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  DollarSign,
+  CreditCard,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -35,7 +40,10 @@ import {
   useUpdateUserRole, 
   useCreateUser, 
   useUpdateUser, 
-  useDeleteUser 
+  useDeleteUser,
+  useAdminPaymentsReadyForPayout,
+  useUpdatePaymentStatus,
+  useBulkUpdatePaymentStatus
 } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 
@@ -73,7 +81,7 @@ const AdminDashboard = () => {
   // Redirect if not admin
   if (user?.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
@@ -161,22 +169,12 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage users and monitor system activity</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              <span className="font-medium">{user.firstName} {user.lastName}</span>
-            </div>
-          </div>
-        </div>
+    <>
+      <PageLayout
+        title="Admin Dashboard"
+        description="Manage users and monitor system activity"
+      >
+      <div className="space-y-6">
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -285,7 +283,7 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-fit">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 lg:w-fit">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -293,6 +291,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="requests" className="flex items-center gap-2">
               <Ticket className="w-4 h-4" />
               Support Requests
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Payments
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -516,6 +518,21 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Consultant Payout Management</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Mark payments as completed after paying consultants externally, either individually or in bulk
+                </p>
+              </CardHeader>
+              <CardContent>
+                <PaymentsReadyForPayout />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -686,9 +703,12 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
 
-        {/* Edit User Dialog */}
-        <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
+      </PageLayout>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
@@ -741,7 +761,321 @@ const AdminDashboard = () => {
             </form>
           </DialogContent>
         </Dialog>
+    </>
+  );
+};
+
+// Payments Ready for Payout Component
+const PaymentsReadyForPayout = () => {
+  const { data: payments, isLoading, error } = useAdminPaymentsReadyForPayout();
+  const updatePaymentStatus = useUpdatePaymentStatus();
+  const bulkUpdatePaymentStatus = useBulkUpdatePaymentStatus();
+  const [expandedConsultants, setExpandedConsultants] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'grouped' | 'detailed'>('grouped');
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PayoutInitiated':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Ready for Manual Payout</Badge>;
+      case 'PayoutCompleted':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Consultant Paid</Badge>;
+      case 'PayoutFailed':
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">Payout Failed - Retry Needed</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  // Group payments by consultant
+  const groupedPayments = payments?.reduce((acc, payment) => {
+    const consultantId = payment.consultantName; // Using name as key for simplicity
+    if (!acc[consultantId]) {
+      acc[consultantId] = {
+        consultantName: payment.consultantName,
+        totalAmount: 0,
+        totalEarnings: 0,
+        ticketCount: 0,
+        payments: []
+      };
+    }
+    acc[consultantId].totalAmount += payment.amount;
+    acc[consultantId].totalEarnings += payment.consultantEarning;
+    acc[consultantId].ticketCount += 1;
+    acc[consultantId].payments.push(payment);
+    return acc;
+  }, {} as Record<string, {
+    consultantName: string;
+    totalAmount: number;
+    totalEarnings: number;
+    ticketCount: number;
+    payments: typeof payments;
+  }>) || {};
+
+  const toggleConsultantExpansion = (consultantName: string) => {
+    const newExpanded = new Set(expandedConsultants);
+    if (newExpanded.has(consultantName)) {
+      newExpanded.delete(consultantName);
+    } else {
+      newExpanded.add(consultantName);
+    }
+    setExpandedConsultants(newExpanded);
+  };
+
+  const handleMarkAllPaidForConsultant = async (consultantName: string) => {
+    const consultantData = groupedPayments[consultantName];
+    if (!consultantData) return;
+
+    const pendingPayments = consultantData.payments.filter(p => p.status === 'PayoutInitiated' || p.status === 'PayoutFailed');
+    
+    if (pendingPayments.length === 0) {
+      toast.info('No pending payments for this consultant');
+      return;
+    }
+
+    const confirmMessage = `Mark ${pendingPayments.length} payment(s) as completed for ${consultantName}? This indicates you have paid the consultant externally.`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const paymentIds = pendingPayments.map(p => p.id);
+      await bulkUpdatePaymentStatus.mutateAsync({
+        paymentIds,
+        status: 'PayoutCompleted'
+      });
+      toast.success(`Marked ${pendingPayments.length} payments as completed for ${consultantName}`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update payment status');
+    }
+  };
+
+  const handleMarkPaymentPaid = async (paymentId: string, orderNumber: string) => {
+    const confirmMessage = `Mark payment for ${orderNumber} as completed? This indicates you have paid the consultant externally.`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      await updatePaymentStatus.mutateAsync({
+        paymentId,
+        status: 'PayoutCompleted'
+      });
+      toast.success(`Marked payment for ${orderNumber} as completed`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update payment status');
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading payments...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-600">Error loading payments</div>;
+  }
+
+  if (!payments || payments.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <CreditCard className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-medium mb-2">No payments ready for payout</h3>
+        <p className="text-muted-foreground">
+          All consultant payouts are up to date.
+        </p>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* View Mode Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant={viewMode === 'grouped' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('grouped')}
+          >
+            Grouped View
+          </Button>
+          <Button
+            variant={viewMode === 'detailed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('detailed')}
+          >
+            Detailed View
+          </Button>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {Object.keys(groupedPayments).length} consultant(s) with pending payouts
+        </div>
+      </div>
+
+      {viewMode === 'grouped' ? (
+        <div className="space-y-4">
+          {Object.entries(groupedPayments).map(([consultantName, data]) => {
+            const pendingPayments = data.payments.filter(p => p.status === 'PayoutInitiated' || p.status === 'PayoutFailed');
+            const completedPayments = data.payments.filter(p => p.status === 'PayoutCompleted');
+            const hasPendingPayments = pendingPayments.length > 0;
+
+            return (
+              <Card key={consultantName} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <CardTitle className="text-lg">{consultantName}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {data.ticketCount} ticket{data.ticketCount !== 1 ? 's' : ''} • 
+                          Total: ₹{data.totalAmount.toFixed(2)} • 
+                          Earnings: ₹{data.totalEarnings.toFixed(2)}
+                        </p>
+                        <div className="flex gap-4 mt-1">
+                          {pendingPayments.length > 0 && (
+                            <span className="text-sm text-orange-600">
+                              {pendingPayments.length} pending
+                            </span>
+                          )}
+                          {completedPayments.length > 0 && (
+                            <span className="text-sm text-green-600">
+                              {completedPayments.length} completed
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {hasPendingPayments && (
+                        <Button
+                          onClick={() => handleMarkAllPaidForConsultant(consultantName)}
+                          disabled={bulkUpdatePaymentStatus.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Mark All Paid ({pendingPayments.length})
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleConsultantExpansion(consultantName)}
+                      >
+                        {expandedConsultants.has(consultantName) ? (
+                          <ChevronDown className="w-4 h-4 mr-2" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 mr-2" />
+                        )}
+                        {expandedConsultants.has(consultantName) ? 'Hide' : 'Show'} Tickets
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                {expandedConsultants.has(consultantName) && (
+                  <CardContent className="pt-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Order #</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Earnings</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {data.payments.map((payment) => (
+                            <TableRow key={payment.id}>
+                              <TableCell className="font-medium">
+                                {payment.orderNumber}
+                              </TableCell>
+                              <TableCell>{payment.customerName}</TableCell>
+                              <TableCell>₹{payment.amount.toFixed(2)}</TableCell>
+                              <TableCell>₹{payment.consultantEarning.toFixed(2)}</TableCell>
+                              <TableCell>
+                                {getStatusBadge(payment.status)}
+                              </TableCell>
+                              <TableCell>
+                                {(payment.status === 'PayoutInitiated' || payment.status === 'PayoutFailed') && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleMarkPaymentPaid(payment.id, payment.orderNumber)}
+                                    disabled={updatePaymentStatus.isPending}
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Mark Paid
+                                  </Button>
+                                )}
+                                {payment.status === 'PayoutCompleted' && (
+                                  <span className="text-sm text-green-600 font-medium">✓ Paid</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        // Detailed View - Original table format
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order #</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Consultant</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Consultant Earning</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {payments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell className="font-medium">
+                    {payment.orderNumber}
+                  </TableCell>
+                  <TableCell>{payment.customerName}</TableCell>
+                  <TableCell>{payment.consultantName}</TableCell>
+                  <TableCell>₹{payment.amount.toFixed(2)}</TableCell>
+                  <TableCell>₹{payment.consultantEarning.toFixed(2)}</TableCell>
+                  <TableCell>
+                    {getStatusBadge(payment.status)}
+                  </TableCell>
+                  <TableCell>
+                    {(payment.status === 'PayoutInitiated' || payment.status === 'PayoutFailed') && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleMarkPaymentPaid(payment.id, payment.orderNumber)}
+                        disabled={updatePaymentStatus.isPending}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Mark Paid
+                      </Button>
+                    )}
+                    {payment.status === 'PayoutCompleted' && (
+                      <span className="text-sm text-green-600 font-medium">✓ Paid</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };

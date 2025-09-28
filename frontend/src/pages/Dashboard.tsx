@@ -1,9 +1,24 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
 import PageLayout from "@/components/layout/PageLayout";
 
 const Dashboard = () => {
   const { firstName, lastName, user } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, navigate]);
+
+  // Don't render anything while redirecting
+  if (user?.role === 'admin') {
+    return null;
+  }
   
   const displayName = firstName && lastName ? `${firstName} ${lastName}` : user?.email;
   const greeting = () => {

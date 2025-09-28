@@ -461,6 +461,31 @@ namespace SapBasisPulse.Api.Migrations
                     b.ToTable("Orders");
                 });
 
+            modelBuilder.Entity("SapBasisPulse.Api.Entities.OrderSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SlotId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SlotId");
+
+                    b.HasIndex("OrderId", "SlotId")
+                        .IsUnique();
+
+                    b.ToTable("OrderSlots");
+                });
+
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Payment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -486,11 +511,47 @@ namespace SapBasisPulse.Api.Migrations
                         .HasColumnType("character varying(5)")
                         .HasDefaultValue("INR");
 
+                    b.Property<DateTime?>("EscrowCancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EscrowInitiatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EscrowNotes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EscrowReleaseCondition")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("EscrowReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("FailedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsInEscrow")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("PayoutCompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PayoutFailedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayoutFailureReason")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PayoutId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PayoutInitiatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayoutReference")
+                        .HasColumnType("text");
 
                     b.Property<decimal>("PlatformCommissionPercent")
                         .HasColumnType("numeric");
@@ -510,6 +571,18 @@ namespace SapBasisPulse.Api.Migrations
                     b.Property<string>("RazorpaySignature")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<long?>("RefundAmountInPaise")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("RefundId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RefundReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -1087,6 +1160,25 @@ namespace SapBasisPulse.Api.Migrations
                     b.Navigation("TimeSlot");
                 });
 
+            modelBuilder.Entity("SapBasisPulse.Api.Entities.OrderSlot", b =>
+                {
+                    b.HasOne("SapBasisPulse.Api.Entities.Order", "Order")
+                        .WithMany("OrderSlots")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SapBasisPulse.Api.Entities.ConsultantAvailabilitySlot", "Slot")
+                        .WithMany()
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Slot");
+                });
+
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Payment", b =>
                 {
                     b.HasOne("SapBasisPulse.Api.Entities.Order", "Order")
@@ -1213,6 +1305,8 @@ namespace SapBasisPulse.Api.Migrations
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Order", b =>
                 {
+                    b.Navigation("OrderSlots");
+
                     b.Navigation("StatusChangeLogs");
 
                     b.Navigation("TicketRatings");

@@ -26,6 +26,7 @@ import AdminUsers from "./pages/admin/Users";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSSOSettings from "./pages/AdminSSOSettings";
+import ConsultantPayments from "./pages/ConsultantPayments";
 import "@/lib/pwa"; // Initialize PWA functionality
 
 const queryClient = new QueryClient();
@@ -75,6 +76,11 @@ const App = () => (
             <Route path="/consultant/availability" element={
               <ProtectedRoute>
                 <ConsultantAvailability />
+              </ProtectedRoute>
+            } />
+            <Route path="/consultant/payments" element={
+              <ProtectedRoute>
+                <ConsultantPayments />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

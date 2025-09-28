@@ -6,12 +6,16 @@ using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.Entities;
 using SapBasisPulse.Api.Services;
 using SapBasisPulse.Api.Services.Payments;
+using SapBasisPulse.Api.Services.BackgroundJobs;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SapBasisPulse.Api.Utilities;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Linq;
+using Hangfire;
+using Hangfire.PostgreSql;
+using Hangfire.Dashboard;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,6 +71,13 @@ builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValidationService>();
 builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
+builder.Services.AddScoped<ISupabaseEmailService, SupabaseEmailService>();
+builder.Services.AddScoped<IEscrowService, EscrowService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IEscrowNotificationService, EscrowNotificationService>();
+
+// Register background job services
+builder.Services.AddScoped<AutomatedPayoutService>();
 
 // Add HttpClient for Supabase API calls (already added above)
 
@@ -216,6 +227,16 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
+// Configure Hangfire for background job processing
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "Host=localhost;Port=5432;Database=sap_basis_pulse;Username=postgres;Password=postgres"));
+
+builder.Services.AddHangfireServer();
+
 var app = builder.Build();
 
 // Configure forwarded headers for production (Railway proxy)
@@ -318,6 +339,15 @@ if (!app.Environment.IsProduction())
 var corsPolicy = app.Environment.IsDevelopment() ? "AllowLocalDev" : "AllowProduction";
 app.UseCors(corsPolicy);
 
+// Configure Hangfire Dashboard (only in development for security)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
+}
+
 // Add simple health check endpoint for Railway
 app.MapGet("/health", () => Results.Ok(new { 
     status = "healthy", 
@@ -354,6 +384,9 @@ if (app.Environment.IsDevelopment())
             
             // Initialize default SSO configuration
             await InitializeDefaultSSOConfigurationAsync(scope.ServiceProvider);
+
+            // Initialize default admin payment settings
+            await InitializeDefaultAdminPaymentSettingsAsync(scope.ServiceProvider);
         }
         catch (Exception ex)
         {
@@ -382,6 +415,42 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast")
 .WithOpenApi();
+
+// Schedule recurring background jobs
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        // Schedule automated payouts to run daily at 2 AM
+        recurringJobManager.AddOrUpdate<AutomatedPayoutService>(
+            "process-automated-payouts",
+            service => service.ProcessAutomatedPayouts(),
+            "0 2 * * *", // Daily at 2 AM
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Utc
+            });
+
+        // Schedule payment reminders to run daily at 10 AM
+        recurringJobManager.AddOrUpdate<AutomatedPayoutService>(
+            "send-payment-reminders",
+            service => service.SendPaymentReminders(),
+            "0 10 * * *", // Daily at 10 AM
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Utc
+            });
+
+        logger.LogInformation("Background jobs scheduled successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to schedule background jobs");
+    }
+}
 
 app.Run();
 
@@ -421,7 +490,52 @@ static async Task InitializeDefaultSSOConfigurationAsync(IServiceProvider servic
     }
 }
 
+static async Task InitializeDefaultAdminPaymentSettingsAsync(IServiceProvider serviceProvider)
+{
+    using var scope = serviceProvider.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        var existingSettings = await context.AdminPaymentSettings.FirstOrDefaultAsync();
+        if (existingSettings == null)
+        {
+            var defaultSettings = new AdminPaymentSettings
+            {
+                PaymentsEnabled = true,
+                Currency = "INR",
+                PlatformCommissionPercent = 10m,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            
+            context.AdminPaymentSettings.Add(defaultSettings);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Default admin payment settings created with payments enabled.");
+        }
+        else
+        {
+            logger.LogInformation("Admin payment settings already exist. PaymentsEnabled={PaymentsEnabled}", existingSettings.PaymentsEnabled);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Failed to initialize default admin payment settings.");
+    }
+}
+
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+}
+
+public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
+{
+    public bool Authorize(DashboardContext context)
+    {
+        // Allow access in development environment
+        return context.GetHttpContext().RequestServices
+            .GetService<IWebHostEnvironment>()?.IsDevelopment() == true;
+    }
 }

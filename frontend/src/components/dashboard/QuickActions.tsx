@@ -11,7 +11,8 @@ import {
   Users,
   Settings,
   BarChart3,
-  Zap
+  Zap,
+  DollarSign
 } from 'lucide-react';
 
 const QuickActions = () => {
@@ -57,6 +58,13 @@ const QuickActions = () => {
           label: 'Assigned Tickets',
           description: 'View tickets assigned to you',
           path: '/tickets',
+          variant: 'outline' as const
+        },
+        {
+          icon: DollarSign,
+          label: 'View Payments',
+          description: 'Track your earnings and payment history',
+          path: '/consultant/payments',
           variant: 'outline' as const
         }
       );
