@@ -43,5 +43,11 @@ namespace SapBasisPulse.Api.Entities
         public Guid? SupportSubOptionId { get; set; }
         public SupportSubOption? SupportSubOption { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Additional audit fields
+        public string? CreatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedBy { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 }

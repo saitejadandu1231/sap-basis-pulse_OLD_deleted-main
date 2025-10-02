@@ -2,6 +2,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateTicketStatus } from '@/hooks/useSupport';
+import { useStatusOptions } from '@/hooks/useStatus';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface CompactTicketStatusUpdaterProps {
@@ -10,15 +12,6 @@ interface CompactTicketStatusUpdaterProps {
   onStatusUpdate?: (newStatus: string) => void;
 }
 
-const statusOptions = [
-  { value: 'New', label: 'New', color: 'bg-blue-100 text-blue-800' },
-  { value: 'InProgress', label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'PendingCustomerAction', label: 'Pending Customer Action', color: 'bg-orange-100 text-orange-800' },
-  { value: 'TopicClosed', label: 'Topic Closed', color: 'bg-green-100 text-green-800' },
-  { value: 'Closed', label: 'Closed', color: 'bg-gray-100 text-gray-800' },
-  { value: 'ReOpened', label: 'Re-Opened', color: 'bg-purple-100 text-purple-800' }
-];
-
 const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
   orderId,
   currentStatus,
@@ -26,6 +19,41 @@ const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
 }) => {
   const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
   const updateStatus = useUpdateTicketStatus();
+  const { userRole } = useAuth();
+  const { data: statusOptionsData } = useStatusOptions();
+
+  // Transform API data to match component expectations
+  const statusOptions = statusOptionsData?.map(option => ({
+    value: option.statusCode,
+    label: option.statusName,
+    color: option.colorCode
+  })) || [];
+
+  // Check if consultant can change status
+  const canConsultantChangeStatus = !(currentStatus === 'Closed' || currentStatus === 'TopicClosed') || userRole !== 'consultant';
+
+  // Filter status options based on business rules
+  const getFilteredStatusOptions = () => {
+    let filtered = statusOptions.filter(option => {
+      // Business rule: Once a consultant closes a ticket, they cannot change status until customer reopens it
+      if ((currentStatus === 'Closed' || currentStatus === 'TopicClosed') && userRole === 'consultant') {
+        return false; // Filter out all options for consultants on closed tickets
+      }
+      return true;
+    });
+
+    // For disabled state, include the current status so it can be displayed
+    if ((currentStatus === 'Closed' || currentStatus === 'TopicClosed') && userRole === 'consultant') {
+      const currentOption = statusOptions.find(option => option.value === currentStatus);
+      if (currentOption) {
+        filtered = [currentOption];
+      }
+    }
+
+    return filtered;
+  };
+
+  const filteredStatusOptions = getFilteredStatusOptions();
 
   const handleStatusUpdate = async () => {
     if (selectedStatus === currentStatus) {
@@ -52,28 +80,57 @@ const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
       <div className="text-sm font-medium min-w-0">
         Update Status:
       </div>
-      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Select status" />
-        </SelectTrigger>
-        <SelectContent>
-          {statusOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${option.color.split(' ')[0]}`} />
-                {option.label}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button 
-        onClick={handleStatusUpdate}
-        disabled={updateStatus.isPending || selectedStatus === currentStatus}
-        size="sm"
-      >
-        {updateStatus.isPending ? 'Updating...' : 'Update'}
-      </Button>
+      {!canConsultantChangeStatus ? (
+        <div className="flex items-center gap-2">
+          <Select value={selectedStatus} disabled>
+            <SelectTrigger className="w-48 opacity-50 cursor-not-allowed">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredStatusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value} disabled>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${option.color}`} />
+                    {option.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            disabled
+            size="sm"
+            className="opacity-50 cursor-not-allowed"
+          >
+            Update
+          </Button>
+        </div>
+      ) : (
+        <>
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredStatusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${option.color}`} />
+                    {option.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={handleStatusUpdate}
+            disabled={updateStatus.isPending || selectedStatus === currentStatus}
+            size="sm"
+          >
+            {updateStatus.isPending ? 'Updating...' : 'Update'}
+          </Button>
+        </>
+      )}
     </div>
   );
 };

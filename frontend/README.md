@@ -2,15 +2,36 @@
 
 Enterprise support ticketing system frontend built with React, TypeScript, and Tailwind CSS.
 
+## 🚀 Features
+
+### Core Functionality
+- **Responsive Design**: Mobile-first approach with touch-friendly UI
+- **Real-time Updates**: Live ticket status and messaging updates
+- **Role-based Interface**: Tailored experiences for Admin, Consultant, and Customer roles
+- **Progressive Web App**: Offline-capable with service worker support
+
+### User Experience
+- **Modern UI**: Clean, accessible interface with shadcn/ui components
+- **Performance Optimized**: Lazy loading, code splitting, and efficient caching
+- **Accessibility**: WCAG compliant with proper focus management
+- **Cross-platform**: Works seamlessly on desktop, tablet, and mobile
+
+### Technical Features
+- **Type Safety**: Full TypeScript implementation
+- **State Management**: React Query for server state, Context for UI state
+- **Routing**: Protected routes with role-based access control
+- **Error Handling**: Comprehensive error boundaries and user feedback
+
 ## 🚀 Vercel Deployment
 
-This project is configured for deployment on Vercel with the following features:
+This project is configured for deployment on Vercel with the following optimizations:
 
 - **Framework**: Vite + React + TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui
+- **Styling**: Tailwind CSS + shadcn/ui with responsive design
 - **Routing**: React Router with proper SPA configuration
 - **API Integration**: Axios with environment-based API URLs
-- **Build Optimization**: Code splitting and chunk optimization
+- **Build Optimization**: Code splitting, lazy loading, and chunk optimization
+- **Performance**: React Query caching and optimized bundle size
 
 ## 📦 Environment Variables
 
@@ -31,15 +52,42 @@ VITE_API_URL=https://sap-basis-pulseolddeleted-main-production.up.railway.app/ap
 ```
 frontend/
 ├── src/
-│   ├── components/     # UI components
-│   ├── pages/         # Route pages
-│   ├── hooks/         # Custom hooks
-│   ├── lib/           # Utilities and API
-│   └── types/         # TypeScript types
-├── public/            # Static assets
-├── vercel.json        # Vercel configuration
-└── vite.config.ts     # Vite configuration
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/             # shadcn/ui base components
+│   │   ├── dashboard/      # Dashboard-specific components
+│   │   ├── navigation/     # Navigation and routing components
+│   │   └── layout/         # Layout and page structure
+│   ├── pages/              # Route-based page components
+│   │   ├── admin/          # Admin-specific pages
+│   │   └── auth/           # Authentication pages
+│   ├── hooks/              # Custom React hooks
+│   ├── services/           # API service functions
+│   ├── contexts/           # React context providers
+│   ├── lib/                # Utilities and configurations
+│   └── integrations/       # Third-party service integrations
+├── public/                 # Static assets and PWA files
+├── vercel.json             # Vercel deployment configuration
+└── vite.config.ts          # Vite build configuration
 ```
+
+## 🎨 Design System
+
+### Responsive Breakpoints
+- **Mobile**: < 640px (sm)
+- **Tablet**: 640px - 1024px (md/lg)
+- **Desktop**: > 1024px (xl/2xl)
+
+### Key Components
+- **PageLayout**: Responsive layout with sidebar navigation
+- **RoleBasedNav**: Dynamic navigation based on user roles
+- **DashboardOverview**: Comprehensive dashboard with metrics
+- **ConsultantAvailability**: Mobile-optimized availability management
+
+### Accessibility Features
+- Focus management and keyboard navigation
+- Screen reader support with proper ARIA labels
+- High contrast support with light/dark themes
+- Touch-friendly interactive elements (44px minimum)
 
 ## 🚀 Deployment Steps
 

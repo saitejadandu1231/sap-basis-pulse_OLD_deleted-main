@@ -10,7 +10,10 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SapBasisPulse.Api.Utilities;
 using Microsoft.AspNetCore.HttpOverrides;
-using System.Linq;
+using SapBasisPulse.Api.Validators;
+using FluentValidation.AspNetCore;
+using FluentValidation;
+using SapBasisPulse.Api.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +32,8 @@ if (builder.Environment.IsProduction())
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 // CORS configuration for development and production
@@ -64,12 +69,19 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValidationService>();
 builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
 builder.Services.AddScoped<IPaymentService, RazorpayPaymentService>();
+builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+
+// Register validators
+builder.Services.AddScoped<IValidator<CreateConsultantAvailabilitySlotDto>, CreateConsultantAvailabilitySlotDtoValidator>();
 
 // Add HttpClient for Supabase API calls
 builder.Services.AddHttpClient();
 
 // Add development helper service
 builder.Services.AddScoped<DevHelperService>();
+
+// Add background services
+builder.Services.AddHostedService<ExpiredSlotsCleanupService>();
 
 // Add DbContext, Identity, and custom services
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -208,6 +220,22 @@ builder.Services.AddAuthentication(options =>
             return context.Response.WriteAsync(JsonSerializer.Serialize(new { error = "Unauthorized" }));
         }
     };
+});
+
+// Add Authorization Policies
+builder.Services.AddAuthorization(options =>
+{
+    // Admin has full access to everything
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+
+    // Consultants can manage their own availability
+    options.AddPolicy("ConsultantOrAdmin", policy => policy.RequireRole("Consultant", "Admin"));
+
+    // Customers and Consultants can view availability slots
+    options.AddPolicy("CustomerOrConsultantOrAdmin", policy => policy.RequireRole("Customer", "Consultant", "Admin"));
+
+    // Resource owner policy - will be checked in controller logic
+    options.AddPolicy("ResourceOwner", policy => policy.RequireAuthenticatedUser());
 });
 
 // Register UserService

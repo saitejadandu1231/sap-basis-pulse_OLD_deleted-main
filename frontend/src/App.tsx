@@ -7,32 +7,59 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import SupportSelection from "./pages/SupportSelection";
-import ConsultantAvailability from "./pages/ConsultantAvailability";
-import ConsultantSkills from "./pages/ConsultantSkills";
-import AdminDashboard from "./pages/AdminDashboard";
-import { MessagingPage } from "./pages/Messaging";
 import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
-import NotFound from "./pages/NotFound";
-import Tickets from "./pages/Tickets";
-import AuthCallback from "./pages/AuthCallback";
-import Settings from "./pages/Settings";
-import Help from "./pages/Help";
-import AdminUsers from "./pages/admin/Users";
-import AdminAnalytics from "./pages/admin/Analytics";
-import AdminSettings from "./pages/admin/AdminSettings";
-import SupportTaxonomyAdmin from "./pages/admin/SupportTaxonomy";
-import AdminSSOSettings from "./pages/AdminSSOSettings";
-import ContactUs from "./pages/ContactUs";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import CancellationRefundPolicy from "./pages/CancellationRefundPolicy";
-import ShippingDeliveryPolicy from "./pages/ShippingDeliveryPolicy";
-import TermsConditions from "./pages/TermsConditions";
+import { lazy, Suspense } from "react";
 
-const queryClient = new QueryClient();
+// Lazy load components for better performance
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const SupportSelection = lazy(() => import("./pages/SupportSelection"));
+const ConsultantAvailability = lazy(() => import("./pages/ConsultantAvailability"));
+const ConsultantSkills = lazy(() => import("./pages/ConsultantSkills"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const MessagingPage = lazy(() => import("./pages/Messaging").then(module => ({ default: module.MessagingPage })));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Tickets = lazy(() => import("./pages/Tickets"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Help = lazy(() => import("./pages/Help"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const SupportTaxonomyAdmin = lazy(() => import("./pages/admin/SupportTaxonomy"));
+const AdminSSOSettings = lazy(() => import("./pages/AdminSSOSettings"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const CancellationRefundPolicy = lazy(() => import("./pages/CancellationRefundPolicy"));
+const ShippingDeliveryPolicy = lazy(() => import("./pages/ShippingDeliveryPolicy"));
+const TermsConditions = lazy(() => import("./pages/TermsConditions"));
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors
+        if (error instanceof Error && error.message.includes('401')) return false;
+        if (error instanceof Error && error.message.includes('403')) return false;
+        return failureCount < 3;
+      },
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -42,7 +69,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -126,6 +154,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+            </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

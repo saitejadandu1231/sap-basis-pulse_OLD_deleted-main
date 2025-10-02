@@ -73,22 +73,29 @@ namespace SapBasisPulse.Api.Controllers
                 return Forbid("Only consultants and admins can update ticket status.");
             }
 
-            var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment);
-
-            if (!result)
+            try
             {
-                return BadRequest(new { error = "Invalid ticket ID or status" });
-            }
+                var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment);
 
-            // Create audit log message with comment if provided
-            var auditMessage = $"Status changed to {dto.Status}";
-            if (!string.IsNullOrWhiteSpace(dto.Comment))
+                if (!result)
+                {
+                    return BadRequest(new { error = "Invalid ticket ID or status" });
+                }
+
+                // Create audit log message with comment if provided
+                var auditMessage = $"Status changed to {dto.Status}";
+                if (!string.IsNullOrWhiteSpace(dto.Comment))
+                {
+                    auditMessage += $". Comment: {dto.Comment}";
+                }
+
+                await _auditLogService.LogAsync(userId, "UpdateTicketStatus", "Order", orderId.ToString(), auditMessage, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
+                return Ok(new { message = "Status updated successfully" });
+            }
+            catch (InvalidOperationException ex)
             {
-                auditMessage += $". Comment: {dto.Comment}";
+                return BadRequest(new { error = ex.Message });
             }
-
-            await _auditLogService.LogAsync(userId, "UpdateTicketStatus", "Order", orderId.ToString(), auditMessage, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
-            return Ok(new { message = "Status updated successfully" });
         }
     }
 }

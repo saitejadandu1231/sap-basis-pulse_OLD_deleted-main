@@ -164,3 +164,6 @@ E:\sap\sap-basis-pulse_OLD_deleted-main\backend\obj\Debug\net8.0\refint\SapBasis
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\obj\Debug\net8.0\SapBasisPulse.Api.pdb
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\obj\Debug\net8.0\SapBasisPulse.Api.genruntimeconfig.cache
 E:\sap\sap-basis-pulse_OLD_deleted-main\backend\obj\Debug\net8.0\ref\SapBasisPulse.Api.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\FluentValidation.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\FluentValidation.AspNetCore.dll
+E:\sap\sap-basis-pulse_OLD_deleted-main\backend\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll

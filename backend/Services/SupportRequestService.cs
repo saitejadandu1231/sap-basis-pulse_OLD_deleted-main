@@ -321,7 +321,7 @@ namespace SapBasisPulse.Api.Services
             };
         }
 
-                public async Task<bool> UpdateStatusAsync(Guid orderId, string status, Guid changedByUserId, string? comment = null)
+        public async Task<bool> UpdateStatusAsync(Guid orderId, string status, Guid changedByUserId, string? comment = null)
         {
             // The orderId parameter is the Order ID from the frontend
             var order = await _context.Orders
@@ -332,6 +332,17 @@ namespace SapBasisPulse.Api.Services
             // Find the status master record by status code
             var statusMaster = await _context.StatusMaster.FirstOrDefaultAsync(sm => sm.StatusCode == status);
             if (statusMaster == null) return false;
+
+            // Get the user who is making the change to check their role
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == changedByUserId);
+            if (user == null) return false;
+
+            // Business rule: Once a consultant closes a ticket, they cannot change status until customer reopens it
+            if ((order.Status.StatusName == "Closed" || order.Status.StatusName == "Topic Closed") && user.Role == UserRole.Consultant)
+            {
+                // Consultants cannot change status of closed tickets
+                throw new InvalidOperationException("Consultants cannot change the status of closed tickets. Only customers can reopen closed tickets.");
+            }
 
             // Store the old status for logging
             var oldStatusId = order.StatusId;

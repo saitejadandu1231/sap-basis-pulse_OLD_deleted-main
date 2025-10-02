@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SapBasisPulse.Api.Data;
@@ -11,9 +12,11 @@ using SapBasisPulse.Api.Data;
 namespace SapBasisPulse.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251002173221_AddAuditFieldsToConsultantTables")]
+    partial class AddAuditFieldsToConsultantTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,13 +75,10 @@ namespace SapBasisPulse.Api.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -93,20 +93,14 @@ namespace SapBasisPulse.Api.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BookedByCustomerChoiceId")
                         .IsUnique();
 
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("ConsultantId", "SlotStartTime");
+                    b.HasIndex("ConsultantId");
 
                     b.ToTable("ConsultantAvailabilitySlots");
                 });
@@ -123,11 +117,10 @@ namespace SapBasisPulse.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("NOW()");
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -145,8 +138,7 @@ namespace SapBasisPulse.Api.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -896,14 +888,10 @@ namespace SapBasisPulse.Api.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("SapBasisPulse.Api.Entities.User", "Consultant")
-                        .WithMany()
+                        .WithMany("ConsultantSlots")
                         .HasForeignKey("ConsultantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("SapBasisPulse.Api.Entities.User", null)
-                        .WithMany("ConsultantSlots")
-                        .HasForeignKey("UserId");
 
                     b.Navigation("BookedByCustomerChoice");
 

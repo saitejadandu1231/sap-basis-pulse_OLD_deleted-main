@@ -1,9 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "KgkeLnPOLD8=",
+  "dgSpecHash": "/oxlO+cVxVI=",
   "success": true,
   "projectFilePath": "E:\\sap\\sap-basis-pulse_OLD_deleted-main\\backend\\SapBasisPulse.Api.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\saite\\.nuget\\packages\\fluentvalidation\\11.11.0\\fluentvalidation.11.11.0.nupkg.sha512",
+    "C:\\Users\\saite\\.nuget\\packages\\fluentvalidation.aspnetcore\\11.3.1\\fluentvalidation.aspnetcore.11.3.1.nupkg.sha512",
+    "C:\\Users\\saite\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\11.11.0\\fluentvalidation.dependencyinjectionextensions.11.11.0.nupkg.sha512",
     "C:\\Users\\saite\\.nuget\\packages\\google.apis\\1.71.0\\google.apis.1.71.0.nupkg.sha512",
     "C:\\Users\\saite\\.nuget\\packages\\google.apis.auth\\1.71.0\\google.apis.auth.1.71.0.nupkg.sha512",
     "C:\\Users\\saite\\.nuget\\packages\\google.apis.core\\1.71.0\\google.apis.core.1.71.0.nupkg.sha512",

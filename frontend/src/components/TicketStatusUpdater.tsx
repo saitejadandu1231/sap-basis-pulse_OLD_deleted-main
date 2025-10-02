@@ -5,65 +5,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useUpdateTicketStatus } from '@/hooks/useSupport';
+import { useStatusOptions } from '@/hooks/useStatus';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { ArrowRight, MessageSquare, CheckCircle } from 'lucide-react';
+import { ArrowRight, MessageSquare, CheckCircle, Lock } from 'lucide-react';
 
 interface TicketStatusUpdaterProps {
   orderId: string;
   currentStatus: string;
   onStatusUpdate?: (newStatus: string) => void;
 }
-
-const statusOptions = [
-  { 
-    value: 'New', 
-    label: 'New', 
-    color: 'bg-blue-500', 
-    textColor: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    description: 'Just submitted'
-  },
-  { 
-    value: 'InProgress', 
-    label: 'In Progress', 
-    color: 'bg-yellow-500', 
-    textColor: 'text-yellow-700',
-    bgColor: 'bg-yellow-50',
-    description: 'Being worked on'
-  },
-  { 
-    value: 'PendingCustomerAction', 
-    label: 'Pending Customer Action', 
-    color: 'bg-orange-500', 
-    textColor: 'text-orange-700',
-    bgColor: 'bg-orange-50',
-    description: 'Waiting for customer'
-  },
-  { 
-    value: 'TopicClosed', 
-    label: 'Topic Closed', 
-    color: 'bg-green-500', 
-    textColor: 'text-green-700',
-    bgColor: 'bg-green-50',
-    description: 'Issue resolved'
-  },
-  { 
-    value: 'Closed', 
-    label: 'Closed', 
-    color: 'bg-muted', 
-    textColor: 'text-muted-foreground',
-    bgColor: 'bg-muted/50',
-    description: 'Ticket closed'
-  },
-  { 
-    value: 'ReOpened', 
-    label: 'Re-Opened', 
-    color: 'bg-purple-500', 
-    textColor: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    description: 'Reopened for review'
-  }
-];
 
 const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   orderId,
@@ -73,6 +24,44 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
   const [comment, setComment] = React.useState('');
   const updateStatus = useUpdateTicketStatus();
+  const { userRole } = useAuth();
+  const { data: statusOptionsData } = useStatusOptions();
+
+  // Transform API data to match component expectations
+  const statusOptions = statusOptionsData?.map(option => ({
+    value: option.statusCode,
+    label: option.statusName,
+    color: `bg-${option.colorCode.split('-')[1]}-500`,
+    textColor: `text-${option.colorCode.split('-')[1]}-700`,
+    bgColor: `bg-${option.colorCode.split('-')[1]}-50`,
+    description: option.description || option.statusName
+  })) || [];
+
+  // Check if consultant can change status
+  const canConsultantChangeStatus = !(currentStatus === 'Closed' || currentStatus === 'TopicClosed') || userRole !== 'consultant';
+
+  // Filter status options based on business rules
+  const getFilteredStatusOptions = () => {
+    let filtered = statusOptions.filter(option => {
+      // Business rule: Once a consultant closes a ticket, they cannot change status until customer reopens it
+      if ((currentStatus === 'Closed' || currentStatus === 'TopicClosed') && userRole === 'consultant') {
+        return false; // Filter out all options for consultants on closed tickets
+      }
+      return true;
+    });
+
+    // For disabled state, include the current status so it can be displayed
+    if ((currentStatus === 'Closed' || currentStatus === 'TopicClosed') && userRole === 'consultant') {
+      const currentOption = statusOptions.find(option => option.value === currentStatus);
+      if (currentOption) {
+        filtered = [currentOption];
+      }
+    }
+
+    return filtered;
+  };
+
+  const filteredStatusOptions = getFilteredStatusOptions();
 
   const handleStatusUpdate = async () => {
     if (selectedStatus === currentStatus && !comment.trim()) {
@@ -144,25 +133,65 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
 
         {/* Status Selector */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Select New Status</Label>
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="h-11">
-              <SelectValue placeholder="Choose a status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value} className="py-3">
-                  <div className="flex items-center gap-3 w-full">
-                    <div className={`w-3 h-3 rounded-full ${option.color}`} />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{option.label}</span>
-                      <span className="text-xs text-muted-foreground">{option.description}</span>
-                    </div>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            Select New Status
+            {!canConsultantChangeStatus && (
+              <Lock className="w-4 h-4 text-muted-foreground" />
+            )}
+          </Label>
+          
+          {!canConsultantChangeStatus ? (
+            <div className="relative">
+              <Select value={selectedStatus} onValueChange={setSelectedStatus} disabled>
+                <SelectTrigger className="h-11 opacity-50 cursor-not-allowed">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredStatusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value} disabled>
+                      <div className="flex items-center gap-3 w-full">
+                        <div className={`w-3 h-3 rounded-full ${option.color}`} />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{option.label}</span>
+                          <span className="text-xs text-muted-foreground">{option.description}</span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="mt-2 p-3 bg-muted/50 rounded-lg border border-dashed">
+                <div className="flex items-start gap-2">
+                  <Lock className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium">Status changes are disabled</p>
+                    <p className="text-xs mt-1">
+                      Once you close a ticket, only customers can reopen it. You cannot make further status changes until the customer reopens the ticket.
+                    </p>
                   </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Choose a status" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredStatusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="py-3">
+                    <div className="flex items-center gap-3 w-full">
+                      <div className={`w-3 h-3 rounded-full ${option.color}`} />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                      </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </div>
 
@@ -260,7 +289,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
       {/* Action Button */}
       <Button 
         onClick={handleStatusUpdate}
-        disabled={updateStatus.isPending || !canUpdate}
+        disabled={updateStatus.isPending || !canUpdate || !canConsultantChangeStatus}
         className="w-full h-11 font-medium"
         size="lg"
       >
@@ -268,6 +297,11 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
           <div className="flex items-center space-x-2">
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span>Updating...</span>
+          </div>
+        ) : !canConsultantChangeStatus ? (
+          <div className="flex items-center space-x-2">
+            <Lock className="w-4 h-4" />
+            <span>Status Changes Disabled</span>
           </div>
         ) : (
           <div className="flex items-center space-x-2">

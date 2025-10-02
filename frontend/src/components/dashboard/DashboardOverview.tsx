@@ -42,7 +42,7 @@ const DashboardOverview = () => {
   return (
     <div className="space-y-6">
       {/* Key Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Messages Card */}
         {featureFlags?.messagingEnabled && (
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/messages')}>
@@ -105,7 +105,7 @@ const DashboardOverview = () => {
       </div>
 
       {/* Content Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Quick Actions */}
         <QuickActions />
 

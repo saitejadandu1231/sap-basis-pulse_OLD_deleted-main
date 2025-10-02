@@ -101,25 +101,29 @@ const Tickets = () => {
     }
   }, [ticketIdFromUrl, tickets, selectedTicket]);
 
-  // Transform API data to match component expectations with fallback to hardcoded options
+  // Transform API data to match component expectations
   const statusOptions = statusOptionsData?.map(option => ({
     value: option.statusCode,
     label: option.statusName,
     color: option.colorCode
-  })) || [
-    { value: 'New', label: 'New', color: 'bg-blue-500' },
-    { value: 'InProgress', label: 'In Progress', color: 'bg-yellow-500' },
-    { value: 'PendingCustomerAction', label: 'Pending Customer', color: 'bg-orange-500' },
-    { value: 'TopicClosed', label: 'Topic Closed', color: 'bg-green-500' },
-    { value: 'Closed', label: 'Closed', color: 'bg-muted' },
-    { value: 'Paid', label: 'Paid', color: 'bg-emerald-500' },
-    { value: 'ReOpened', label: 'Re-Opened', color: 'bg-purple-500' }
-  ];
+  })) || [];
 
-  // Filter status options for consultants - remove TopicClosed and Paid
-  const filteredStatusOptions = userRole === 'consultant' 
-    ? statusOptions.filter(option => option.value !== 'TopicClosed' && option.value !== 'Paid')
-    : statusOptions;
+  // Filter status options for consultants - remove TopicClosed, Paid, and all options for closed tickets
+  const getFilteredStatusOptions = (currentStatus?: string) => {
+    return statusOptions.filter(option => {
+      // For consultants, remove TopicClosed and Paid
+      if (userRole === 'consultant' && (option.value === 'TopicClosed' || option.value === 'Paid')) {
+        return false;
+      }
+      // Business rule: Once a consultant closes a ticket, they cannot change status until customer reopens it
+      if (currentStatus && (currentStatus === 'Closed' || currentStatus === 'TopicClosed') && userRole === 'consultant') {
+        return false; // Filter out all options for consultants on closed tickets
+      }
+      return true;
+    });
+  };
+
+  const filteredStatusOptions = getFilteredStatusOptions();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -301,6 +305,16 @@ const Tickets = () => {
           ? `Search results for "${searchQuery}" (${tickets?.length || 0} results)`
           : (userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets')
       }
+      showSearch={true}
+      searchPlaceholder="Search tickets..."
+      searchQuery={searchQuery}
+      onSearch={(query) => {
+        if (query.trim()) {
+          setSearchParams({ search: query.trim() });
+        } else {
+          setSearchParams({});
+        }
+      }}
       actions={
         <div className="flex items-center space-x-2">
           {searchQuery && (
@@ -325,7 +339,7 @@ const Tickets = () => {
     >
       <div className="space-y-6">
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
@@ -340,7 +354,7 @@ const Tickets = () => {
             ))}
           </div>
         ) : tickets && tickets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {tickets.map((ticket) => (
               <Card 
                 key={ticket.id} 
@@ -369,7 +383,7 @@ const Tickets = () => {
                             </Badge>
                           </SelectTrigger>
                           <SelectContent className="min-w-[200px]">
-                            {filteredStatusOptions.map((option) => (
+                            {getFilteredStatusOptions(ticket.status).map((option) => (
                               <SelectItem key={option.value} value={option.value}>
                                 <div className="flex items-center space-x-2">
                                   <div className={`w-3 h-3 rounded-full ${option.color}`} />

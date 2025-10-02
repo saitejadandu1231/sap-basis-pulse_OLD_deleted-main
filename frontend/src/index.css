@@ -98,6 +98,36 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Responsive typography */
+  h1 {
+    @apply text-2xl sm:text-3xl lg:text-4xl;
+  }
+
+  h2 {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+
+  h3 {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+
+  /* Better touch targets on mobile */
+  @media (max-width: 640px) {
+    button, [role="button"], input, select, textarea {
+      min-height: 44px;
+    }
+  }
+
+  /* Improved focus states for accessibility */
+  .focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Better text selection */
+  ::selection {
+    @apply bg-primary/20 text-primary-foreground;
+  }
+
   .light body {
     background: linear-gradient(180deg, 
       hsl(220 14% 96%) 0%, 

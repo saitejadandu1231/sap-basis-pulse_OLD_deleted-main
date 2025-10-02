@@ -866,7 +866,7 @@ const SupportSelection = () => {
                     <AlertCircle className="w-4 h-4 text-orange-600" />
                     <span>Set Priority Level *</span>
                   </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {priorityOptions.map(priority => {
                       const isSelected = selectedPriority === priority.id;
                       return (
@@ -929,7 +929,7 @@ const SupportSelection = () => {
                     ))}
                   </div>
                 ) : availableConsultants && availableConsultants.length > 0 ? (
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {availableConsultants.map((consultant: any) => {
                       const isSelected = selectedConsultant === consultant.id;
                       const showReviews = consultantShowingReviews === consultant.id;
@@ -1184,7 +1184,7 @@ const SupportSelection = () => {
                       ))}
                     </div>
                   ) : timeSlots && timeSlots.length > 0 ? (
-                    <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {timeSlots.map(slot => {
                         const isSelected = selectedTimeSlots.includes(slot.id);
                         const startTime = new Date(slot.slotStartTime);

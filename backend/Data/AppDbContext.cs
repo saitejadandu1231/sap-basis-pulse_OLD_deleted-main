@@ -269,7 +269,49 @@ namespace SapBasisPulse.Api.Data
                 .HasFilter("[SupportCategoryId] IS NOT NULL OR [SupportSubOptionId] IS NOT NULL");
 
             entity.Property(cs => cs.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql("NOW()");
+
+            // Configure audit fields
+            entity.Property(cs => cs.CreatedBy)
+                .HasMaxLength(100);
+
+            entity.Property(cs => cs.UpdatedBy)
+                .HasMaxLength(100);
+
+            // Soft delete query filter
+            entity.HasQueryFilter(cs => !cs.IsDeleted);
+        });
+
+        // ConsultantAvailabilitySlot configuration
+        modelBuilder.Entity<ConsultantAvailabilitySlot>(entity =>
+        {
+            entity.HasKey(cas => cas.Id);
+
+            entity.HasOne(cas => cas.Consultant)
+                .WithMany()
+                .HasForeignKey(cas => cas.ConsultantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(cas => cas.BookedByCustomerChoice)
+                .WithOne(cc => cc.Slot)
+                .HasForeignKey<ConsultantAvailabilitySlot>(cas => cas.BookedByCustomerChoiceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Composite index for frequently queried fields
+            entity.HasIndex(cas => new { cas.ConsultantId, cas.SlotStartTime });
+
+            // Configure audit fields
+            entity.Property(cas => cas.CreatedAt)
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(cas => cas.CreatedBy)
+                .HasMaxLength(100);
+
+            entity.Property(cas => cas.UpdatedBy)
+                .HasMaxLength(100);
+
+            // Soft delete query filter
+            entity.HasQueryFilter(cas => !cas.IsDeleted);
         });
 
         base.OnModelCreating(modelBuilder);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,6 @@ import { useNavigate } from 'react-router-dom';
 import { useUnreadMessageCount } from '@/services/messagingHooks';
 import RoleBasedNav from '../navigation/RoleBasedNav';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -28,6 +27,10 @@ interface PageLayoutProps {
   actions?: React.ReactNode;
   showSidebar?: boolean;
   className?: string;
+  showSearch?: boolean;
+  searchPlaceholder?: string;
+  onSearch?: (query: string) => void;
+  searchQuery?: string;
 }
 
 const PageLayout: React.FC<PageLayoutProps> = ({
@@ -36,13 +39,31 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   description,
   actions,
   showSidebar = true,
-  className
+  className,
+  showSearch = false,
+  searchPlaceholder = "Search...",
+  onSearch,
+  searchQuery: externalSearchQuery
 }) => {
   const { user, userRole, firstName, lastName, signOut } = useAuth();
   const { data: featureFlags } = useFeatureFlags();
   const { data: unreadCount } = useUnreadMessageCount();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
+
+  const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery;
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setInternalSearchQuery(query);
+    onSearch?.(query);
+  };
+
+  const handleClearSearch = () => {
+    setInternalSearchQuery('');
+    onSearch?.('');
+  };
 
   const displayName = firstName && lastName ? `${firstName} ${lastName}` : user?.email;
 
@@ -89,16 +110,28 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           </div>
 
           {/* Search Bar - Desktop only */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search tickets, messages..."
-                className="w-full pl-10 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
+          {showSearch && (
+            <div className="hidden md:flex flex-1 max-w-md mx-4">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="w-full pl-10 pr-10 py-2 text-sm bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Header Actions */}
           <div className="flex items-center space-x-1 sm:space-x-2 ml-auto">
@@ -205,10 +238,10 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           {/* Page Header */}
           {(title || description || actions) && (
             <div className="border-b bg-background/50 backdrop-blur">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-3 sm:p-6">
+              <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                 <div className="min-w-0 flex-1">
                   {title && (
-                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
+                    <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
                   )}
                   {description && (
                     <p className="text-muted-foreground mt-1 text-sm sm:text-base">{description}</p>
@@ -224,7 +257,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           )}
 
           {/* Page Content */}
-          <div className={cn("p-3 sm:p-6", className)}>
+          <div className={cn("p-4 sm:p-6", className)}>
             {children}
           </div>
         </main>

@@ -68,8 +68,17 @@ namespace SapBasisPulse.Api.Controllers
         [HttpGet("options")]
         public async Task<IActionResult> GetStatusOptions()
         {
-            var statusOptions = await _context.StatusMaster
-                .Where(sm => sm.IsActive)
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            
+            var query = _context.StatusMaster.Where(sm => sm.IsActive);
+            
+            // For consultants, exclude the "ReOpened" status
+            if (userRole == "Consultant")
+            {
+                query = query.Where(sm => sm.StatusCode != "ReOpened");
+            }
+            
+            var statusOptions = await query
                 .OrderBy(sm => sm.SortOrder)
                 .Select(sm => new
                 {
