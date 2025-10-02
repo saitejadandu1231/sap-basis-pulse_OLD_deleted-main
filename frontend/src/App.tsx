@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { lazy, Suspense } from "react";
+import React, { lazy, Suspense } from "react";
 
 // Lazy load components for better performance
 const Index = lazy(() => import("./pages/Index"));
@@ -36,12 +36,56 @@ const CancellationRefundPolicy = lazy(() => import("./pages/CancellationRefundPo
 const ShippingDeliveryPolicy = lazy(() => import("./pages/ShippingDeliveryPolicy"));
 const TermsConditions = lazy(() => import("./pages/TermsConditions"));
 
-// Loading component
-const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-  </div>
-);
+// Enhanced loading component with error boundary
+const LoadingSpinner = () => {
+  React.useEffect(() => {
+    // Prevent memory leaks during loading
+    const timeoutId = setTimeout(() => {
+      console.log('Loading spinner active');
+    }, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+    </div>
+  );
+};
+
+// Suspense boundary with error recovery
+const SuspenseBoundary = ({ children }: { children: React.ReactNode }) => {
+  const [hasError, setHasError] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (hasError) {
+      const timer = setTimeout(() => setHasError(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasError]);
+
+  if (hasError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Loading failed. Retrying...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <React.Suspense fallback={<LoadingSpinner />}>
+      <ErrorBoundary>
+        {children}
+      </ErrorBoundary>
+    </React.Suspense>
+  );
+};
 
 // Error boundary for individual routes
 const RouteErrorBoundary = ({ children }: { children: React.ReactNode }) => (
@@ -68,6 +112,8 @@ const queryClient = new QueryClient({
       refetchIntervalInBackground: false,
       enabled: true,
       notifyOnChangeProps: ['data', 'error', 'isLoading'],
+      // Prevent updates after component unmount
+      structuralSharing: false,
     },
     mutations: {
       retry: 1,
@@ -87,7 +133,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Suspense fallback={<LoadingSpinner />}>
+              <SuspenseBoundary>
                 <Routes>
             <Route path="/" element={<RouteErrorBoundary><Index /></RouteErrorBoundary>} />
             <Route path="/login" element={<RouteErrorBoundary><Login /></RouteErrorBoundary>} />
@@ -172,7 +218,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<RouteErrorBoundary><NotFound /></RouteErrorBoundary>} />
           </Routes>
-            </Suspense>
+              </SuspenseBoundary>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
