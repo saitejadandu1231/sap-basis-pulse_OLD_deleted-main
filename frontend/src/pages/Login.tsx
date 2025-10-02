@@ -11,14 +11,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
-import { 
-  AlertCircle, 
-  ArrowLeft, 
-  Shield, 
-  Mail, 
-  Lock, 
-  User, 
-  Users, 
+import {
+  AlertCircle,
+  ArrowLeft,
+  Shield,
+  Mail,
+  Lock,
+  User,
+  Users,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -31,11 +31,12 @@ import { apiFetch } from "@/lib/api";
 import SSOButtons from "@/components/SSOButtons";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const Login = () => {
+// Login component that uses useAuth
+const LoginContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { signIn, signUp, user, loading: authLoading } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   
   // Get the redirect path from location state if available
   const from = (location.state as { from?: string })?.from || '/dashboard';
@@ -195,15 +196,6 @@ const Login = () => {
       setLoading(false);
     }
   };
-
-  // Show loading while auth is initializing
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-2 sm:p-4">
@@ -627,6 +619,22 @@ const Login = () => {
       </div>
     </div>
   );
+};
+
+// Wrapper component that handles loading state
+const Login = () => {
+  const { loading: authLoading } = useAuth();
+
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return <LoginContent />;
 };
 
 export default Login;

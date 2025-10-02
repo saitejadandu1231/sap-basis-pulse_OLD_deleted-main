@@ -61,7 +61,7 @@ class ErrorBoundary extends Component<Props, State> {
                   <p className="text-sm font-medium text-red-800 dark:text-red-200">
                     Error Details:
                   </p>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-1 font-mono">
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1 font-mono break-all">
                     {this.state.error.message}
                   </p>
                 </div>
@@ -71,6 +71,7 @@ class ErrorBoundary extends Component<Props, State> {
                   onClick={this.handleRetry}
                   variant="outline"
                   className="flex-1"
+                  disabled={false}
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Try Again
@@ -78,6 +79,7 @@ class ErrorBoundary extends Component<Props, State> {
                 <Button
                   onClick={this.handleReload}
                   className="flex-1"
+                  disabled={false}
                 >
                   Reload Page
                 </Button>
@@ -88,7 +90,14 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    try {
+      return this.props.children;
+    } catch (error) {
+      // If rendering children fails, show error UI
+      console.error('Error rendering children:', error);
+      this.setState({ hasError: true, error: error as Error });
+      return this.render();
+    }
   }
 }
 

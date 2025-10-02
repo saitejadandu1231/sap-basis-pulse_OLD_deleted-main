@@ -35,11 +35,23 @@ interface AuthContextType {
   updateUser: (firstName: string, lastName: string) => Promise<{ error: any }>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>({
+  user: null,
+  token: null,
+  loading: true,
+  userRole: null,
+  firstName: null,
+  lastName: null,
+  signIn: async () => ({ error: new Error('AuthProvider not initialized') }),
+  signUp: async () => ({ error: new Error('AuthProvider not initialized') }),
+  signOut: async () => {},
+  refreshUser: async () => {},
+  updateUser: async () => ({ error: new Error('AuthProvider not initialized') }),
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
