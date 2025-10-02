@@ -13,6 +13,16 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' &&
     componentTagger(),
+    {
+      name: 'cache-bust',
+      transformIndexHtml(html: string) {
+        const timestamp = Date.now();
+        return html.replace(
+          /(href|src)="([^"]*\.(css|js))"/g,
+          (match: string, attr: string, url: string, ext: string) => `${attr}="${url}?v=${timestamp}"`
+        );
+      }
+    }
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -22,6 +32,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: false, // Disable sourcemaps in production for smaller build
+    emptyOutDir: true, // Ensure clean builds
     rollupOptions: {
       output: {
         manualChunks: {
@@ -36,6 +47,7 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     // This helps with build optimization
-    'process.env.NODE_ENV': JSON.stringify(mode)
+    'process.env.NODE_ENV': JSON.stringify(mode),
+    'process.env.BUILD_TIME': JSON.stringify(new Date().toISOString())
   }
 }));
