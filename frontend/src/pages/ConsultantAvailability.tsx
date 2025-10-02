@@ -115,13 +115,17 @@ const ConsultantAvailability = () => {
 
   // Fetch admin email and slots
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
         // Set default admin email
-        setAdminEmail('appadmin@yuktor.com');
+        if (isMounted) {
+          setAdminEmail('appadmin@yuktor.com');
+        }
 
         // Fetch consultant slots
-        if (user?.id) {
+        if (user?.id && isMounted) {
           const slotsResponse = await apiFetch(`ConsultantAvailability/consultant/${user.id}`, {
             method: 'GET'
           });
@@ -137,7 +141,9 @@ const ConsultantAvailability = () => {
             }))
             : [];
 
-          setSlots(formattedSlots);
+          if (isMounted) {
+            setSlots(formattedSlots);
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -145,6 +151,10 @@ const ConsultantAvailability = () => {
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [token, user?.id]);
 
   const handleDefineBlock = async (e: React.FormEvent) => {

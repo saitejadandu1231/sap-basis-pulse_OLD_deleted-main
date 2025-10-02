@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { lazy, Suspense } from "react";
 
 // Lazy load components for better performance
@@ -62,15 +63,16 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Suspense fallback={<LoadingSpinner />}>
+                <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -160,4 +162,5 @@ const App = () => (
     </AuthProvider>
   </ThemeProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );export default App;

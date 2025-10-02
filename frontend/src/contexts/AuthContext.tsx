@@ -45,6 +45,15 @@ export const useAuth = () => {
   return context;
 };
 
+// Loading guard hook to prevent using auth before initialization
+export const useAuthLoading = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context.loading;
+};
+
 // Helper function to decode JWT
 const decodeJwt = (token: string): any => {
   try {
