@@ -61,29 +61,145 @@ const ConsultantSkills = () => {
 
     try {
       if (checked) {
-        await addSkillMutation.mutateAsync({
-          consultantId: user.id,
-          supportTypeId: skill.supportTypeId,
-          supportCategoryId: skill.supportCategoryId
-        });
-        setSelectedSkills(prev => [...prev, skill]);
-        toast.success('Skill added to your expertise');
-      } else {
-        // Find the skill to remove
-        const skillToRemove = consultantSkills?.find(s =>
-          s.supportTypeId === skill.supportTypeId &&
-          s.supportCategoryId === skill.supportCategoryId
-        );
-        if (skillToRemove) {
-          await removeSkillMutation.mutateAsync({
+        // If selecting a support type (no category specified), select all categories too
+        if (!skill.supportCategoryId) {
+          const supportType = supportTypes?.find(type => type.id === skill.supportTypeId);
+          const skillsToAdd: {supportTypeId: string; supportCategoryId?: string}[] = [{ supportTypeId: skill.supportTypeId }]; // General skill
+
+          // Add all categories under this type
+          if (supportType?.categories) {
+            supportType.categories.forEach(category => {
+              skillsToAdd.push({
+                supportTypeId: skill.supportTypeId,
+                supportCategoryId: category.id
+              });
+            });
+          }
+
+          // Add all skills
+          for (const skillToAdd of skillsToAdd) {
+            try {
+              await addSkillMutation.mutateAsync({
+                consultantId: user.id,
+                supportTypeId: skillToAdd.supportTypeId,
+                supportCategoryId: skillToAdd.supportCategoryId
+              });
+            } catch (error) {
+              // Continue with other skills even if one fails
+              console.warn('Failed to add skill:', skillToAdd, error);
+            }
+          }
+
+          // Update local state
+          setSelectedSkills(prev => [...prev, ...skillsToAdd]);
+          toast.success(`Added ${skillsToAdd.length} skills to your expertise`);
+        } else {
+          // Selecting a specific category
+          await addSkillMutation.mutateAsync({
             consultantId: user.id,
-            skillId: skillToRemove.id
+            supportTypeId: skill.supportTypeId,
+            supportCategoryId: skill.supportCategoryId
           });
+          setSelectedSkills(prev => [...prev, skill]);
+          toast.success('Skill added to your expertise');
+        }
+      } else {
+        // If deselecting a support type, deselect all categories too
+        if (!skill.supportCategoryId) {
+          const supportType = supportTypes?.find(type => type.id === skill.supportTypeId);
+          const skillsToRemove = [];
+
+          // Find general skill
+          const generalSkill = consultantSkills?.find(s =>
+            s.supportTypeId === skill.supportTypeId && !s.supportCategoryId
+          );
+          if (generalSkill) {
+            skillsToRemove.push(generalSkill);
+          }
+
+          // Find all category skills under this type
+          if (supportType?.categories) {
+            supportType.categories.forEach(category => {
+              const categorySkill = consultantSkills?.find(s =>
+                s.supportTypeId === skill.supportTypeId && s.supportCategoryId === category.id
+              );
+              if (categorySkill) {
+                skillsToRemove.push(categorySkill);
+              }
+            });
+          }
+
+          // Remove all skills
+          for (const skillToRemove of skillsToRemove) {
+            try {
+              await removeSkillMutation.mutateAsync({
+                consultantId: user.id,
+                skillId: skillToRemove.id
+              });
+            } catch (error) {
+              // Continue with other skills even if one fails
+              console.warn('Failed to remove skill:', skillToRemove, error);
+            }
+          }
+
+          // Update local state
           setSelectedSkills(prev => prev.filter(s =>
-            !(s.supportTypeId === skill.supportTypeId &&
-              s.supportCategoryId === skill.supportCategoryId)
+            s.supportTypeId !== skill.supportTypeId
           ));
-          toast.success('Skill removed from your expertise');
+          toast.success(`Removed ${skillsToRemove.length} skills from your expertise`);
+        } else {
+          // Deselecting a specific category
+          const skillToRemove = consultantSkills?.find(s =>
+            s.supportTypeId === skill.supportTypeId &&
+            s.supportCategoryId === skill.supportCategoryId
+          );
+          if (skillToRemove) {
+            await removeSkillMutation.mutateAsync({
+              consultantId: user.id,
+              skillId: skillToRemove.id
+            });
+
+            // Check if this was the last category under this support type
+            const supportType = supportTypes?.find(type => type.id === skill.supportTypeId);
+            const remainingCategories = selectedSkills.filter(s =>
+              s.supportTypeId === skill.supportTypeId && s.supportCategoryId && s.supportCategoryId !== skill.supportCategoryId
+            );
+
+            // If no categories remain and there's a general skill, remove it too
+            let shouldRemoveGeneralSkill = false;
+            if (remainingCategories.length === 0) {
+              const generalSkill = consultantSkills?.find(s =>
+                s.supportTypeId === skill.supportTypeId && !s.supportCategoryId
+              );
+              if (generalSkill) {
+                try {
+                  await removeSkillMutation.mutateAsync({
+                    consultantId: user.id,
+                    skillId: generalSkill.id
+                  });
+                  shouldRemoveGeneralSkill = true;
+                } catch (error) {
+                  console.warn('Failed to remove general skill:', error);
+                }
+              }
+            }
+
+            // Update local state
+            setSelectedSkills(prev => prev.filter(s => {
+              // Remove the specific category
+              if (s.supportTypeId === skill.supportTypeId && s.supportCategoryId === skill.supportCategoryId) {
+                return false;
+              }
+              // Remove the general skill if no categories remain
+              if (shouldRemoveGeneralSkill && s.supportTypeId === skill.supportTypeId && !s.supportCategoryId) {
+                return false;
+              }
+              return true;
+            }));
+
+            const removedCount = shouldRemoveGeneralSkill ? 2 : 1;
+            toast.success(`${removedCount === 2 ? 'Category and general skill' : 'Skill'} removed from your expertise`);
+          }
         }
       }
     } catch (error: any) {

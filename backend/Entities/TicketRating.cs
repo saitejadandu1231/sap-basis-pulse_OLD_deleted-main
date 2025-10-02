@@ -15,6 +15,6 @@ namespace SapBasisPulse.Api.Entities
         public int? CommunicationProfessionalism { get; set; }
         public int? ResolutionQuality { get; set; }
         public int? ResponseTime { get; set; }
-        public string Comments { get; set; }
+        public string? Comments { get; set; }
     }
 }

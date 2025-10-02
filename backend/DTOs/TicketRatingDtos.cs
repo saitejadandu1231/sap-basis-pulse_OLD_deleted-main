@@ -12,7 +12,7 @@ namespace SapBasisPulse.Api.DTOs
         public int? CommunicationProfessionalism { get; set; }
         public int? ResolutionQuality { get; set; }
         public int? ResponseTime { get; set; }
-        public string Comments { get; set; }
+        public string? Comments { get; set; }
         public string? RatedByUserName { get; set; }
     }
 
@@ -25,6 +25,6 @@ namespace SapBasisPulse.Api.DTOs
         public int? CommunicationProfessionalism { get; set; }
         public int? ResolutionQuality { get; set; }
         public int? ResponseTime { get; set; }
-        public string Comments { get; set; }
+        public string? Comments { get; set; }
     }
 }

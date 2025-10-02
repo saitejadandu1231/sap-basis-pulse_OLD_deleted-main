@@ -266,7 +266,7 @@ export const useSubmitTicketRating = () => {
       resolutionQuality: number;
       responseTime: number;
       communicationProfessionalism: number;
-      comments?: string;
+      comments: string;
     }) => {
       const response = await apiFetch('TicketRatings', {
         method: 'POST',
@@ -673,7 +673,14 @@ export const useAddConsultantSkill = () => {
         throw new Error(errorData.error || 'Failed to add consultant skill');
       }
 
-      return await response.json();
+      // Handle 201 Created response which may or may not have a body
+      try {
+        const result = await response.json();
+        return result;
+      } catch {
+        // If response body is empty, return the input data
+        return { ...data, id: 'temp-id' };
+      }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['consultantSkills', data.consultantId] });
@@ -695,7 +702,8 @@ export const useRemoveConsultantSkill = () => {
         throw new Error(errorData.error || 'Failed to remove consultant skill');
       }
 
-      return await response.json();
+      // DELETE returns 204 No Content with empty body, so we don't parse JSON
+      return { consultantId: data.consultantId, skillId: data.skillId };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['consultantSkills', data.consultantId] });

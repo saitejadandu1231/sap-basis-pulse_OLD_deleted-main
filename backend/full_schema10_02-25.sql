@@ -142,7 +142,7 @@ CREATE TABLE "TicketRatings" (
     "CommunicationProfessionalism" integer,
     "ResolutionQuality" integer,
     "ResponseTime" integer,
-    "Comments" text NOT NULL,
+    "Comments" text,
     CONSTRAINT "PK_TicketRatings" PRIMARY KEY ("Id"),
     CONSTRAINT "FK_TicketRatings_Orders_OrderId" FOREIGN KEY ("OrderId") REFERENCES "Orders" ("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_TicketRatings_Users_RatedByUserId" FOREIGN KEY ("RatedByUserId") REFERENCES "Users" ("Id") ON DELETE CASCADE,

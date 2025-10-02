@@ -76,7 +76,7 @@ const CompactRatingForm: React.FC<CompactRatingFormProps> = ({
         resolutionQuality,
         responseTime,
         communicationProfessionalism,
-        comments: comments.trim() || undefined
+        comments: comments.trim() || ''
       });
 
       toast.success('Rating submitted successfully');
