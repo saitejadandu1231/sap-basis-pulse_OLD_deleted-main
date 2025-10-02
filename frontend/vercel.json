@@ -6,15 +6,8 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/:path*",
-      "destination": "/index.html",
-      "has": [
-        {
-          "type": "header",
-          "key": "accept",
-          "value": "text/html"
-        }
-      ]
+      "source": "/((?!assets|icons|manifest\\.json|favicon\\.ico|robots\\.txt).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
