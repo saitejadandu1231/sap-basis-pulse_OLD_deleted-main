@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import PWAStatus from "@/components/PWAStatus";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -32,7 +31,6 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CancellationRefundPolicy from "./pages/CancellationRefundPolicy";
 import ShippingDeliveryPolicy from "./pages/ShippingDeliveryPolicy";
 import TermsConditions from "./pages/TermsConditions";
-import "@/lib/pwa"; // Initialize PWA functionality
 
 const queryClient = new QueryClient();
 
@@ -129,7 +127,6 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        <PWAStatus />
       </TooltipProvider>
     </AuthProvider>
   </ThemeProvider>

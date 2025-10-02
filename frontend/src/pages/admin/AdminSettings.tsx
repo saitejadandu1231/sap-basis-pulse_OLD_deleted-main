@@ -214,7 +214,7 @@ const AdminSettings = () => {
               </div>
               <div>
                 <Label htmlFor="fromName">From Name</Label>
-                <Input id="fromName" defaultValue="SAP BASIS Pulse" />
+                <Input id="fromName" defaultValue="Yuktor" />
               </div>
             </div>
             

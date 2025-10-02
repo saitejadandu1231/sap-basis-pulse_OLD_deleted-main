@@ -55,7 +55,7 @@ $env:DATABASE_URL = "your_production_database_connection_string"
    ```powershell
    npm install -g @railway/cli
    railway login
-   railway link  # Select your SAP Basis Pulse project
+   railway link  # Select your Yuktor project
    ```
 
 2. **Run Railway-specific script:**
