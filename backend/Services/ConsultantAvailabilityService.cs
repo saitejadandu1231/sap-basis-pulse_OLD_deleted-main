@@ -75,6 +75,22 @@ namespace SapBasisPulse.Api.Services
 
         public async Task<ConsultantAvailabilitySlotsResponse> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto)
         {
+            // Validate that the consultant exists and has an hourly rate set
+            var consultant = await _context.Users.FindAsync(dto.ConsultantId);
+            if (consultant == null || consultant.Role != UserRole.Consultant)
+                throw new ArgumentException("Invalid consultant selected");
+
+            if (!consultant.HourlyRate.HasValue)
+                throw new ArgumentException("Consultant must set an hourly rate before creating availability slots");
+
+            // Validate that the consultant has at least one skill
+            var consultantSkills = await _context.ConsultantSkills
+                .Where(cs => cs.ConsultantId == dto.ConsultantId)
+                .ToListAsync();
+            
+            if (!consultantSkills.Any())
+                throw new ArgumentException("Consultant must select at least one skill before creating availability slots");
+
             // Validate input times first
             if (dto.SlotEndTime <= dto.SlotStartTime)
             {
