@@ -1,7 +1,7 @@
 {
-  "name": "SAP BASIS Pulse",
-  "short_name": "Basis Pulse", 
-  "description": "SAP BASIS Support Management System",
+  "name": "Yuktor",
+  "short_name": "Yuktor", 
+  "description": "Yuktor - Enterprise Support Management System",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1b23",

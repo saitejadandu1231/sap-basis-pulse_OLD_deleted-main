@@ -23,7 +23,7 @@ namespace SapBasisPulse.Api.Controllers
             var users = await _userService.GetAllAsync();
             return Ok(users);
         }
-        
+
         [HttpGet("consultants")]
         [Authorize]
         public async Task<IActionResult> GetAllConsultants()
@@ -69,5 +69,39 @@ namespace SapBasisPulse.Api.Controllers
             if (!success) return BadRequest(new { error });
             return NoContent();
         }
+
+        [HttpPut("{id}/hourly-rate")]
+        [Authorize(Roles = "Consultant")]
+        public async Task<IActionResult> UpdateHourlyRate(Guid id, [FromBody] UpdateHourlyRateDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            // Ensure user can only update their own rate
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
+            if (id != userId) return Forbid();
+
+            var (success, error) = await _userService.UpdateHourlyRateAsync(id, dto.HourlyRate);
+            if (!success) return BadRequest(new { error });
+            return Ok(new { message = "Hourly rate updated successfully" });
+        }
+
+        [HttpPut("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            // Get current user ID from JWT token
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
+
+            var (success, error) = await _userService.ChangePasswordAsync(userId, dto.CurrentPassword, dto.NewPassword);
+            if (!success) return BadRequest(new { error });
+            return Ok(new { message = "Password changed successfully" });
+        }
+    }
+
+    public class UpdateHourlyRateDto
+    {
+        public decimal HourlyRate { get; set; }
     }
 }

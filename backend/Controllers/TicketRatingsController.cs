@@ -23,6 +23,14 @@ namespace SapBasisPulse.Api.Controllers
             return Ok(ratings);
         }
 
+        [HttpGet("consultant/{consultantId}")]
+        [Authorize]
+        public async Task<IActionResult> GetRatingsForConsultant(Guid consultantId)
+        {
+            var ratings = await _service.GetRatingsForConsultantAsync(consultantId);
+            return Ok(ratings);
+        }
+
         [HttpGet("{id}")]
         [Authorize]
         public async Task<IActionResult> GetById(Guid id)

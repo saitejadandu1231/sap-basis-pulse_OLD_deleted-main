@@ -18,6 +18,11 @@ namespace SapBasisPulse.Api.Services
             // Validate required fields
             if (string.IsNullOrWhiteSpace(dto.Description) || string.IsNullOrWhiteSpace(dto.Priority))
                 throw new ArgumentException("Description and Priority are required");
+            
+            // Validate time slots
+            if (dto.TimeSlotIds == null || dto.TimeSlotIds.Count == 0)
+                throw new ArgumentException("At least one time slot must be selected");
+
             // SR Identifier logic: required for certain suboptions (handled in UI, double-check here)
             if (dto.SupportSubOptionId.HasValue)
             {
@@ -25,35 +30,65 @@ namespace SapBasisPulse.Api.Services
                 if (subOption != null && subOption.Name.Contains("SR", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(dto.SrIdentifier))
                     throw new ArgumentException("SR Identifier is required for this request type");
             }
-            var slot = await _context.ConsultantAvailabilitySlots.FindAsync(dto.TimeSlotId);
-            if (slot == null || slot.BookedByCustomerChoiceId != null)
-                throw new ArgumentException("Selected time slot is not available");
-            // Mark slot as booked
-            slot.BookedByCustomerChoiceId = Guid.NewGuid(); // Create a new CustomerChoice (simplified)
+
+            // Validate and check availability of all selected time slots
+            var timeSlots = await _context.ConsultantAvailabilitySlots
+                .Where(ts => dto.TimeSlotIds.Contains(ts.Id))
+                .ToListAsync();
+
+            if (timeSlots.Count != dto.TimeSlotIds.Count)
+                throw new ArgumentException("One or more selected time slots do not exist");
+
+            if (timeSlots.Any(ts => ts.BookedByCustomerChoiceId != null))
+                throw new ArgumentException("One or more selected time slots are already booked");
+
+            // Get consultant's hourly rate
+            var consultant = await _context.Users.FindAsync(dto.ConsultantId);
+            if (consultant == null || consultant.Role != UserRole.Consultant)
+                throw new ArgumentException("Invalid consultant selected");
+
+            if (!consultant.HourlyRate.HasValue)
+                throw new ArgumentException("Consultant has not set an hourly rate");
+
+            // Calculate total hours and amount
+            int totalHours = 0;
+            foreach (var slot in timeSlots)
+            {
+                var duration = slot.SlotEndTime - slot.SlotStartTime;
+                totalHours += (int)duration.TotalHours;
+            }
+            decimal totalAmount = totalHours * consultant.HourlyRate.Value;
+
+            // Mark slots as booked and create customer choice
+            var customerChoiceId = Guid.NewGuid();
             var customerChoice = new CustomerChoice
             {
-                Id = slot.BookedByCustomerChoiceId.Value,
+                Id = customerChoiceId,
                 UserId = createdByUserId,
-                SlotId = slot.Id,
+                SlotId = timeSlots.First().Id, // Use first slot for backward compatibility
                 CreatedAt = DateTime.UtcNow,
-                Description = dto.Description, // Set required Description from DTO
-                Priority = dto.Priority, // Set Priority from DTO
-                Status = "Open", // Default status
-                ConsultantId = dto.ConsultantId, // Set ConsultantId from DTO
-                SupportTypeId = dto.SupportTypeId, // Copy support taxonomy info
+                Description = dto.Description,
+                Priority = dto.Priority,
+                Status = "Open",
+                ConsultantId = dto.ConsultantId,
+                SupportTypeId = dto.SupportTypeId,
                 SupportCategoryId = dto.SupportCategoryId,
                 SupportSubOptionId = dto.SupportSubOptionId
             };
             _context.CustomerChoices.Add(customerChoice);
+
+            // Mark all time slots as booked
+            foreach (var slot in timeSlots)
+            {
+                slot.BookedByCustomerChoiceId = customerChoiceId;
+            }
+
             // Create support request (Order)
-            // Generate an order number in the format SR-YYYY-MMDD-XXXX where XXXX is a random number
             string orderNumber = $"SR-{DateTime.UtcNow:yyyy-MMdd}-{new Random().Next(1000, 9999)}";
             
-            // Get the support type name
             var supportType = await _context.SupportTypes.FindAsync(dto.SupportTypeId);
             string supportTypeName = supportType?.Name ?? "Unknown";
             
-            // Ensure SrIdentifier is not null - use orderNumber as a fallback if it's not provided
             string srIdentifier = !string.IsNullOrWhiteSpace(dto.SrIdentifier) 
                 ? dto.SrIdentifier 
                 : $"AUTO-{orderNumber}";
@@ -61,30 +96,45 @@ namespace SapBasisPulse.Api.Services
             var order = new Order
             {
                 Id = Guid.NewGuid(),
-                OrderNumber = orderNumber, // Set the OrderNumber field
-                CustomerChoiceId = customerChoice.Id, // Link to the CustomerChoice we just created
+                OrderNumber = orderNumber,
+                CustomerChoiceId = customerChoice.Id,
                 SupportTypeId = dto.SupportTypeId,
-                SupportTypeName = supportTypeName, // Set the SupportTypeName field
+                SupportTypeName = supportTypeName,
                 SupportCategoryId = dto.SupportCategoryId,
                 SupportSubOptionId = dto.SupportSubOptionId,
                 Description = dto.Description,
-                SrIdentifier = srIdentifier, // Use the srIdentifier variable which is guaranteed not to be null
+                SrIdentifier = srIdentifier,
                 Priority = dto.Priority,
                 ConsultantId = dto.ConsultantId,
-                TimeSlotId = dto.TimeSlotId,
+                TimeSlotId = timeSlots.First().Id, // Keep for backward compatibility
                 CreatedByUserId = createdByUserId,
                 CreatedAt = DateTime.UtcNow,
                 StatusId = 1, // Default to "New" status
-                StatusString = "New" // Keep backward compatibility
+                StatusString = "New", // Keep backward compatibility
+                TotalAmount = totalAmount,
+                PaymentStatus = "Pending"
             };
             _context.Orders.Add(order);
+
+            // Create OrderTimeSlot entries for multiple slots
+            foreach (var slot in timeSlots)
+            {
+                var orderTimeSlot = new OrderTimeSlot
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    TimeSlotId = slot.Id
+                };
+                _context.OrderTimeSlots.Add(orderTimeSlot);
+            }
+
             await _context.SaveChangesAsync();
             return await ToDto(order);
         }
 
-        public async Task<IEnumerable<SupportRequestDto>> GetRecentForUserAsync(Guid userId)
+        public async Task<IEnumerable<SupportRequestDto>> GetRecentForUserAsync(Guid userId, string? searchQuery = null)
         {
-            var orders = await _context.Orders
+            var query = _context.Orders
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
                 .Include(o => o.SupportSubOption)
@@ -92,9 +142,28 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.TimeSlot)
                 .Include(o => o.CreatedByUser)
                 .Include(o => o.Status)
-                .Where(o => o.CreatedByUserId == userId)
+                .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
+                .Where(o => o.CreatedByUserId == userId);
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var searchTerm = searchQuery.ToLower().Trim();
+                query = query.Where(o =>
+                    o.OrderNumber.ToLower().Contains(searchTerm) ||
+                    o.SrIdentifier.ToLower().Contains(searchTerm) ||
+                    (o.SupportType != null && o.SupportType.Name.ToLower().Contains(searchTerm)) ||
+                    (o.Description != null && o.Description.ToLower().Contains(searchTerm)) ||
+                    (o.Consultant != null && (o.Consultant.FirstName + " " + o.Consultant.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.CreatedByUser != null && (o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.Status != null && o.Status.StatusName.ToLower().Contains(searchTerm)) ||
+                    (o.Priority != null && o.Priority.ToLower().Contains(searchTerm))
+                );
+            }
+
+            var orders = await query
                 .OrderByDescending(o => o.CreatedAt)
-                .Take(10)
+                .Take(50) // Increase limit for search results
                 .ToListAsync();
 
             var dtos = new List<SupportRequestDto>();
@@ -105,9 +174,9 @@ namespace SapBasisPulse.Api.Services
             return dtos;
         }
 
-        public async Task<IEnumerable<SupportRequestDto>> GetRecentForConsultantAsync(Guid consultantId)
+        public async Task<IEnumerable<SupportRequestDto>> GetRecentForConsultantAsync(Guid consultantId, string? searchQuery = null)
         {
-            var orders = await _context.Orders
+            var query = _context.Orders
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
                 .Include(o => o.SupportSubOption)
@@ -115,9 +184,28 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.TimeSlot)
                 .Include(o => o.CreatedByUser)
                 .Include(o => o.Status)
-                .Where(o => o.ConsultantId == consultantId)
+                .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
+                .Where(o => o.ConsultantId == consultantId);
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var searchTerm = searchQuery.ToLower().Trim();
+                query = query.Where(o =>
+                    o.OrderNumber.ToLower().Contains(searchTerm) ||
+                    o.SrIdentifier.ToLower().Contains(searchTerm) ||
+                    (o.SupportType != null && o.SupportType.Name.ToLower().Contains(searchTerm)) ||
+                    (o.Description != null && o.Description.ToLower().Contains(searchTerm)) ||
+                    (o.Consultant != null && (o.Consultant.FirstName + " " + o.Consultant.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.CreatedByUser != null && (o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.Status != null && o.Status.StatusName.ToLower().Contains(searchTerm)) ||
+                    (o.Priority != null && o.Priority.ToLower().Contains(searchTerm))
+                );
+            }
+
+            var orders = await query
                 .OrderByDescending(o => o.CreatedAt)
-                .Take(10)
+                .Take(50) // Increase limit for search results
                 .ToListAsync();
 
             var dtos = new List<SupportRequestDto>();
@@ -175,6 +263,35 @@ namespace SapBasisPulse.Api.Services
                     .CountAsync();
             }
             
+            // Load order time slots for multiple slots support
+            await _context.Entry(o).Collection(x => x.OrderTimeSlots).LoadAsync();
+            foreach (var ots in o.OrderTimeSlots)
+            {
+                await _context.Entry(ots).Reference(x => x.TimeSlot).LoadAsync();
+            }
+
+            // Calculate total hours from all time slots
+            int totalHours = 0;
+            var timeSlotInfos = new List<TimeSlotInfo>();
+            foreach (var ots in o.OrderTimeSlots)
+            {
+                var slot = ots.TimeSlot;
+                if (slot != null)
+                {
+                    var duration = slot.SlotEndTime - slot.SlotStartTime;
+                    var hours = (int)duration.TotalHours;
+                    totalHours += hours;
+                    
+                    timeSlotInfos.Add(new TimeSlotInfo
+                    {
+                        Id = slot.Id,
+                        StartTime = slot.SlotStartTime,
+                        EndTime = slot.SlotEndTime,
+                        DurationHours = hours
+                    });
+                }
+            }
+            
             return new SupportRequestDto
             {
                 Id = o.Id,
@@ -189,16 +306,18 @@ namespace SapBasisPulse.Api.Services
                 Priority = o.Priority,
                 ConsultantId = o.Consultant?.Id ?? Guid.Empty,
                 ConsultantName = o.Consultant != null ? o.Consultant.FirstName + " " + o.Consultant.LastName : "Unknown",
-                TimeSlotId = o.TimeSlotId ?? Guid.Empty,
-                SlotStartTime = o.TimeSlot?.SlotStartTime ?? DateTime.MinValue,
-                SlotEndTime = o.TimeSlot?.SlotEndTime ?? DateTime.MinValue,
+                TimeSlots = timeSlotInfos, // Multiple time slots
                 CreatedByUserId = o.CreatedByUserId,
                 CreatedByName = o.CreatedByUser != null ? o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName : "Unknown",
                 CreatedAt = o.CreatedAt,
                 Status = o.Status.StatusName,
                 ConversationId = conversation?.Id,
                 HasConversation = conversation != null,
-                UnreadMessageCount = unreadCount
+                UnreadMessageCount = unreadCount,
+                TotalAmount = o.TotalAmount,
+                PaymentStatus = o.PaymentStatus,
+                ConsultantHourlyRate = o.Consultant?.HourlyRate,
+                TotalHours = totalHours
             };
         }
 

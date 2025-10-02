@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import SSOButtons from "@/components/SSOButtons";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -143,7 +144,13 @@ const Login = () => {
 
     try {
       // Call backend register endpoint directly
-      const payload = { email, password, firstName, lastName, role: selectedRole };
+      const payload = { 
+        email, 
+        password, 
+        firstName, 
+        lastName, 
+        role: selectedRole
+      };
       const res = await apiFetch('auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
       const error = res.ok ? null : { message: result?.error ?? 'Registration failed' };

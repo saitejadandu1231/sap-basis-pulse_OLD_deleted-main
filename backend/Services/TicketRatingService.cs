@@ -32,6 +32,29 @@ namespace SapBasisPulse.Api.Services
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<TicketRatingDto>> GetRatingsForConsultantAsync(Guid consultantId)
+        {
+            return await _context.TicketRatings
+                .Where(r => r.RatedUserId == consultantId && r.RatingForRole == "consultant")
+                .Include(r => r.RatedByUser)
+                .Select(r => new TicketRatingDto
+                {
+                    Id = r.Id,
+                    OrderId = r.OrderId,
+                    RatedByUserId = r.RatedByUserId,
+                    RatedUserId = r.RatedUserId,
+                    RatingForRole = r.RatingForRole,
+                    CommunicationProfessionalism = r.CommunicationProfessionalism,
+                    ResolutionQuality = r.ResolutionQuality,
+                    ResponseTime = r.ResponseTime,
+                    Comments = r.Comments,
+                    RatedByUserName = r.RatedByUser != null ? $"{r.RatedByUser.FirstName} {r.RatedByUser.LastName}" : null
+                })
+                .OrderByDescending(r => r.Id) // Most recent first
+                .Take(10) // Limit to 10 most recent reviews
+                .ToListAsync();
+        }
+
         public async Task<TicketRatingDto?> GetByIdAsync(Guid id)
         {
             var r = await _context.TicketRatings.FindAsync(id);

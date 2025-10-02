@@ -45,7 +45,9 @@ namespace SapBasisPulse.Api.Services
             return await _context.ConsultantAvailabilitySlots
                 .Where(s => s.ConsultantId == consultantId && 
                            s.SlotStartTime >= startDateUtc && 
-                           s.SlotStartTime <= endDateUtc)
+                           s.SlotStartTime <= endDateUtc &&
+                           s.SlotStartTime > DateTime.UtcNow && // Only future slots
+                           s.BookedByCustomerChoiceId == null) // Only available slots
                 .Select(s => new ConsultantAvailabilitySlotDto
                 {
                     Id = s.Id,

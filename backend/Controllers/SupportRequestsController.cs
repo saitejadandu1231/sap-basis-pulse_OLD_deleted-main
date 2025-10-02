@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.DTOs;
 using SapBasisPulse.Api.Services;
 using System.Security.Claims;
@@ -12,10 +14,13 @@ namespace SapBasisPulse.Api.Controllers
     {
         private readonly ISupportRequestService _service;
         private readonly IAuditLogService _auditLogService;
-        public SupportRequestsController(ISupportRequestService service, IAuditLogService auditLogService)
+        private readonly AppDbContext _context;
+
+        public SupportRequestsController(ISupportRequestService service, IAuditLogService auditLogService, AppDbContext context)
         {
             _service = service;
             _auditLogService = auditLogService;
+            _context = context;
         }
 
         [HttpPost]
@@ -30,20 +35,20 @@ namespace SapBasisPulse.Api.Controllers
 
         [HttpGet("recent/user")]
         [Authorize]
-        public async Task<IActionResult> GetRecentForUser()
+        public async Task<IActionResult> GetRecentForUser([FromQuery] string? search = null)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var result = await _service.GetRecentForUserAsync(userId);
-            await _auditLogService.LogAsync(userId, "GetRecentSupportRequests", "Order", "", "Fetched recent support requests", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
+            var result = await _service.GetRecentForUserAsync(userId, search);
+            await _auditLogService.LogAsync(userId, "GetRecentSupportRequests", "Order", "", $"Fetched recent support requests{(search != null ? $" with search: {search}" : "")}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
             return Ok(result);
         }
 
         [HttpGet("recent/consultant")]
         [Authorize(Roles = "Consultant,Admin")]
-        public async Task<IActionResult> GetRecentForConsultant()
+        public async Task<IActionResult> GetRecentForConsultant([FromQuery] string? search = null)
         {
             var consultantId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var result = await _service.GetRecentForConsultantAsync(consultantId);
+            var result = await _service.GetRecentForConsultantAsync(consultantId, search);
             return Ok(result);
         }
 
@@ -56,12 +61,20 @@ namespace SapBasisPulse.Api.Controllers
         }
 
         [HttpPut("{orderId}/status")]
-        [Authorize(Roles = "Consultant,Admin")]
+        [Authorize]
         public async Task<IActionResult> UpdateStatus(Guid orderId, [FromBody] UpdateStatusDto dto)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            // Allow consultants and admins to update status
+            if (userRole != "Consultant" && userRole != "Admin")
+            {
+                return Forbid("Only consultants and admins can update ticket status.");
+            }
+
             var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment);
-            
+
             if (!result)
             {
                 return BadRequest(new { error = "Invalid ticket ID or status" });

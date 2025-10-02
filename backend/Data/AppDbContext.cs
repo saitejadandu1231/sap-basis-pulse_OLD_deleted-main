@@ -11,6 +11,7 @@ namespace SapBasisPulse.Api.Data
         public DbSet<ConsultantAvailabilitySlot> ConsultantAvailabilitySlots { get; set; }
         public DbSet<CustomerChoice> CustomerChoices { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderTimeSlot> OrderTimeSlots { get; set; }
         public DbSet<TicketRating> TicketRatings { get; set; }
         public DbSet<SupportType> SupportTypes { get; set; }
         public DbSet<SupportCategory> SupportCategories { get; set; }
@@ -25,6 +26,7 @@ namespace SapBasisPulse.Api.Data
         public DbSet<StatusMaster> StatusMaster { get; set; }
         public DbSet<StatusChangeLog> StatusChangeLogs { get; set; }
         public DbSet<SSOConfiguration> SSOConfigurations { get; set; }
+        public DbSet<ConsultantSkill> ConsultantSkills { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -68,6 +70,22 @@ namespace SapBasisPulse.Api.Data
                 .WithMany()
                 .HasForeignKey(o => o.TimeSlotId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configure OrderTimeSlot entity
+        modelBuilder.Entity<OrderTimeSlot>(entity =>
+        {
+            entity.HasOne(ots => ots.Order)
+                .WithMany(o => o.OrderTimeSlots)
+                .HasForeignKey(ots => ots.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ots => ots.TimeSlot)
+                .WithMany()
+                .HasForeignKey(ots => ots.TimeSlotId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(ots => new { ots.OrderId, ots.TimeSlotId }).IsUnique();
         });
 
         // Apply the ServiceRequestIdentifier configuration
@@ -217,6 +235,41 @@ namespace SapBasisPulse.Api.Data
                 
             entity.Property(sso => sso.SupabaseEnabled)
                 .HasDefaultValue(false);
+        });
+
+        // ConsultantSkill configuration
+        modelBuilder.Entity<ConsultantSkill>(entity =>
+        {
+            entity.ToTable("ConsultantSkill");
+            entity.HasKey(cs => cs.Id);
+
+            entity.HasOne(cs => cs.Consultant)
+                .WithMany(u => u.ConsultantSkills)
+                .HasForeignKey(cs => cs.ConsultantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(cs => cs.SupportType)
+                .WithMany()
+                .HasForeignKey(cs => cs.SupportTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(cs => cs.SupportCategory)
+                .WithMany()
+                .HasForeignKey(cs => cs.SupportCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(cs => cs.SupportSubOption)
+                .WithMany()
+                .HasForeignKey(cs => cs.SupportSubOptionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Ensure unique combination of consultant and skill (type/category/suboption)
+            entity.HasIndex(cs => new { cs.ConsultantId, cs.SupportTypeId, cs.SupportCategoryId, cs.SupportSubOptionId })
+                .IsUnique()
+                .HasFilter("[SupportCategoryId] IS NOT NULL OR [SupportSubOptionId] IS NOT NULL");
+
+            entity.Property(cs => cs.CreatedAt)
+                .HasDefaultValueSql("GETUTCDATE()");
         });
 
         base.OnModelCreating(modelBuilder);

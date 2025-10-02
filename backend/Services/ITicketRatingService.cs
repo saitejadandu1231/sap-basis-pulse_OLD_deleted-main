@@ -8,6 +8,7 @@ namespace SapBasisPulse.Api.Services
     public interface ITicketRatingService
     {
         Task<IEnumerable<TicketRatingDto>> GetRatingsForOrderAsync(Guid orderId);
+        Task<IEnumerable<TicketRatingDto>> GetRatingsForConsultantAsync(Guid consultantId);
         Task<TicketRatingDto?> GetByIdAsync(Guid id);
         Task<TicketRatingDto> CreateAsync(CreateTicketRatingDto dto);
     }

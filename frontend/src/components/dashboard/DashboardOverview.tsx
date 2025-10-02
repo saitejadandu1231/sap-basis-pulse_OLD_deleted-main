@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import QuickActions from './QuickActions';
+import ConsultantSettings from './ConsultantSettings';
 
 const DashboardOverview = () => {
   const { user, userRole } = useAuth();
@@ -73,7 +74,7 @@ const DashboardOverview = () => {
         </Card>
 
         {/* Total Tickets */}
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/tickets')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -88,7 +89,7 @@ const DashboardOverview = () => {
 
         {/* Role-specific metric */}
         {userRole === 'consultant' && (
-          <Card>
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/consultant/availability')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Today's Slots</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -108,6 +109,21 @@ const DashboardOverview = () => {
         {/* Quick Actions */}
         <QuickActions />
 
+        {/* Consultant Settings - Only for consultants */}
+        {userRole === 'consultant' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Consultant Settings</CardTitle>
+              <CardDescription>
+                Manage your consulting rates and availability
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ConsultantSettings />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Recent Activity */}
         <Card>
           <CardHeader>
@@ -120,7 +136,11 @@ const DashboardOverview = () => {
             {tickets && tickets.length > 0 ? (
               <div className="space-y-3">
                 {tickets.slice(0, 4).map((ticket) => (
-                  <div key={ticket.id} className="flex items-center space-x-3 p-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div 
+                    key={ticket.id} 
+                    className="flex items-center space-x-3 p-2 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/tickets?ticket=${ticket.id}`)}
+                  >
                     <div className="flex-shrink-0">
                       {ticket.status === 'Closed' ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />

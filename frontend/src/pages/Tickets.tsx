@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecentTickets, useUpdateTicketStatus, useTicketRatings } from '@/hooks/useSupport';
 import { useStatusOptions } from '@/hooks/useStatus';
-import PageLayout from '@/components/layout/PageLayout';
+import { useCreatePaymentOrder, useVerifyPayment } from '@/hooks/usePayment';
+    
 import TicketStatusUpdater from '@/components/TicketStatusUpdater';
 import TicketRatingContainer from '@/components/TicketRatingContainer';
 import StatusHistory from '@/components/StatusHistory';
@@ -15,10 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, TrendingUp, ChevronUp, ChevronRight, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, ChevronUp, ChevronRight, Eye } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { toast } from 'sonner';
+import PageLayout from '@/components/layout/PageLayout';
 
 // Compact rating preview component
 const TicketRatingPreview: React.FC<{ ticketId: string }> = ({ ticketId }) => {
@@ -62,15 +64,42 @@ const TicketRatingPreview: React.FC<{ ticketId: string }> = ({ ticketId }) => {
 
 const Tickets = () => {
   const { user, userRole } = useAuth();
-  const { data: tickets, isLoading, refetch } = useRecentTickets();
   const { data: featureFlags } = useFeatureFlags();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [statusChangeDialog, setStatusChangeDialog] = useState({ open: false, ticketId: '', newStatus: '', oldStatus: '' });
   const [statusComment, setStatusComment] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [processingTicketId, setProcessingTicketId] = useState<string | null>(null);
   const updateTicketStatus = useUpdateTicketStatus();
   const { data: statusOptionsData } = useStatusOptions();
+  const createPaymentOrder = useCreatePaymentOrder();
+  const verifyPaymentMutation = useVerifyPayment();
+
+  // Get search query from URL
+  const searchQuery = searchParams.get('search') || '';
+  const ticketIdFromUrl = searchParams.get('ticket');
+  console.log('Tickets component - searchQuery:', searchQuery, 'searchParams:', searchParams.toString());
+
+  const { data: tickets, isLoading, refetch } = useRecentTickets(searchQuery?.trim() || undefined);
+
+  // Auto-open ticket from URL parameter
+  useEffect(() => {
+    if (ticketIdFromUrl && tickets && tickets.length > 0 && !selectedTicket) {
+      const ticket = tickets.find(t => t.id === ticketIdFromUrl);
+      if (ticket) {
+        setSelectedTicket(ticket);
+        setIsDialogOpen(true);
+        // Clear the ticket parameter from URL after opening
+        setSearchParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          newParams.delete('ticket');
+          return newParams;
+        });
+      }
+    }
+  }, [ticketIdFromUrl, tickets, selectedTicket]);
 
   // Transform API data to match component expectations with fallback to hardcoded options
   const statusOptions = statusOptionsData?.map(option => ({
@@ -83,12 +112,19 @@ const Tickets = () => {
     { value: 'PendingCustomerAction', label: 'Pending Customer', color: 'bg-orange-500' },
     { value: 'TopicClosed', label: 'Topic Closed', color: 'bg-green-500' },
     { value: 'Closed', label: 'Closed', color: 'bg-muted' },
+    { value: 'Paid', label: 'Paid', color: 'bg-emerald-500' },
     { value: 'ReOpened', label: 'Re-Opened', color: 'bg-purple-500' }
   ];
+
+  // Filter status options for consultants - remove TopicClosed and Paid
+  const filteredStatusOptions = userRole === 'consultant' 
+    ? statusOptions.filter(option => option.value !== 'TopicClosed' && option.value !== 'Paid')
+    : statusOptions;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Closed':
+      case 'Paid':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'InProgress':
         return <Clock className="w-5 h-5 text-blue-500" />;
@@ -155,6 +191,103 @@ const Tickets = () => {
     }
   };
 
+  const handlePayment = async (ticket: any) => {
+    // Initialize Razorpay function
+    const initializeRazorpay = (paymentOrder: any) => {
+      // Initialize Razorpay
+      const options = {
+        key: paymentOrder.key,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: 'SAP Basis Pulse',
+        description: `Payment for ${ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}`,
+        order_id: paymentOrder.razorpayOrderId,
+        handler: async function (response: any) {
+          try {
+            console.log('Razorpay response:', response);
+            console.log('Response keys:', Object.keys(response));
+            
+            // Check all possible property names
+            const orderId = response.razorpay_order_id || response.order_id || response.razorpayOrderId;
+            const paymentId = response.razorpay_payment_id || response.payment_id || response.razorpayPaymentId;
+            const signature = response.razorpay_signature || response.signature || response.razorpaySignature;
+            
+            console.log('Extracted values:', { orderId, paymentId, signature });
+            
+            // Ensure all required fields are present
+            if (!orderId || !paymentId || !signature) {
+              console.error('Missing required Razorpay response fields:', {
+                orderId, paymentId, signature,
+                original: response
+              });
+              toast.error('Payment verification failed: Missing payment details');
+              setProcessingTicketId(null);
+              return;
+            }
+
+            await verifyPaymentMutation.mutateAsync({
+              razorpayOrderId: orderId,
+              razorpayPaymentId: paymentId,
+              razorpaySignature: signature
+            });
+            
+            toast.success('Payment successful! Payment has been completed.');
+            refetch(); // Refresh tickets
+          } catch (error: any) {
+            toast.error('Payment verification failed: ' + error.message);
+          } finally {
+            setProcessingTicketId(null);
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setProcessingTicketId(null);
+          }
+        },
+        prefill: {
+          name: user?.firstName + ' ' + user?.lastName,
+          email: user?.email,
+        },
+        theme: {
+          color: '#3B82F6',
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    };
+
+    try {
+      setProcessingTicketId(ticket.id);
+      const amount = ticket.totalAmount || 100; // Use ticket total amount or default
+      
+      const paymentOrder = await createPaymentOrder.mutateAsync({
+        orderId: ticket.id,
+        amount: amount
+      });
+
+      // Load Razorpay script if not already loaded
+      if (!(window as any).Razorpay) {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => {
+          initializeRazorpay(paymentOrder);
+        };
+        script.onerror = () => {
+          toast.error('Failed to load payment gateway');
+          setProcessingTicketId(null);
+        };
+        document.body.appendChild(script);
+      } else {
+        initializeRazorpay(paymentOrder);
+      }
+    } catch (error: any) {
+      toast.error('Failed to initiate payment: ' + error.message);
+      setProcessingTicketId(null);
+    }
+  };
+
   const canManageTicket = (ticket: any) => {
     return userRole === 'admin' || 
            (userRole === 'consultant' && ticket.consultantId === user?.id); // Fixed incorrect comparison
@@ -163,14 +296,31 @@ const Tickets = () => {
   return (
     <PageLayout
       title={userRole === 'admin' ? 'All Tickets' : 'My Tickets'}
-      description={userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets'}
+      description={
+        searchQuery 
+          ? `Search results for "${searchQuery}" (${tickets?.length || 0} results)`
+          : (userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets')
+      }
       actions={
-        userRole === 'customer' ? (
-          <Button onClick={() => navigate('/support')}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Ticket
-          </Button>
-        ) : null
+        <div className="flex items-center space-x-2">
+          {searchQuery && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setSearchParams({});
+              }}
+            >
+              Clear Search
+            </Button>
+          )}
+          {userRole === 'customer' && (
+            <Button onClick={() => navigate('/support')}>
+              <Plus className="w-4 h-4 mr-1" />
+              New Ticket
+            </Button>
+          )}
+        </div>
       }
     >
       <div className="space-y-6">
@@ -194,7 +344,11 @@ const Tickets = () => {
             {tickets.map((ticket) => (
               <Card 
                 key={ticket.id} 
-                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full cursor-pointer"
+                onClick={() => {
+                  setSelectedTicket(ticket);
+                  setIsDialogOpen(true);
+                }}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -205,17 +359,17 @@ const Tickets = () => {
                       {getStatusIcon(ticket.status)}
                       {/* Quick Status Update for Consultants/Admins */}
                       {(userRole === 'consultant' || userRole === 'admin') ? (
-                        <Select 
-                          value={ticket.status} 
+                        <Select
+                          value={ticket.status}
                           onValueChange={(newStatus) => handleQuickStatusUpdate(ticket.id, newStatus, ticket.status)}
                         >
                           <SelectTrigger className="w-auto h-6 text-xs border-none bg-transparent p-0 focus:ring-0 focus:ring-offset-0">
                             <Badge variant={getStatusVariant(ticket.status)} className="text-xs cursor-pointer hover:bg-opacity-80">
-                              {ticket.status.replace(/([A-Z])/g, ' $1').trim()}
+                              {(userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
                             </Badge>
                           </SelectTrigger>
                           <SelectContent className="min-w-[200px]">
-                            {statusOptions.map((option) => (
+                            {filteredStatusOptions.map((option) => (
                               <SelectItem key={option.value} value={option.value}>
                                 <div className="flex items-center space-x-2">
                                   <div className={`w-3 h-3 rounded-full ${option.color}`} />
@@ -226,8 +380,8 @@ const Tickets = () => {
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge variant={getStatusVariant(ticket.status)} className="text-xs">
-                          {ticket.status.replace(/([A-Z])/g, ' $1').trim()}
+                        <Badge variant={getStatusVariant(ticket.status === 'Paid' ? 'Closed' : ticket.status)} className="text-xs">
+                          {(ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
                         </Badge>
                       )}
                     </div>
@@ -242,8 +396,8 @@ const Tickets = () => {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="flex flex-col h-full">
+                  <div className="flex-1 space-y-3">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Calendar className="w-3 h-3" />
@@ -271,47 +425,96 @@ const Tickets = () => {
                     )}
                     
                     {/* Rating Display */}
-                    {(ticket.status === 'Closed' || ticket.status === 'TopicClosed') && (
+                    {(ticket.status === 'Closed' || ticket.status === 'TopicClosed' || ticket.status === 'Paid') && (
                       <div className="space-y-2">
                         <TicketRatingPreview ticketId={ticket.id} />
                         {userRole === 'customer' && (
-                          <div className="flex items-center space-x-1 text-xs text-purple-600 bg-purple-50 rounded px-2 py-1">
+                          <div className="flex items-center space-x-1 text-xs text-purple-600 bg-purple-100 dark:bg-purple-900/20 rounded px-2 py-1 whitespace-nowrap">
                             <Star className="w-3 h-3" />
                             <span>Click "View & Rate" to rate your consultant</span>
                           </div>
                         )}
                       </div>
                     )}
-                    
-                    <div className="flex space-x-2">
-                      {featureFlags?.messagingEnabled && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/messages?orderId=${ticket.id}`);
-                          }}
-                          className="flex-1"
-                        >
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          Message
-                        </Button>
-                      )}
-                      
+                  </div>
+                  
+                  {/* Action Buttons - Always at bottom */}
+                  <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
+                    {featureFlags?.messagingEnabled && (
                       <Button
-                        variant="secondary"
+                        variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleTicketClick(ticket);
+                          navigate(`/messages?orderId=${ticket.id}`);
                         }}
-                        className="flex-1"
+                        className="flex-1 min-w-0"
                       >
-                        <Eye className="w-4 h-4 mr-2" />
-                        {userRole === 'customer' ? 'View & Rate' : 'Details'}
+                        <MessageSquare className="w-4 h-4 sm:hidden" />
+                        <span className="sm:hidden">Message</span>
+                        <MessageSquare className="w-4 h-4 hidden sm:inline mr-1" />
+                        <span className="hidden sm:inline">Message</span>
                       </Button>
-                    </div>
+                    )}
+
+                    {/* Payment status button - shows "Paid" when payment is completed */}
+                    {ticket.paymentStatus === 'Paid' && ticket.totalAmount > 0 && userRole !== 'consultant' && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        disabled
+                        className="flex-1 min-w-0 bg-green-600 hover:bg-green-600 cursor-not-allowed"
+                      >
+                        <span className="w-4 h-4 sm:hidden">✓</span>
+                        <span className="sm:hidden">Paid</span>
+                        <span className="w-4 h-4 hidden sm:inline mr-1">✓</span>
+                        <span className="hidden sm:inline">Paid</span>
+                      </Button>
+                    )}
+
+                    {/* Payment button for customers when ticket is closed and payment is pending */}
+                    {(() => {
+                      const shouldShow = userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'Paid') && ticket.paymentStatus !== 'Paid' && ticket.totalAmount >= 0;
+                      console.log('Pay Now button debug:', {
+                        userRole,
+                        ticketStatus: ticket.status,
+                        paymentStatus: ticket.paymentStatus,
+                        totalAmount: ticket.totalAmount,
+                        shouldShow
+                      });
+                      return shouldShow;
+                    })() && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePayment(ticket);
+                        }}
+                        disabled={processingTicketId !== null}
+                        className="flex-1 min-w-0 bg-green-600 hover:bg-green-700"
+                      >
+                        <span className="w-4 h-4 sm:hidden">₹</span>
+                        <span className="sm:hidden">{processingTicketId === ticket.id ? 'Processing...' : 'Pay'}</span>
+                        <span className="w-4 h-4 hidden sm:inline mr-1">₹</span>
+                        <span className="hidden sm:inline">{processingTicketId === ticket.id ? 'Processing...' : 'Pay Now'}</span>
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTicketClick(ticket);
+                      }}
+                      className="flex-1 min-w-0"
+                    >
+                      {/* <Star className="w-4 h-4 mr-1" /> */}
+                      <Eye className="w-4 h-4 sm:hidden" />
+                      <span className="sm:hidden">{userRole === 'customer' ? 'View' : 'Details'}</span>
+                      <span className="hidden sm:inline">{userRole === 'customer' ? 'View & Rate' : 'Details'}</span>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -320,18 +523,32 @@ const Tickets = () => {
         ) : (
           <div className="text-center py-12">
             <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No tickets found</h3>
+            <h3 className="text-lg font-medium mb-2">
+              {searchQuery ? 'No tickets match your search' : 'No tickets found'}
+            </h3>
             <p className="text-muted-foreground mb-6">
-              {userRole === 'customer' 
-                ? "You haven't created any support tickets yet."
-                : "No tickets are currently assigned to you."
+              {searchQuery 
+                ? `No tickets found matching "${searchQuery}". Try a different search term.`
+                : (userRole === 'customer' 
+                    ? "You haven't created any support tickets yet."
+                    : "No tickets are currently assigned to you."
+                  )
               }
             </p>
-            {userRole === 'customer' && (
-              <Button onClick={() => navigate('/support')}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create your first ticket
+            {searchQuery ? (
+              <Button 
+                variant="outline" 
+                onClick={() => setSearchParams({})}
+              >
+                Clear Search
               </Button>
+            ) : (
+              userRole === 'customer' && (
+                <Button onClick={() => navigate('/support')}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Create your first ticket
+                </Button>
+              )
             )}
           </div>
         )}
@@ -414,6 +631,18 @@ const Tickets = () => {
                 <span className="font-medium text-muted-foreground text-xs sm:text-sm">Consultant:</span>
                 <p className="text-sm break-words">{selectedTicket.consultantName || 'Unassigned'}</p>
               </div>
+              {selectedTicket.totalAmount > 0 && userRole !== 'consultant' && (
+                <div className="space-y-1">
+                  <span className="font-medium text-muted-foreground text-xs sm:text-sm">Payment:</span>
+                  <p className="text-sm">
+                    {selectedTicket.paymentStatus === 'Paid' ? (
+                      <span className="text-green-600 font-medium">✓ Completed</span>
+                    ) : (
+                      <span className="text-orange-600">Pending: ₹{selectedTicket.totalAmount?.toFixed(2)}</span>
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
             
             {selectedTicket?.description && (
@@ -494,27 +723,27 @@ const Tickets = () => {
                   }}
                   className="w-full sm:w-auto"
                 >
-                  <MessageSquare className="w-4 h-4 mr-2" />
+                  <MessageSquare className="w-4 h-4 mr-1" />
                   <span className="hidden sm:inline">Open </span>Messages
                 </Button>
               )}
-              
-              {selectedTicket && (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Focus on ratings tab  
-                    const ratingsTab = document.querySelector('[data-value="ratings"]') as HTMLButtonElement;
-                    ratingsTab?.click();
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">View </span>Analytics
-                </Button>
-              )}
             </div>
+            
+            {/* Payment Button for Customers */}
+            {userRole === 'customer' && selectedTicket && 
+             (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed' || selectedTicket.status === 'Paid') && 
+             selectedTicket.paymentStatus !== 'Paid' && selectedTicket.totalAmount >= 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handlePayment(selectedTicket)}
+                disabled={processingTicketId !== null}
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              >
+                <span className="w-4 h-4 mr-1">₹</span>
+                {processingTicketId === selectedTicket.id ? 'Processing...' : `Pay ₹${selectedTicket.totalAmount?.toFixed(2)} (${selectedTicket.totalHours}h)`}
+              </Button>
+            )}
             
             <Button 
               variant="secondary"

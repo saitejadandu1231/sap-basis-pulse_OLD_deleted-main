@@ -87,6 +87,44 @@ namespace SapBasisPulse.Api.Migrations
                     b.ToTable("ConsultantAvailabilitySlots");
                 });
 
+            modelBuilder.Entity("SapBasisPulse.Api.Entities.ConsultantSkill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ConsultantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<Guid?>("SupportCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SupportSubOptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SupportTypeId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupportCategoryId");
+
+                    b.HasIndex("SupportSubOptionId");
+
+                    b.HasIndex("SupportTypeId");
+
+                    b.HasIndex("ConsultantId", "SupportTypeId", "SupportCategoryId", "SupportSubOptionId")
+                        .IsUnique()
+                        .HasFilter("[SupportCategoryId] IS NOT NULL OR [SupportSubOptionId] IS NOT NULL");
+
+                    b.ToTable("ConsultantSkill", (string)null);
+                });
+
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Conversation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -345,8 +383,21 @@ namespace SapBasisPulse.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("PaymentCompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Priority")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RazorpayOrderId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RazorpayPaymentId")
                         .HasColumnType("text");
 
                     b.Property<string>("SrIdentifier")
@@ -376,6 +427,9 @@ namespace SapBasisPulse.Api.Migrations
                     b.Property<Guid?>("TimeSlotId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ConsultantId");
@@ -395,6 +449,31 @@ namespace SapBasisPulse.Api.Migrations
                     b.HasIndex("TimeSlotId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("SapBasisPulse.Api.Entities.OrderTimeSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TimeSlotId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TimeSlotId");
+
+                    b.HasIndex("OrderId", "TimeSlotId")
+                        .IsUnique();
+
+                    b.ToTable("OrderTimeSlots");
                 });
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.RefreshToken", b =>
@@ -592,6 +671,10 @@ namespace SapBasisPulse.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -611,6 +694,10 @@ namespace SapBasisPulse.Api.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -634,6 +721,10 @@ namespace SapBasisPulse.Api.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -709,6 +800,9 @@ namespace SapBasisPulse.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal?>("HourlyRate")
+                        .HasColumnType("numeric");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -773,6 +867,39 @@ namespace SapBasisPulse.Api.Migrations
                     b.Navigation("BookedByCustomerChoice");
 
                     b.Navigation("Consultant");
+                });
+
+            modelBuilder.Entity("SapBasisPulse.Api.Entities.ConsultantSkill", b =>
+                {
+                    b.HasOne("SapBasisPulse.Api.Entities.User", "Consultant")
+                        .WithMany("ConsultantSkills")
+                        .HasForeignKey("ConsultantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SapBasisPulse.Api.Entities.SupportCategory", "SupportCategory")
+                        .WithMany()
+                        .HasForeignKey("SupportCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SapBasisPulse.Api.Entities.SupportSubOption", "SupportSubOption")
+                        .WithMany()
+                        .HasForeignKey("SupportSubOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SapBasisPulse.Api.Entities.SupportType", "SupportType")
+                        .WithMany()
+                        .HasForeignKey("SupportTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Consultant");
+
+                    b.Navigation("SupportCategory");
+
+                    b.Navigation("SupportSubOption");
+
+                    b.Navigation("SupportType");
                 });
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Conversation", b =>
@@ -949,6 +1076,25 @@ namespace SapBasisPulse.Api.Migrations
                     b.Navigation("TimeSlot");
                 });
 
+            modelBuilder.Entity("SapBasisPulse.Api.Entities.OrderTimeSlot", b =>
+                {
+                    b.HasOne("SapBasisPulse.Api.Entities.Order", "Order")
+                        .WithMany("OrderTimeSlots")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SapBasisPulse.Api.Entities.ConsultantAvailabilitySlot", "TimeSlot")
+                        .WithMany()
+                        .HasForeignKey("TimeSlotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("TimeSlot");
+                });
+
             modelBuilder.Entity("SapBasisPulse.Api.Entities.RefreshToken", b =>
                 {
                     b.HasOne("SapBasisPulse.Api.Entities.User", "User")
@@ -1064,6 +1210,8 @@ namespace SapBasisPulse.Api.Migrations
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Order", b =>
                 {
+                    b.Navigation("OrderTimeSlots");
+
                     b.Navigation("StatusChangeLogs");
 
                     b.Navigation("TicketRatings");
@@ -1085,6 +1233,8 @@ namespace SapBasisPulse.Api.Migrations
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.User", b =>
                 {
+                    b.Navigation("ConsultantSkills");
+
                     b.Navigation("ConsultantSlots");
 
                     b.Navigation("CustomerChoices");

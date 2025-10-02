@@ -41,6 +41,7 @@ namespace SapBasisPulse.Api.DTOs
         public string LastName { get; set; }
         public string Role { get; set; }
         public string Status { get; set; }
+        public decimal? HourlyRate { get; set; }
     }
 
     public class ConsultantWithRatingDto
@@ -53,5 +54,20 @@ namespace SapBasisPulse.Api.DTOs
         public string Status { get; set; }
         public double? AverageRating { get; set; }
         public int TotalRatings { get; set; }
+        public decimal? HourlyRate { get; set; }
+    }
+
+    public class ChangePasswordDto
+    {
+        [Required]
+        public string CurrentPassword { get; set; }
+
+        [Required]
+        [MinLength(6, ErrorMessage = "Password must be at least 6 characters long")]
+        public string NewPassword { get; set; }
+
+        [Required]
+        [Compare("NewPassword", ErrorMessage = "Passwords do not match")]
+        public string ConfirmPassword { get; set; }
     }
 }

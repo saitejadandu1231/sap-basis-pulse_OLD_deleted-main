@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import PageLayout from '@/components/layout/PageLayout';
@@ -8,11 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { User, Bell, Shield, Palette, Globe, Sun, Moon, Monitor } from 'lucide-react';
+import { User, Bell, Shield, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { apiFetch } from '@/lib/api';
 
 const Settings = () => {
-  const { user, userRole, firstName, lastName } = useAuth();
+  const { user, userRole, firstName, lastName, updateUser } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+
+  const [formFirstName, setFormFirstName] = useState(firstName || '');
+  const [formLastName, setFormLastName] = useState(lastName || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Change password dialog state
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const themeOptions = [
     {
@@ -35,6 +50,110 @@ const Settings = () => {
     }
   ];
   
+  const handleSaveProfile = async () => {
+    if (!formFirstName.trim() || !formLastName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "First name and last name are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const result = await updateUser(formFirstName.trim(), formLastName.trim());
+      if (result.error) {
+        toast({
+          title: "Update Failed",
+          description: result.error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been updated successfully.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "An unexpected error occurred while updating your profile.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Validation Error",
+        description: "All password fields are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Validation Error",
+        description: "New password and confirmation do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Validation Error",
+        description: "New password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const response = await apiFetch('users/change-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to change password');
+      }
+
+      toast({
+        title: "Password Changed",
+        description: "Your password has been changed successfully.",
+      });
+
+      // Reset form and close dialog
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsPasswordDialogOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Change Failed",
+        description: error.message || "An unexpected error occurred while changing your password.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
     <PageLayout
       title="Settings"
@@ -56,11 +175,19 @@ const Settings = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" defaultValue={firstName || ''} />
+                <Input 
+                  id="firstName" 
+                  value={formFirstName} 
+                  onChange={(e) => setFormFirstName(e.target.value)}
+                />
               </div>
               <div>
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" defaultValue={lastName || ''} />
+                <Input 
+                  id="lastName" 
+                  value={formLastName} 
+                  onChange={(e) => setFormLastName(e.target.value)}
+                />
               </div>
             </div>
             <div>
@@ -74,7 +201,12 @@ const Settings = () => {
               <Label htmlFor="role">Role</Label>
               <Input id="role" defaultValue={userRole || ''} disabled />
             </div>
-            <Button>Save Changes</Button>
+            <Button 
+              onClick={handleSaveProfile} 
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Saving...' : 'Save Changes'}
+            </Button>
           </CardContent>
         </Card>
 
@@ -136,16 +268,66 @@ const Settings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline">Change Password</Button>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="twoFactor">Two-Factor Authentication</Label>
-                <p className="text-sm text-muted-foreground">
-                  Add an extra layer of security
-                </p>
-              </div>
-              <Switch id="twoFactor" />
-            </div>
+            <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">Change Password</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Change Password</DialogTitle>
+                  <DialogDescription>
+                    Enter your current password and choose a new one.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Enter your current password"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter your new password"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your new password"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsPasswordDialogOpen(false)}
+                    disabled={isChangingPassword}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword}
+                  >
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
 
@@ -201,37 +383,6 @@ const Settings = () => {
                   );
                 })}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Language & Region */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Globe className="w-5 h-5 mr-2" />
-              Language & Region
-            </CardTitle>
-            <CardDescription>
-              Set your preferred language and regional settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="language">Language</Label>
-              <select className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="en">English</option>
-                <option value="de">Deutsch</option>
-                <option value="fr">Français</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="timezone">Timezone</Label>
-              <select className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="UTC">UTC</option>
-                <option value="Europe/Berlin">Europe/Berlin</option>
-                <option value="America/New_York">America/New_York</option>
-              </select>
             </div>
           </CardContent>
         </Card>

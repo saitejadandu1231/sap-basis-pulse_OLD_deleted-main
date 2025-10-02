@@ -19,6 +19,9 @@ namespace SapBasisPulse.Api.DTOs
 
         [Required]
         public string Role { get; set; } // "Customer" or "Consultant"
+
+        // Skills for consultants (optional, only used when Role is Consultant)
+        public List<CreateConsultantSkillDto>? Skills { get; set; }
     }
 
     public class LoginDto

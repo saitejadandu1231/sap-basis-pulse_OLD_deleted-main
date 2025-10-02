@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -11,9 +11,9 @@ import {
   Calendar,
   Settings,
   BarChart3,
+  Layers,
   Plus,
   ChevronLeft,
-  Bell,
   Search,
   User,
   LogOut,
@@ -47,11 +47,40 @@ interface NavigationItem {
 const AppLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const { user, userRole, signOut } = useAuth();
   const { data: featureFlags } = useFeatureFlags();
   const { data: unreadCount } = useUnreadMessageCount();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Trigger search when debounced query changes
+  useEffect(() => {
+    if (debouncedSearchQuery.trim()) {
+      navigate(`/tickets?search=${encodeURIComponent(debouncedSearchQuery.trim())}`);
+    } else if (location.pathname === '/tickets' && debouncedSearchQuery === '') {
+      // Only clear search params if we're on tickets page and query is empty
+      navigate('/tickets');
+    }
+  }, [debouncedSearchQuery, navigate, location.pathname]);
+
+  // Clear search query when navigating away from tickets page
+  useEffect(() => {
+    if (!location.pathname.startsWith('/tickets')) {
+      setSearchQuery('');
+      setDebouncedSearchQuery('');
+    }
+  }, [location.pathname]);
 
   const navigationItems: NavigationItem[] = [
     {
@@ -104,6 +133,13 @@ const AppLayout = () => {
       roles: ['admin']
     },
     {
+      id: 'taxonomy',
+      label: 'Support Taxonomy',
+      icon: Layers,
+      href: '/admin/taxonomy',
+      roles: ['admin']
+    },
+    {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
@@ -131,6 +167,25 @@ const AppLayout = () => {
     navigate('/');
   };
 
+  const handleSearch = (query: string) => {
+    // Immediately trigger search without debounce
+    if (query.trim()) {
+      navigate(`/tickets?search=${encodeURIComponent(query.trim())}`);
+    } else {
+      navigate('/tickets');
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch(searchQuery);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+  };
+
   const userInitials = user?.firstName && user?.lastName 
     ? `${user.firstName[0]}${user.lastName[0]}`
     : user?.email?.[0]?.toUpperCase() || 'U';
@@ -149,13 +204,13 @@ const AppLayout = () => {
           <div className="flex items-center justify-between">
             {!sidebarCollapsed && (
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-yuktor-400 to-yuktor-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">Y</span>
-                </div>
-                <div>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="hover:opacity-80 transition-opacity"
+                >
                   <h1 className="font-semibold text-gray-900">Yuktor</h1>
-                  <p className="text-xs text-gray-500">SAP BASIS Support</p>
-                </div>
+                </button>
+                <p className="text-xs text-gray-500">Enterprise Support</p>
               </div>
             )}
             <Button
@@ -290,17 +345,24 @@ const AppLayout = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input 
                     placeholder="Search tickets, messages..." 
-                    className="pl-10 bg-gray-50 border-gray-200"
+                    className="pl-10 pr-10 bg-gray-50 border-gray-200"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => handleSearch(searchQuery)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm">
-                <Bell className="w-5 h-5" />
-              </Button>
-              
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
                   {user?.firstName && user?.lastName 
