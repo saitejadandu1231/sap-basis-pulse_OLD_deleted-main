@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import fs from 'fs';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -21,6 +22,17 @@ export default defineConfig(({ mode }) => ({
           /(href|src)="([^"]*\.(css|js))"/g,
           (match: string, attr: string, url: string, ext: string) => `${attr}="${url}?v=${timestamp}"`
         );
+      }
+    },
+    {
+      name: 'copy-headers',
+      closeBundle() {
+        if (fs.existsSync('public/_headers')) {
+          if (!fs.existsSync('dist')) {
+            fs.mkdirSync('dist', { recursive: true });
+          }
+          fs.copyFileSync('public/_headers', 'dist/_headers');
+        }
       }
     }
   ].filter(Boolean),
