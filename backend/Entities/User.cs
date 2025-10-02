@@ -18,5 +18,6 @@ namespace SapBasisPulse.Api.Entities
         public ICollection<ConsultantAvailabilitySlot> ConsultantSlots { get; set; } = new List<ConsultantAvailabilitySlot>();
         public ICollection<CustomerChoice> CustomerChoices { get; set; } = new List<CustomerChoice>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
+        public ICollection<ConsultantSkill> ConsultantSkills { get; set; } = new List<ConsultantSkill>();
     }
 }

@@ -9,7 +9,8 @@ import {
   BarChart3, 
   Settings,
   Plus,
-  HelpCircle
+  HelpCircle,
+  Award
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -77,6 +78,13 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
       path: '/consultant/availability',
       roles: ['consultant'],
       description: 'Manage your schedule'
+    },
+    {
+      icon: Award,
+      label: 'My Skills',
+      path: '/consultant/skills',
+      roles: ['consultant'],
+      description: 'Manage your expertise areas'
     },
     {
       icon: Settings,

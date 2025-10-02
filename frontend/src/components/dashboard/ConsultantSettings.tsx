@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Save } from 'lucide-react';
+import { DollarSign, Save, Settings, ExternalLink } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const ConsultantSettings = () => {
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [hourlyRate, setHourlyRate] = useState(user?.hourlyRate?.toString() || '');
   const queryClient = useQueryClient();
 
@@ -86,6 +88,29 @@ const ConsultantSettings = () => {
           </p>
         </div>
       )}
+
+      {/* Skills Management Section */}
+      <div className="space-y-4 pt-6 border-t">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            <Label className="text-base font-semibold">Expertise Areas</Label>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/consultant/skills')}
+            className="flex items-center gap-2"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Manage Skills
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Define your SAP consulting specializations to help customers find the right expert.
+          Click "Manage Skills" to update your expertise areas.
+        </p>
+      </div>
     </div>
   );
 };

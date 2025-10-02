@@ -35,20 +35,20 @@ namespace SapBasisPulse.Api.Controllers
 
         [HttpGet("recent/user")]
         [Authorize]
-        public async Task<IActionResult> GetRecentForUser()
+        public async Task<IActionResult> GetRecentForUser([FromQuery] string? search = null)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var result = await _service.GetRecentForUserAsync(userId);
-            await _auditLogService.LogAsync(userId, "GetRecentSupportRequests", "Order", "", "Fetched recent support requests", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
+            var result = await _service.GetRecentForUserAsync(userId, search);
+            await _auditLogService.LogAsync(userId, "GetRecentSupportRequests", "Order", "", $"Fetched recent support requests{(search != null ? $" with search: {search}" : "")}", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
             return Ok(result);
         }
 
         [HttpGet("recent/consultant")]
         [Authorize(Roles = "Consultant,Admin")]
-        public async Task<IActionResult> GetRecentForConsultant()
+        public async Task<IActionResult> GetRecentForConsultant([FromQuery] string? search = null)
         {
             var consultantId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var result = await _service.GetRecentForConsultantAsync(consultantId);
+            var result = await _service.GetRecentForConsultantAsync(consultantId, search);
             return Ok(result);
         }
 

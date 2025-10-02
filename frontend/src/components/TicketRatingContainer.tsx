@@ -92,13 +92,13 @@ const TicketRatingContainer: React.FC<TicketRatingContainerProps> = ({
       )}
 
       {!canRate && user?.role === 'customer' && (
-        <div className="text-xs text-muted-foreground text-center p-2 bg-muted/30 rounded">
+        <div className="text-xs text-muted-foreground text-center p-2 bg-muted/30 dark:bg-muted/10 rounded">
           Customer ratings are available after ticket is closed
         </div>
       )}
 
       {canRate && userHasRated && (
-        <div className="text-xs text-green-600 text-center p-2 bg-green-50 rounded">
+        <div className="text-xs text-green-600 dark:text-green-400 text-center p-2 bg-green-50 dark:bg-green-950/20 rounded">
           ✓ You have already rated this ticket
         </div>
       )}

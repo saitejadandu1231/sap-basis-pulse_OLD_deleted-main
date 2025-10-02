@@ -47,7 +47,7 @@ const Help = () => {
   return (
     <PageLayout
       title="Help & Support"
-      description="Find answers, guides, and get help with SAP BASIS Pulse"
+      description="Find answers, guides, and get help with Yuktor"
     >
       <div className="space-y-6">
         {/* Search Bar */}

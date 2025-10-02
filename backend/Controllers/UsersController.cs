@@ -84,6 +84,20 @@ namespace SapBasisPulse.Api.Controllers
             if (!success) return BadRequest(new { error });
             return Ok(new { message = "Hourly rate updated successfully" });
         }
+
+        [HttpPut("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            // Get current user ID from JWT token
+            var userId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
+
+            var (success, error) = await _userService.ChangePasswordAsync(userId, dto.CurrentPassword, dto.NewPassword);
+            if (!success) return BadRequest(new { error });
+            return Ok(new { message = "Password changed successfully" });
+        }
     }
 
     public class UpdateHourlyRateDto

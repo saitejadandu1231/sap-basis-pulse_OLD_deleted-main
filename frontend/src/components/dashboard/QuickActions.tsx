@@ -3,15 +3,20 @@ import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Plus, 
-  MessageSquare, 
-  Calendar, 
+import {
+  Plus,
+  MessageSquare,
+  Calendar,
   Ticket,
   Users,
   Settings,
   BarChart3,
-  Zap
+  Layers,
+  Zap,
+  Sparkles,
+  ArrowRight,
+  Command,
+  Award
 } from 'lucide-react';
 
 const QuickActions = () => {
@@ -30,15 +35,23 @@ const QuickActions = () => {
           label: 'New Support Request',
           description: 'Create a new SAP BASIS support ticket',
           path: '/support',
-          variant: 'default' as const,
-          shortcut: 'Ctrl+N'
+          variant: 'primary' as const,
+          shortcut: '',
+          gradient: 'from-emerald-500 to-teal-600',
+          hoverGradient: 'from-emerald-600 to-teal-700',
+          bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
+          textColor: 'text-emerald-900 dark:text-emerald-100'
         },
         {
           icon: Ticket,
           label: 'My Tickets',
           description: 'View your support requests',
           path: '/tickets',
-          variant: 'outline' as const
+          variant: 'secondary' as const,
+          gradient: 'from-blue-500 to-indigo-600',
+          hoverGradient: 'from-blue-600 to-indigo-700',
+          bgColor: 'bg-blue-50 dark:bg-blue-950/20',
+          textColor: 'text-blue-900 dark:text-blue-100'
         }
       );
     }
@@ -50,14 +63,33 @@ const QuickActions = () => {
           label: 'Manage Availability',
           description: 'Set your consultation slots',
           path: '/consultant/availability',
-          variant: 'default' as const
+          variant: 'primary' as const,
+          gradient: 'from-purple-500 to-violet-600',
+          hoverGradient: 'from-purple-600 to-violet-700',
+          bgColor: 'bg-purple-50 dark:bg-purple-950/20',
+          textColor: 'text-purple-900 dark:text-purple-100'
+        },
+        {
+          icon: Award,
+          label: 'Manage Skills',
+          description: 'Update your expertise areas',
+          path: '/consultant/skills',
+          variant: 'secondary' as const,
+          gradient: 'from-green-500 to-emerald-600',
+          hoverGradient: 'from-green-600 to-emerald-700',
+          bgColor: 'bg-green-50 dark:bg-green-950/20',
+          textColor: 'text-green-900 dark:text-green-100'
         },
         {
           icon: Ticket,
           label: 'Assigned Tickets',
           description: 'View tickets assigned to you',
           path: '/tickets',
-          variant: 'outline' as const
+          variant: 'secondary' as const,
+          gradient: 'from-orange-500 to-red-600',
+          hoverGradient: 'from-orange-600 to-red-700',
+          bgColor: 'bg-orange-50 dark:bg-orange-950/20',
+          textColor: 'text-orange-900 dark:text-orange-100'
         }
       );
     }
@@ -69,21 +101,44 @@ const QuickActions = () => {
           label: 'Manage Users',
           description: 'Add or modify user accounts',
           path: '/admin/users',
-          variant: 'default' as const
+          variant: 'primary' as const,
+          gradient: 'from-cyan-500 to-blue-600',
+          hoverGradient: 'from-cyan-600 to-blue-700',
+          bgColor: 'bg-cyan-50 dark:bg-cyan-950/20',
+          textColor: 'text-cyan-900 dark:text-cyan-100'
         },
         {
           icon: BarChart3,
           label: 'View Analytics',
           description: 'System metrics and reports',
           path: '/admin/analytics',
-          variant: 'outline' as const
+          variant: 'secondary' as const,
+          gradient: 'from-pink-500 to-rose-600',
+          hoverGradient: 'from-pink-600 to-rose-700',
+          bgColor: 'bg-pink-50 dark:bg-pink-950/20',
+          textColor: 'text-pink-900 dark:text-pink-100'
+        },
+        {
+          icon: Layers,
+          label: 'Manage Taxonomy',
+          description: 'Configure support types, categories, and sub-options',
+          path: '/admin/taxonomy',
+          variant: 'tertiary' as const,
+          gradient: 'from-purple-500 to-violet-600',
+          hoverGradient: 'from-purple-600 to-violet-700',
+          bgColor: 'bg-purple-50 dark:bg-purple-950/20',
+          textColor: 'text-purple-900 dark:text-purple-100'
         },
         {
           icon: Settings,
           label: 'System Settings',
           description: 'Configure feature flags and settings',
           path: '/admin/settings',
-          variant: 'outline' as const
+          variant: 'tertiary' as const,
+          gradient: 'from-slate-500 to-gray-600',
+          hoverGradient: 'from-slate-600 to-gray-700',
+          bgColor: 'bg-slate-50 dark:bg-slate-950/20',
+          textColor: 'text-slate-900 dark:text-slate-100'
         }
       );
     }
@@ -95,8 +150,12 @@ const QuickActions = () => {
         label: 'Open Messages',
         description: 'Start a conversation',
         path: '/messages',
-        variant: 'secondary' as const,
-        shortcut: 'Ctrl+M'
+        variant: 'tertiary' as const,
+        shortcut: '',
+        gradient: 'from-amber-500 to-yellow-600',
+        hoverGradient: 'from-amber-600 to-yellow-700',
+        bgColor: 'bg-amber-50 dark:bg-amber-950/20',
+        textColor: 'text-amber-900 dark:text-amber-100'
       });
     }
 
@@ -110,97 +169,122 @@ const QuickActions = () => {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-background to-muted/20 border-0 shadow-lg">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-yellow-500/30">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-xl font-semibold">Quick Actions</span>
-        </CardTitle>
-        <CardDescription className="text-muted-foreground">
-          Common tasks for your role
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {actions.map((action) => {
-            const Icon = action.icon;
-            const isPrimary = action.variant === 'default';
-            
-            return (
-              <Card
-                key={action.path}
-                className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer hover:border-purple-200"
-                style={isPrimary ? {
-                  background: 'linear-gradient(135deg, rgb(239 246 255) 0%, rgb(243 232 255) 100%) !important',
-                  backgroundColor: 'rgb(239 246 255) !important'
-                } : {
-                  background: 'linear-gradient(135deg, rgb(249 250 251) 0%, rgb(241 245 249) 100%) !important',
-                  backgroundColor: 'rgb(249 250 251) !important'
-                }}
-                onClick={() => navigate(action.path)}
-                title={action.shortcut ? `${action.description} (${action.shortcut})` : action.description}
-              >
-                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                  {/* Header with Icon and Title */}
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shadow-md transition-all duration-300 group-hover:scale-110 ${
-                      isPrimary 
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-blue-500/30' 
-                        : 'bg-gradient-to-r from-slate-500 to-slate-700 text-white shadow-slate-500/30'
-                    }`}>
-                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className={`font-semibold text-sm sm:text-base transition-colors ${
-                        isPrimary 
-                          ? 'text-blue-900 group-hover:text-blue-700' 
-                          : 'text-blue-900 group-hover:text-blue-700'
-                      }`}>
-                        {action.label}
-                      </h3>
-                      {action.shortcut && (
-                        <div className="flex items-center mt-1">
-                          <kbd className="text-xs bg-black/10 text-gray-700 px-2 py-1 rounded-md shadow-sm backdrop-blur-sm">
-                            {action.shortcut.replace('Ctrl+', '⌘')}
-                          </kbd>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Description */}
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {action.description}
-                  </p>
-                  
-                  {/* Action Indicator */}
-                  <div className="flex items-center justify-end">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-1 ${
-                      isPrimary 
-                        ? 'bg-blue-100 text-blue-600 group-hover:bg-blue-200' 
-                        : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
-                    }`}>
-                      <svg className="w-3 h-3" viewBox="0 0 12 12" fill="currentColor">
-                        <path d="M3.5 2L8.5 6L3.5 10L2.5 9L6.5 6L2.5 3L3.5 2Z" />
-                      </svg>
-                    </div>
-                  </div>
-                
-                {/* Subtle gradient overlay for depth */}
-                <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${
-                  isPrimary 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
-                    : 'bg-gradient-to-r from-slate-500 to-slate-700'
-                }`} />
-                </CardContent>
-              </Card>
-            );
-          })}
+    <div className="relative">
+      {/* Background decoration */}
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 via-blue-50/20 to-cyan-50/30 dark:from-violet-950/10 dark:via-blue-950/5 dark:to-cyan-950/10 rounded-2xl -m-2" />
+
+      <Card className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-0 shadow-2xl shadow-purple-500/10 rounded-2xl overflow-hidden">
+        {/* Animated background pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
-      </CardContent>
-    </Card>
+
+        <CardHeader className="relative pb-6 pt-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center shadow-lg shadow-purple-500/30 animate-pulse">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-bounce" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                  Quick Actions
+                </CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-400 mt-1">
+                  Common tasks for your role
+                </CardDescription>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="relative px-8 pb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {actions.map((action, index) => {
+              const Icon = action.icon;
+              const isPrimary = action.variant === 'primary';
+
+              return (
+                <div
+                  key={action.path}
+                  className="group relative"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {/* Card with glassmorphism effect */}
+                  <div
+                    className={`relative overflow-hidden rounded-2xl transition-all duration-500 ease-out hover:scale-[1.02] hover:shadow-2xl cursor-pointer border border-white/20 dark:border-gray-700/30 min-h-[200px] flex flex-col ${action.bgColor}`}
+                    onClick={() => navigate(action.path)}
+                    title={action.shortcut ? `${action.description} (${action.shortcut})` : action.description}
+                  >
+                    {/* Gradient background */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+
+                    {/* Animated border */}
+                    <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${action.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 p-[1px]`}>
+                      <div className="w-full h-full rounded-2xl bg-white dark:bg-gray-900" />
+                    </div>
+
+                    <div className="relative p-6 flex flex-col flex-1 space-y-4">
+                      {/* Header with Icon and Title */}
+                      <div className="flex items-start justify-between">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+                          <Icon className="w-6 h-6 text-white" />
+                        </div>
+
+                        {action.shortcut && (
+                          <div className="flex items-center space-x-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                            <Command className="w-3 h-3" />
+                            <span className="text-xs font-medium">{action.shortcut.split('⌘')[1]}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="space-y-2 flex-1">
+                        <h3 className={`font-bold text-lg ${action.textColor} group-hover:scale-105 transition-transform duration-300`}>
+                          {action.label}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
+                          {action.description}
+                        </p>
+                      </div>
+
+                      {/* Action indicator */}
+                      <div className="flex items-center justify-between pt-2 flex-shrink-0">
+                        <div className={`flex items-center space-x-2 text-sm font-medium ${action.textColor} opacity-70 group-hover:opacity-100 transition-opacity`}>
+                          <span>Go to action</span>
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                        </div>
+
+                        {/* Subtle sparkle effect */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                          <div className="w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-ping" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Hover glow effect */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${action.hoverGradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-2xl`} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom decoration */}
+          <div className="mt-8 flex justify-center">
+            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+              <div className="w-1 h-1 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse" />
+              <span>Choose an action to get started</span>
+              <div className="w-1 h-1 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

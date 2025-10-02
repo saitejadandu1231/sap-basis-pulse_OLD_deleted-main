@@ -132,9 +132,9 @@ namespace SapBasisPulse.Api.Services
             return await ToDto(order);
         }
 
-        public async Task<IEnumerable<SupportRequestDto>> GetRecentForUserAsync(Guid userId)
+        public async Task<IEnumerable<SupportRequestDto>> GetRecentForUserAsync(Guid userId, string? searchQuery = null)
         {
-            var orders = await _context.Orders
+            var query = _context.Orders
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
                 .Include(o => o.SupportSubOption)
@@ -143,9 +143,27 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.CreatedByUser)
                 .Include(o => o.Status)
                 .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
-                .Where(o => o.CreatedByUserId == userId)
+                .Where(o => o.CreatedByUserId == userId);
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var searchTerm = searchQuery.ToLower().Trim();
+                query = query.Where(o =>
+                    o.OrderNumber.ToLower().Contains(searchTerm) ||
+                    o.SrIdentifier.ToLower().Contains(searchTerm) ||
+                    (o.SupportType != null && o.SupportType.Name.ToLower().Contains(searchTerm)) ||
+                    (o.Description != null && o.Description.ToLower().Contains(searchTerm)) ||
+                    (o.Consultant != null && (o.Consultant.FirstName + " " + o.Consultant.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.CreatedByUser != null && (o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.Status != null && o.Status.StatusName.ToLower().Contains(searchTerm)) ||
+                    (o.Priority != null && o.Priority.ToLower().Contains(searchTerm))
+                );
+            }
+
+            var orders = await query
                 .OrderByDescending(o => o.CreatedAt)
-                .Take(10)
+                .Take(50) // Increase limit for search results
                 .ToListAsync();
 
             var dtos = new List<SupportRequestDto>();
@@ -156,9 +174,9 @@ namespace SapBasisPulse.Api.Services
             return dtos;
         }
 
-        public async Task<IEnumerable<SupportRequestDto>> GetRecentForConsultantAsync(Guid consultantId)
+        public async Task<IEnumerable<SupportRequestDto>> GetRecentForConsultantAsync(Guid consultantId, string? searchQuery = null)
         {
-            var orders = await _context.Orders
+            var query = _context.Orders
                 .Include(o => o.SupportType)
                 .Include(o => o.SupportCategory)
                 .Include(o => o.SupportSubOption)
@@ -167,9 +185,27 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.CreatedByUser)
                 .Include(o => o.Status)
                 .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
-                .Where(o => o.ConsultantId == consultantId)
+                .Where(o => o.ConsultantId == consultantId);
+
+            // Apply search filter if provided
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                var searchTerm = searchQuery.ToLower().Trim();
+                query = query.Where(o =>
+                    o.OrderNumber.ToLower().Contains(searchTerm) ||
+                    o.SrIdentifier.ToLower().Contains(searchTerm) ||
+                    (o.SupportType != null && o.SupportType.Name.ToLower().Contains(searchTerm)) ||
+                    (o.Description != null && o.Description.ToLower().Contains(searchTerm)) ||
+                    (o.Consultant != null && (o.Consultant.FirstName + " " + o.Consultant.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.CreatedByUser != null && (o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName).ToLower().Contains(searchTerm)) ||
+                    (o.Status != null && o.Status.StatusName.ToLower().Contains(searchTerm)) ||
+                    (o.Priority != null && o.Priority.ToLower().Contains(searchTerm))
+                );
+            }
+
+            var orders = await query
                 .OrderByDescending(o => o.CreatedAt)
-                .Take(10)
+                .Take(50) // Increase limit for search results
                 .ToListAsync();
 
             var dtos = new List<SupportRequestDto>();

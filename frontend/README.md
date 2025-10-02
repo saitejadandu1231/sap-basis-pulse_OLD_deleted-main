@@ -1,4 +1,4 @@
-# SAP Basis Pulse - Frontend
+# Yuktor - Frontend
 
 Enterprise support ticketing system frontend built with React, TypeScript, and Tailwind CSS.
 

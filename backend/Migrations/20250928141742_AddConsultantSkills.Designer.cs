@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SapBasisPulse.Api.Data;
@@ -11,9 +12,11 @@ using SapBasisPulse.Api.Data;
 namespace SapBasisPulse.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250928141742_AddConsultantSkills")]
+    partial class AddConsultantSkills
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,9 +100,7 @@ namespace SapBasisPulse.Api.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("GETUTCDATE()");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("SupportCategoryId")
                         .HasColumnType("uuid");
@@ -112,17 +113,15 @@ namespace SapBasisPulse.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ConsultantId");
+
                     b.HasIndex("SupportCategoryId");
 
                     b.HasIndex("SupportSubOptionId");
 
                     b.HasIndex("SupportTypeId");
 
-                    b.HasIndex("ConsultantId", "SupportTypeId", "SupportCategoryId", "SupportSubOptionId")
-                        .IsUnique()
-                        .HasFilter("[SupportCategoryId] IS NOT NULL OR [SupportSubOptionId] IS NOT NULL");
-
-                    b.ToTable("ConsultantSkill", (string)null);
+                    b.ToTable("ConsultantSkill");
                 });
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Conversation", b =>
@@ -879,18 +878,16 @@ namespace SapBasisPulse.Api.Migrations
 
                     b.HasOne("SapBasisPulse.Api.Entities.SupportCategory", "SupportCategory")
                         .WithMany()
-                        .HasForeignKey("SupportCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("SupportCategoryId");
 
                     b.HasOne("SapBasisPulse.Api.Entities.SupportSubOption", "SupportSubOption")
                         .WithMany()
-                        .HasForeignKey("SupportSubOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("SupportSubOptionId");
 
                     b.HasOne("SapBasisPulse.Api.Entities.SupportType", "SupportType")
                         .WithMany()
                         .HasForeignKey("SupportTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Consultant");

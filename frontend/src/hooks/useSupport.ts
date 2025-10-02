@@ -23,6 +23,24 @@ interface SupportSubOption {
   requiresSrIdentifier?: boolean;
 }
 
+interface ConsultantSkill {
+  id: string;
+  consultantId: string;
+  supportTypeId: string;
+  supportTypeName: string;
+  supportCategoryId: string | null;
+  supportCategoryName: string | null;
+  supportSubOptionId: string | null;
+  supportSubOptionName: string | null;
+  createdAt: string;
+}
+
+interface ConsultantSkills {
+  consultantId: string;
+  consultantName: string;
+  skills: ConsultantSkill[];
+}
+
 interface TimeSlot {
   id: string;
   consultantId: string;
@@ -159,11 +177,11 @@ export const useAvailableConsultants = () => {
 };
 
   // Recent tickets
-export const useRecentTickets = () => {
+export const useRecentTickets = (searchQuery?: string) => {
   const { user, token } = useAuth();
   
   return useQuery({
-    queryKey: ['recentTickets', token], // Add token to query key for automatic refetching when token changes
+    queryKey: ['recentTickets', token, searchQuery?.trim() || null], // Add searchQuery to query key for automatic refetching
     queryFn: async () => {
       if (!user || !token) return [];
       
@@ -174,8 +192,16 @@ export const useRecentTickets = () => {
         endpoint = 'SupportRequests';
       }
       
-      console.log("Fetching tickets with token:", token ? "Present" : "Missing");
-      const response = await apiFetch(endpoint);
+      // Add search parameter if provided
+      const params = new URLSearchParams();
+      if (searchQuery && searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+      const queryString = params.toString();
+      const fullEndpoint = queryString ? `${endpoint}?${queryString}` : endpoint;
+      
+      console.log("Fetching tickets with token:", token ? "Present" : "Missing", "search:", searchQuery || 'none');
+      const response = await apiFetch(fullEndpoint);
       
       // Handle authentication errors
       if (response.status === 401 || response.status === 403) {
@@ -321,5 +347,375 @@ export const useUpdateTicketStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['recentTickets'] });
       queryClient.invalidateQueries({ queryKey: ['status-history', variables.orderId] });
     },
+  });
+};
+
+// Consultant reviews
+export const useConsultantReviews = (consultantId: string) => {
+  return useQuery({
+    queryKey: ['consultantReviews', consultantId],
+    queryFn: async () => {
+      const response = await apiFetch(`TicketRatings/consultant/${consultantId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch consultant reviews');
+      }
+      return await response.json();
+    },
+    enabled: !!consultantId,
+  });
+};
+
+// Admin Support Taxonomy Management Hooks
+export const useAdminSupportTypes = () => {
+  return useQuery({
+    queryKey: ['adminSupportTypes'],
+    queryFn: async () => {
+      const response = await apiFetch('SupportTaxonomy/admin/types');
+      if (!response.ok) {
+        throw new Error('Failed to fetch support types');
+      }
+      return await response.json();
+    },
+  });
+};
+
+export const useCreateSupportType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { name: string; description: string }) => {
+      const response = await apiFetch('SupportTaxonomy/admin/types', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create support type');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTypes'] });
+      queryClient.invalidateQueries({ queryKey: ['supportTypes'] });
+    },
+  });
+};
+
+export const useUpdateSupportType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { id: string; name: string; description: string }) => {
+      const response = await apiFetch(`SupportTaxonomy/admin/types/${data.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: data.name, description: data.description }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update support type');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTypes'] });
+      queryClient.invalidateQueries({ queryKey: ['supportTypes'] });
+    },
+  });
+};
+
+export const useDeleteSupportType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiFetch(`SupportTaxonomy/admin/types/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete support type');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportTypes'] });
+      queryClient.invalidateQueries({ queryKey: ['supportTypes'] });
+    },
+  });
+};
+
+export const useAdminSupportCategories = () => {
+  return useQuery({
+    queryKey: ['adminSupportCategories'],
+    queryFn: async () => {
+      const response = await apiFetch('SupportTaxonomy/admin/categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch support categories');
+      }
+      return await response.json();
+    },
+  });
+};
+
+export const useCreateSupportCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { name: string; description: string; supportTypeId: string }) => {
+      const response = await apiFetch('SupportTaxonomy/admin/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create support category');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['supportCategories'] });
+    },
+  });
+};
+
+export const useUpdateSupportCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { id: string; name: string; description: string; supportTypeId: string }) => {
+      const response = await apiFetch(`SupportTaxonomy/admin/categories/${data.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: data.name, description: data.description, supportTypeId: data.supportTypeId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update support category');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['supportCategories'] });
+    },
+  });
+};
+
+export const useDeleteSupportCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiFetch(`SupportTaxonomy/admin/categories/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete support category');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['supportCategories'] });
+    },
+  });
+};
+
+export const useAdminSupportSubOptions = () => {
+  return useQuery({
+    queryKey: ['adminSupportSubOptions'],
+    queryFn: async () => {
+      const response = await apiFetch('SupportTaxonomy/admin/suboptions');
+      if (!response.ok) {
+        throw new Error('Failed to fetch support sub-options');
+      }
+      return await response.json();
+    },
+  });
+};
+
+export const useCreateSupportSubOption = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { name: string; description: string; supportTypeId: string; requiresSrIdentifier?: boolean }) => {
+      const response = await apiFetch('SupportTaxonomy/admin/suboptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create support sub-option');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportSubOptions'] });
+      queryClient.invalidateQueries({ queryKey: ['supportSubOptions'] });
+    },
+  });
+};
+
+export const useUpdateSupportSubOption = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { id: string; name: string; description: string; supportTypeId: string; requiresSrIdentifier?: boolean }) => {
+      const response = await apiFetch(`SupportTaxonomy/admin/suboptions/${data.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: data.name, description: data.description, supportTypeId: data.supportTypeId, requiresSrIdentifier: data.requiresSrIdentifier }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update support sub-option');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportSubOptions'] });
+      queryClient.invalidateQueries({ queryKey: ['supportSubOptions'] });
+    },
+  });
+};
+
+export const useDeleteSupportSubOption = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiFetch(`SupportTaxonomy/admin/suboptions/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete support sub-option');
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSupportSubOptions'] });
+      queryClient.invalidateQueries({ queryKey: ['supportSubOptions'] });
+    },
+  });
+};
+
+// Consultant Skills Hooks
+export const useConsultantSkills = (consultantId: string) => {
+  return useQuery({
+    queryKey: ['consultantSkills', consultantId],
+    queryFn: async () => {
+      const response = await apiFetch(`SupportTaxonomy/consultant/${consultantId}/skills`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch consultant skills');
+      }
+      return await response.json();
+    },
+    enabled: !!consultantId,
+  });
+};
+
+export const useAddConsultantSkill = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { consultantId: string; supportTypeId: string; supportCategoryId?: string; supportSubOptionId?: string }) => {
+      const response = await apiFetch(`SupportTaxonomy/consultant/${data.consultantId}/skills`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supportTypeId: data.supportTypeId,
+          supportCategoryId: data.supportCategoryId || null,
+          supportSubOptionId: data.supportSubOptionId || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add consultant skill');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['consultantSkills', data.consultantId] });
+    },
+  });
+};
+
+export const useRemoveConsultantSkill = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { consultantId: string; skillId: string }) => {
+      const response = await apiFetch(`SupportTaxonomy/consultant/${data.consultantId}/skills/${data.skillId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove consultant skill');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['consultantSkills', data.consultantId] });
+    },
+  });
+};
+
+export const useConsultantsBySkills = (supportTypeId: string, supportCategoryId?: string) => {
+  return useQuery({
+    queryKey: ['consultantsBySkills', supportTypeId, supportCategoryId],
+    queryFn: async () => {
+      const params = new URLSearchParams({ supportTypeId });
+      if (supportCategoryId) params.append('supportCategoryId', supportCategoryId);
+
+      const response = await apiFetch(`SupportTaxonomy/consultants-by-skills?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch consultants by skills');
+      }
+      return await response.json();
+    },
+    enabled: !!supportTypeId,
   });
 };

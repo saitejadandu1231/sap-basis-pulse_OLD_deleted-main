@@ -13,6 +13,7 @@ namespace SapBasisPulse.Api.DTOs
         public int? ResolutionQuality { get; set; }
         public int? ResponseTime { get; set; }
         public string Comments { get; set; }
+        public string? RatedByUserName { get; set; }
     }
 
     public class CreateTicketRatingDto

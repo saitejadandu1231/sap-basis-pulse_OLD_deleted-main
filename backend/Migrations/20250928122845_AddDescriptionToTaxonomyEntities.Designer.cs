@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SapBasisPulse.Api.Data;
@@ -11,9 +12,11 @@ using SapBasisPulse.Api.Data;
 namespace SapBasisPulse.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250928122845_AddDescriptionToTaxonomyEntities")]
+    partial class AddDescriptionToTaxonomyEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -85,44 +88,6 @@ namespace SapBasisPulse.Api.Migrations
                     b.HasIndex("ConsultantId");
 
                     b.ToTable("ConsultantAvailabilitySlots");
-                });
-
-            modelBuilder.Entity("SapBasisPulse.Api.Entities.ConsultantSkill", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ConsultantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.Property<Guid?>("SupportCategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SupportSubOptionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SupportTypeId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SupportCategoryId");
-
-                    b.HasIndex("SupportSubOptionId");
-
-                    b.HasIndex("SupportTypeId");
-
-                    b.HasIndex("ConsultantId", "SupportTypeId", "SupportCategoryId", "SupportSubOptionId")
-                        .IsUnique()
-                        .HasFilter("[SupportCategoryId] IS NOT NULL OR [SupportSubOptionId] IS NOT NULL");
-
-                    b.ToTable("ConsultantSkill", (string)null);
                 });
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Conversation", b =>
@@ -869,39 +834,6 @@ namespace SapBasisPulse.Api.Migrations
                     b.Navigation("Consultant");
                 });
 
-            modelBuilder.Entity("SapBasisPulse.Api.Entities.ConsultantSkill", b =>
-                {
-                    b.HasOne("SapBasisPulse.Api.Entities.User", "Consultant")
-                        .WithMany("ConsultantSkills")
-                        .HasForeignKey("ConsultantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SapBasisPulse.Api.Entities.SupportCategory", "SupportCategory")
-                        .WithMany()
-                        .HasForeignKey("SupportCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SapBasisPulse.Api.Entities.SupportSubOption", "SupportSubOption")
-                        .WithMany()
-                        .HasForeignKey("SupportSubOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("SapBasisPulse.Api.Entities.SupportType", "SupportType")
-                        .WithMany()
-                        .HasForeignKey("SupportTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Consultant");
-
-                    b.Navigation("SupportCategory");
-
-                    b.Navigation("SupportSubOption");
-
-                    b.Navigation("SupportType");
-                });
-
             modelBuilder.Entity("SapBasisPulse.Api.Entities.Conversation", b =>
                 {
                     b.HasOne("SapBasisPulse.Api.Entities.User", "Consultant")
@@ -1233,8 +1165,6 @@ namespace SapBasisPulse.Api.Migrations
 
             modelBuilder.Entity("SapBasisPulse.Api.Entities.User", b =>
                 {
-                    b.Navigation("ConsultantSkills");
-
                     b.Navigation("ConsultantSlots");
 
                     b.Navigation("CustomerChoices");

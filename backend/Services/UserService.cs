@@ -176,5 +176,22 @@ namespace SapBasisPulse.Api.Services
             await _context.SaveChangesAsync();
             return (true, null);
         }
+
+        public async Task<(bool Success, string? Error)> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return (false, "User not found");
+
+            // Verify current password
+            var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
+            if (passwordVerificationResult == PasswordVerificationResult.Failed)
+                return (false, "Current password is incorrect");
+
+            // Hash new password
+            user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+            await _context.SaveChangesAsync();
+
+            return (true, null);
+        }
     }
 }

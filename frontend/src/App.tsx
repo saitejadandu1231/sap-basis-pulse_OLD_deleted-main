@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SupportSelection from "./pages/SupportSelection";
 import ConsultantAvailability from "./pages/ConsultantAvailability";
+import ConsultantSkills from "./pages/ConsultantSkills";
 import AdminDashboard from "./pages/AdminDashboard";
 import { MessagingPage } from "./pages/Messaging";
 import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
@@ -24,6 +25,7 @@ import Help from "./pages/Help";
 import AdminUsers from "./pages/admin/Users";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminSettings from "./pages/admin/AdminSettings";
+import SupportTaxonomyAdmin from "./pages/admin/SupportTaxonomy";
 import AdminSSOSettings from "./pages/AdminSSOSettings";
 import ContactUs from "./pages/ContactUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -81,6 +83,11 @@ const App = () => (
                 <ConsultantAvailability />
               </ProtectedRoute>
             } />
+            <Route path="/consultant/skills" element={
+              <ProtectedRoute>
+                <ConsultantSkills />
+              </ProtectedRoute>
+            } />
             <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminDashboard />
@@ -99,6 +106,11 @@ const App = () => (
             <Route path="/admin/settings" element={
               <ProtectedRoute>
                 <AdminSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/taxonomy" element={
+              <ProtectedRoute>
+                <SupportTaxonomyAdmin />
               </ProtectedRoute>
             } />
             <Route path="/admin/sso-settings" element={

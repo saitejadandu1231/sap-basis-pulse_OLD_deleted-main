@@ -32,6 +32,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, firstName: string, lastName: string, role: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateUser: (firstName: string, lastName: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -272,6 +273,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = async (firstName: string, lastName: string) => {
+    if (!token || !user) return { error: { message: 'Not authenticated' } };
+
+    try {
+      const response = await apiFetch(`users/${user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          role: user.role, // Keep the existing role
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: { message: errorData.error || 'Failed to update profile' } };
+      }
+
+      // Refresh user data after successful update
+      await refreshUser();
+      return { error: null };
+    } catch (error: any) {
+      return { error: { message: error.message || 'An unexpected error occurred' } };
+    }
+  };
+
   const value = {
     user,
     token,
@@ -283,6 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     refreshUser,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

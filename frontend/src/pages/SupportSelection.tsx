@@ -28,7 +28,9 @@ import {
     useSupportSubOptions, 
     useConsultantAvailabilitySlots,
     useCreateSupportRequest,
-    useAvailableConsultants 
+    useAvailableConsultants,
+    useConsultantReviews,
+    useConsultantsBySkills
 } from '@/hooks/useSupport';
 import { useValidateServiceRequestIdentifier } from '@/hooks/useServiceRequestIdentifier';
 
@@ -79,6 +81,40 @@ const SupportSelection = () => {
   const { data: supportTypes, isLoading: loadingTypes } = useSupportTypes();
   const { data: supportCategories, isLoading: loadingCategories } = useSupportCategories(selectedSupport);
   const { data: consultants, isLoading: consultantsLoading } = useAvailableConsultants();
+  
+  // Use skill-based filtering when support criteria are selected
+  const { data: consultantsBySkills, isLoading: consultantsBySkillsLoading } = useConsultantsBySkills(
+    selectedSupport,
+    selectedCategory || undefined
+  );
+  
+  // Determine which consultants to show: skill-filtered if criteria selected, otherwise all consultants
+  const availableConsultants = useMemo(() => {
+    // If support criteria are selected, use skill-filtered results (even if empty)
+    // If no criteria selected, use all consultants
+    let consultantList = selectedSupport ? (consultantsBySkills || []) : (consultants || []);
+    
+    // If we have skill-filtered consultants, enrich them with full consultant data
+    if (selectedSupport && consultantsBySkills && consultantsBySkills.length > 0 && consultants) {
+      consultantList = consultantList.map(skillConsultant => {
+        const fullConsultant = consultants.find(c => c.id === skillConsultant.consultantId);
+        return fullConsultant ? { ...fullConsultant, skills: skillConsultant.skills } : skillConsultant;
+      });
+    }
+    
+    // Sort by average rating (highest first), then by total ratings
+    return consultantList.sort((a, b) => {
+      const ratingA = a.averageRating || 0;
+      const ratingB = b.averageRating || 0;
+      if (ratingB !== ratingA) return ratingB - ratingA;
+      return (b.totalRatings || 0) - (a.totalRatings || 0);
+    });
+  }, [consultantsBySkills, consultants, selectedSupport]);
+  
+  const isConsultantsLoading = consultantsLoading || (selectedSupport && consultantsBySkillsLoading);
+  
+  // Fetch reviews for the currently selected consultant (when reviews are being shown)
+  const { data: consultantReviews, isLoading: reviewsLoading } = useConsultantReviews(consultantShowingReviews || '');
   const { data: supportSubOptionsData, isLoading: loadingSubOptions } = useSupportSubOptions(selectedSupport || undefined);
   const supportSubOptions = useMemo(() => selectedSupport ? supportSubOptionsData : [], [selectedSupport, supportSubOptionsData]);
 
@@ -878,7 +914,7 @@ const SupportSelection = () => {
                   <span>Choose a consultant for your support request *</span>
                 </Label>
                 
-                {consultantsLoading ? (
+                {isConsultantsLoading ? (
                   <div className="grid gap-3 md:grid-cols-2">
                     {[1, 2, 3, 4].map(i => (
                       <div key={i} className="bg-muted/30 rounded-lg p-4 animate-pulse">
@@ -892,9 +928,9 @@ const SupportSelection = () => {
                       </div>
                     ))}
                   </div>
-                ) : consultants && consultants.length > 0 ? (
+                ) : availableConsultants && availableConsultants.length > 0 ? (
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {consultants.map((consultant: any) => {
+                    {availableConsultants.map((consultant: any) => {
                       const isSelected = selectedConsultant === consultant.id;
                       const showReviews = consultantShowingReviews === consultant.id;
                       
@@ -1038,33 +1074,45 @@ const SupportSelection = () => {
                                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                                   <div className="bg-muted/20 rounded-lg p-3 space-y-2">
                                     <h5 className="text-xs font-medium text-muted-foreground">Customer Reviews</h5>
-                                    {/* Sample reviews - you can replace with real data */}
-                                    {[
-                                      { rating: 5, comment: 'Excellent support, resolved my issue quickly!', date: '2 days ago' },
-                                      { rating: 4, comment: 'Very knowledgeable and professional.', date: '1 week ago' },
-                                      { rating: 5, comment: 'Great experience, highly recommended.', date: '2 weeks ago' }
-                                    ].slice(0, 2).map((review, idx) => (
-                                      <div key={idx} className="border-l-2 border-purple-200 pl-2">
-                                        <div className="flex items-center space-x-1">
-                                          <div className="flex">
-                                            {[1, 2, 3, 4, 5].map((star) => (
-                                              <Star
-                                                key={star}
-                                                className={`w-2.5 h-2.5 ${
-                                                  star <= review.rating 
-                                                    ? 'fill-yellow-400 text-yellow-400' 
-                                                    : 'text-gray-300'
-                                                }`}
-                                              />
-                                            ))}
+                                    {reviewsLoading ? (
+                                      <div className="text-xs text-muted-foreground text-center py-2">Loading reviews...</div>
+                                    ) : consultantReviews && consultantReviews.length > 0 ? (
+                                      consultantReviews.slice(0, 2).map((review: any, idx: number) => {
+                                        // Calculate average rating from the three components
+                                        const avgRating = review.communicationProfessionalism && review.resolutionQuality && review.responseTime
+                                          ? Math.round((review.communicationProfessionalism + review.resolutionQuality + review.responseTime) / 3)
+                                          : 5; // Default to 5 if no ratings
+                                        
+                                        return (
+                                          <div key={review.id || idx} className="border-l-2 border-purple-200 pl-2">
+                                            <div className="flex items-center space-x-1">
+                                              <div className="flex">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                  <Star
+                                                    key={star}
+                                                    className={`w-2.5 h-2.5 ${
+                                                      star <= avgRating 
+                                                        ? 'fill-yellow-400 text-yellow-400' 
+                                                        : 'text-gray-300'
+                                                    }`}
+                                                  />
+                                                ))}
+                                              </div>
+                                              <span className="text-xs text-muted-foreground">
+                                                {review.ratedByUserName || 'Anonymous'}
+                                              </span>
+                                            </div>
+                                            {review.comments && (
+                                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                "{review.comments}"
+                                              </p>
+                                            )}
                                           </div>
-                                          <span className="text-xs text-muted-foreground">{review.date}</span>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                          "{review.comment}"
-                                        </p>
-                                      </div>
-                                    ))}
+                                        );
+                                      })
+                                    ) : (
+                                      <div className="text-xs text-muted-foreground text-center py-2">No reviews available</div>
+                                    )}
                                     {consultant.totalRatings > 2 && (
                                       <p className="text-xs text-muted-foreground text-center pt-1">
                                         +{consultant.totalRatings - 2} more reviews
@@ -1083,8 +1131,31 @@ const SupportSelection = () => {
                   <Card className="border-dashed border-2 border-muted-foreground/20">
                     <CardContent className="p-8 text-center">
                       <User className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-                      <h4 className="font-medium text-muted-foreground mb-2">No consultants available</h4>
-                      <p className="text-sm text-muted-foreground/70">Please try again later or contact support.</p>
+                      <h4 className="font-medium text-muted-foreground mb-2">
+                        {selectedSupport ? 'No consultants match your selected criteria' : 'No consultants available'}
+                      </h4>
+                      <p className="text-sm text-muted-foreground/70">
+                        {selectedSupport 
+                          ? 'Try selecting different support criteria or contact support for assistance.' 
+                          : 'Please try again later or contact support.'
+                        }
+                      </p>
+                      {selectedSupport && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-4"
+                          onClick={() => {
+                            setSelectedSupport('');
+                            setSelectedCategory('');
+                            setSelectedSubOption('');
+                            setSelectedConsultant('');
+                            setSelectedTimeSlots([]);
+                          }}
+                        >
+                          View All Consultants
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 )}

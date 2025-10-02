@@ -19,14 +19,16 @@ namespace SapBasisPulse.Api.Services
         private readonly IConfiguration _config;
         private readonly IEmailSender _emailSender;
         private readonly Microsoft.AspNetCore.Identity.UserManager<User> _userManager;
+        private readonly ISupportTaxonomyService _supportTaxonomyService;
 
-        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager)
+        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager, ISupportTaxonomyService supportTaxonomyService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
             _config = config;
             _emailSender = emailSender;
             _userManager = userManager;
+            _supportTaxonomyService = supportTaxonomyService;
         }
 
         public async Task<(bool Success, string? Error, AuthResponseDto? Response)> RegisterAsync(RegisterDto dto)
@@ -70,6 +72,24 @@ namespace SapBasisPulse.Api.Services
                 {
                     var msg = string.Join("; ", result.Errors.Select(e => e.Description));
                     return (false, msg, null);
+                }
+
+                // Add consultant skills if provided and user is a consultant
+                if (dto.Skills != null && dto.Skills.Any() && user.Role == UserRole.Consultant)
+                {
+                    try
+                    {
+                        foreach (var skillDto in dto.Skills)
+                        {
+                            await _supportTaxonomyService.AddConsultantSkillAsync(user.Id, skillDto);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the error but don't fail registration - skills can be added later
+                        // In a production system, you might want to log this or handle it differently
+                        Console.WriteLine($"Failed to add consultant skills during registration: {ex.Message}");
+                    }
                 }
 
                 // Generate email confirmation token (simple base64 for demo, use secure token in prod)

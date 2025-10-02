@@ -16,7 +16,7 @@ const Dashboard = () => {
   return (
     <PageLayout
       title={`${greeting()}, ${firstName || 'User'}!`}
-      description="Here's what's happening with your SAP BASIS support today."
+      description="Here's what's happening with your Yuktor today."
     >
       <DashboardOverview />
     </PageLayout>

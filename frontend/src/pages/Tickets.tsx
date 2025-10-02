@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecentTickets, useUpdateTicketStatus, useTicketRatings } from '@/hooks/useSupport';
 import { useStatusOptions } from '@/hooks/useStatus';
@@ -16,8 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, TrendingUp, ChevronUp, ChevronRight, Eye } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, ChevronUp, ChevronRight, Eye } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { toast } from 'sonner';
 import PageLayout from '@/components/layout/PageLayout';
@@ -64,9 +64,9 @@ const TicketRatingPreview: React.FC<{ ticketId: string }> = ({ ticketId }) => {
 
 const Tickets = () => {
   const { user, userRole } = useAuth();
-  const { data: tickets, isLoading, refetch } = useRecentTickets();
   const { data: featureFlags } = useFeatureFlags();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [statusChangeDialog, setStatusChangeDialog] = useState({ open: false, ticketId: '', newStatus: '', oldStatus: '' });
   const [statusComment, setStatusComment] = useState('');
@@ -76,6 +76,30 @@ const Tickets = () => {
   const { data: statusOptionsData } = useStatusOptions();
   const createPaymentOrder = useCreatePaymentOrder();
   const verifyPaymentMutation = useVerifyPayment();
+
+  // Get search query from URL
+  const searchQuery = searchParams.get('search') || '';
+  const ticketIdFromUrl = searchParams.get('ticket');
+  console.log('Tickets component - searchQuery:', searchQuery, 'searchParams:', searchParams.toString());
+
+  const { data: tickets, isLoading, refetch } = useRecentTickets(searchQuery?.trim() || undefined);
+
+  // Auto-open ticket from URL parameter
+  useEffect(() => {
+    if (ticketIdFromUrl && tickets && tickets.length > 0 && !selectedTicket) {
+      const ticket = tickets.find(t => t.id === ticketIdFromUrl);
+      if (ticket) {
+        setSelectedTicket(ticket);
+        setIsDialogOpen(true);
+        // Clear the ticket parameter from URL after opening
+        setSearchParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          newParams.delete('ticket');
+          return newParams;
+        });
+      }
+    }
+  }, [ticketIdFromUrl, tickets, selectedTicket]);
 
   // Transform API data to match component expectations with fallback to hardcoded options
   const statusOptions = statusOptionsData?.map(option => ({
@@ -168,6 +192,71 @@ const Tickets = () => {
   };
 
   const handlePayment = async (ticket: any) => {
+    // Initialize Razorpay function
+    const initializeRazorpay = (paymentOrder: any) => {
+      // Initialize Razorpay
+      const options = {
+        key: paymentOrder.key,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: 'SAP Basis Pulse',
+        description: `Payment for ${ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}`,
+        order_id: paymentOrder.razorpayOrderId,
+        handler: async function (response: any) {
+          try {
+            console.log('Razorpay response:', response);
+            console.log('Response keys:', Object.keys(response));
+            
+            // Check all possible property names
+            const orderId = response.razorpay_order_id || response.order_id || response.razorpayOrderId;
+            const paymentId = response.razorpay_payment_id || response.payment_id || response.razorpayPaymentId;
+            const signature = response.razorpay_signature || response.signature || response.razorpaySignature;
+            
+            console.log('Extracted values:', { orderId, paymentId, signature });
+            
+            // Ensure all required fields are present
+            if (!orderId || !paymentId || !signature) {
+              console.error('Missing required Razorpay response fields:', {
+                orderId, paymentId, signature,
+                original: response
+              });
+              toast.error('Payment verification failed: Missing payment details');
+              setProcessingTicketId(null);
+              return;
+            }
+
+            await verifyPaymentMutation.mutateAsync({
+              razorpayOrderId: orderId,
+              razorpayPaymentId: paymentId,
+              razorpaySignature: signature
+            });
+            
+            toast.success('Payment successful! Payment has been completed.');
+            refetch(); // Refresh tickets
+          } catch (error: any) {
+            toast.error('Payment verification failed: ' + error.message);
+          } finally {
+            setProcessingTicketId(null);
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setProcessingTicketId(null);
+          }
+        },
+        prefill: {
+          name: user?.firstName + ' ' + user?.lastName,
+          email: user?.email,
+        },
+        theme: {
+          color: '#3B82F6',
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    };
+
     try {
       setProcessingTicketId(ticket.id);
       const amount = ticket.totalAmount || 100; // Use ticket total amount or default
@@ -193,70 +282,6 @@ const Tickets = () => {
       } else {
         initializeRazorpay(paymentOrder);
       }
-
-      const initializeRazorpay = (paymentOrder: any) => {
-        // Initialize Razorpay
-        const options = {
-          key: paymentOrder.key,
-          amount: paymentOrder.amount,
-          currency: paymentOrder.currency,
-          name: 'SAP Basis Pulse',
-          description: `Payment for ${ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}`,
-          order_id: paymentOrder.razorpayOrderId,
-          handler: async function (response: any) {
-            try {
-              console.log('Razorpay response:', response);
-              console.log('Response keys:', Object.keys(response));
-              
-              // Check all possible property names
-              const orderId = response.razorpay_order_id || response.order_id || response.razorpayOrderId;
-              const paymentId = response.razorpay_payment_id || response.payment_id || response.razorpayPaymentId;
-              const signature = response.razorpay_signature || response.signature || response.razorpaySignature;
-              
-              console.log('Extracted values:', { orderId, paymentId, signature });
-              
-              // Ensure all required fields are present
-              if (!orderId || !paymentId || !signature) {
-                console.error('Missing required Razorpay response fields:', {
-                  orderId, paymentId, signature,
-                  original: response
-                });
-                toast.error('Payment verification failed: Missing payment details');
-                setProcessingTicketId(null);
-                return;
-              }
-
-              await verifyPaymentMutation.mutateAsync({
-                razorpayOrderId: orderId,
-                razorpayPaymentId: paymentId,
-                razorpaySignature: signature
-              });
-              
-              toast.success('Payment successful! Payment has been completed.');
-              refetch(); // Refresh tickets
-            } catch (error: any) {
-              toast.error('Payment verification failed: ' + error.message);
-            } finally {
-              setProcessingTicketId(null);
-            }
-          },
-          modal: {
-            ondismiss: function() {
-              setProcessingTicketId(null);
-            }
-          },
-          prefill: {
-            name: user?.firstName + ' ' + user?.lastName,
-            email: user?.email,
-          },
-          theme: {
-            color: '#3B82F6',
-          },
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
-      };
     } catch (error: any) {
       toast.error('Failed to initiate payment: ' + error.message);
       setProcessingTicketId(null);
@@ -271,14 +296,31 @@ const Tickets = () => {
   return (
     <PageLayout
       title={userRole === 'admin' ? 'All Tickets' : 'My Tickets'}
-      description={userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets'}
+      description={
+        searchQuery 
+          ? `Search results for "${searchQuery}" (${tickets?.length || 0} results)`
+          : (userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets')
+      }
       actions={
-        userRole === 'customer' ? (
-          <Button onClick={() => navigate('/support')}>
-            <Plus className="w-4 h-4 mr-1" />
-            New Ticket
-          </Button>
-        ) : null
+        <div className="flex items-center space-x-2">
+          {searchQuery && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setSearchParams({});
+              }}
+            >
+              Clear Search
+            </Button>
+          )}
+          {userRole === 'customer' && (
+            <Button onClick={() => navigate('/support')}>
+              <Plus className="w-4 h-4 mr-1" />
+              New Ticket
+            </Button>
+          )}
+        </div>
       }
     >
       <div className="space-y-6">
@@ -302,7 +344,11 @@ const Tickets = () => {
             {tickets.map((ticket) => (
               <Card 
                 key={ticket.id} 
-                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full"
+                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full cursor-pointer"
+                onClick={() => {
+                  setSelectedTicket(ticket);
+                  setIsDialogOpen(true);
+                }}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -404,7 +450,9 @@ const Tickets = () => {
                         }}
                         className="flex-1 min-w-0"
                       >
-                        <MessageSquare className="w-4 h-4 mr-1" />
+                        <MessageSquare className="w-4 h-4 sm:hidden" />
+                        <span className="sm:hidden">Message</span>
+                        <MessageSquare className="w-4 h-4 hidden sm:inline mr-1" />
                         <span className="hidden sm:inline">Message</span>
                       </Button>
                     )}
@@ -417,7 +465,9 @@ const Tickets = () => {
                         disabled
                         className="flex-1 min-w-0 bg-green-600 hover:bg-green-600 cursor-not-allowed"
                       >
-                        <span className="w-4 h-4 mr-1">✓</span>
+                        <span className="w-4 h-4 sm:hidden">✓</span>
+                        <span className="sm:hidden">Paid</span>
+                        <span className="w-4 h-4 hidden sm:inline mr-1">✓</span>
                         <span className="hidden sm:inline">Paid</span>
                       </Button>
                     )}
@@ -444,7 +494,9 @@ const Tickets = () => {
                         disabled={processingTicketId !== null}
                         className="flex-1 min-w-0 bg-green-600 hover:bg-green-700"
                       >
-                        <span className="w-4 h-4 mr-1">₹</span>
+                        <span className="w-4 h-4 sm:hidden">₹</span>
+                        <span className="sm:hidden">{processingTicketId === ticket.id ? 'Processing...' : 'Pay'}</span>
+                        <span className="w-4 h-4 hidden sm:inline mr-1">₹</span>
                         <span className="hidden sm:inline">{processingTicketId === ticket.id ? 'Processing...' : 'Pay Now'}</span>
                       </Button>
                     )}
@@ -459,6 +511,8 @@ const Tickets = () => {
                       className="flex-1 min-w-0"
                     >
                       {/* <Star className="w-4 h-4 mr-1" /> */}
+                      <Eye className="w-4 h-4 sm:hidden" />
+                      <span className="sm:hidden">{userRole === 'customer' ? 'View' : 'Details'}</span>
                       <span className="hidden sm:inline">{userRole === 'customer' ? 'View & Rate' : 'Details'}</span>
                     </Button>
                   </div>
@@ -469,18 +523,32 @@ const Tickets = () => {
         ) : (
           <div className="text-center py-12">
             <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No tickets found</h3>
+            <h3 className="text-lg font-medium mb-2">
+              {searchQuery ? 'No tickets match your search' : 'No tickets found'}
+            </h3>
             <p className="text-muted-foreground mb-6">
-              {userRole === 'customer' 
-                ? "You haven't created any support tickets yet."
-                : "No tickets are currently assigned to you."
+              {searchQuery 
+                ? `No tickets found matching "${searchQuery}". Try a different search term.`
+                : (userRole === 'customer' 
+                    ? "You haven't created any support tickets yet."
+                    : "No tickets are currently assigned to you."
+                  )
               }
             </p>
-            {userRole === 'customer' && (
-              <Button onClick={() => navigate('/support')}>
-                <Plus className="w-4 h-4 mr-1" />
-                Create your first ticket
+            {searchQuery ? (
+              <Button 
+                variant="outline" 
+                onClick={() => setSearchParams({})}
+              >
+                Clear Search
               </Button>
+            ) : (
+              userRole === 'customer' && (
+                <Button onClick={() => navigate('/support')}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Create your first ticket
+                </Button>
+              )
             )}
           </div>
         )}
@@ -657,22 +725,6 @@ const Tickets = () => {
                 >
                   <MessageSquare className="w-4 h-4 mr-1" />
                   <span className="hidden sm:inline">Open </span>Messages
-                </Button>
-              )}
-              
-              {selectedTicket && (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed' || selectedTicket.status === 'Paid') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Focus on ratings tab  
-                    const ratingsTab = document.querySelector('[data-value="ratings"]') as HTMLButtonElement;
-                    ratingsTab?.click();
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  <span className="hidden sm:inline">View </span>Analytics
                 </Button>
               )}
             </div>
