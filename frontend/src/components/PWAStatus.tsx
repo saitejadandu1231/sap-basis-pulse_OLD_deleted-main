@@ -74,7 +74,7 @@ const PWAStatus: React.FC = () => {
           <Smartphone className="h-5 w-5 text-yuktor-600 dark:text-yuktor-400" />
           <div className="flex-1">
             <p className="text-sm font-medium text-yuktor-900 dark:text-yuktor-100">
-              Install SAP BASIS Pulse
+              Install Yuktor
             </p>
             <p className="text-xs text-yuktor-600 dark:text-yuktor-400">
               Get a native app experience

@@ -2,7 +2,7 @@
   <!-- Background -->
   <rect width="192" height="192" fill="#4F46E5" rx="32"/>
   
-  <!-- SAP BASIS Pulse Icon -->
+  <!-- Yuktor Icon -->
   <g transform="translate(32, 32)">
     <!-- Background circle -->
     <circle cx="64" cy="64" r="56" fill="white" opacity="0.1"/>

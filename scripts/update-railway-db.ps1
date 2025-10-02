@@ -15,7 +15,7 @@ railway login
 
 # Link to your project (if not already linked)
 Write-Host "Linking to Railway project..." -ForegroundColor Yellow
-Write-Host "If prompted, select your SAP Basis Pulse project" -ForegroundColor Cyan
+Write-Host "If prompted, select your Yuktor project" -ForegroundColor Cyan
 railway link
 
 # Get database connection string from Railway

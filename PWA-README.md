@@ -1,35 +1,31 @@
-# SAP BASIS Pulse - PWA Setup
+# Yuktor - PWA Setup
 
 ## Progressive Web App Implementation
 
-This application has been converted to a Progressive Web App (PWA) with the following features:
+This application is configured as a Progressive Web App (PWA) for installation on devices, but **offline functionality has been removed**. The app requires an internet connection to function.
 
 ### PWA Features ✅
 - **Web App Manifest**: Configured for native app-like experience
-- **Service Worker**: Offline caching and background sync
 - **App Installation**: Install prompt for desktop and mobile
-- **Offline Support**: Cached resources and API responses
-- **Push Notifications**: Ready for future notification features
 - **Native-like UI**: Full-screen mode and native styling
 
-### Files Added/Modified
+### PWA Features ❌ (Removed)
+- ~~Service Worker: Offline caching and background sync~~
+- ~~Offline Support: Cached resources and API responses~~
+- ~~Push Notifications~~
+
+### Files Configuration
 
 #### Core PWA Files
 - `public/manifest.json` - Web app manifest with app metadata
-- `public/sw.js` - Service worker for caching and offline functionality  
-- `src/lib/pwa.ts` - PWA management utilities and installation prompts
-- `src/components/PWAStatus.tsx` - Status indicator and install prompt component
 
 #### Assets Created
-- `public/icons/icon-192x192.svg` - App icon (192x192)
-- `public/icons/icon-512x512.svg` - App icon (512x512)
-- `public/icons/apple-touch-icon.svg` - iOS icon
-- `public/favicon.svg` - Browser favicon
+- `public/icons/icon-192x192.png` - App icon (192x192)
+- `public/icons/icon-512x512.png` - App icon (512x512)
+- `public/favicon.ico` - Browser favicon
 
 #### Modified Files
 - `index.html` - Added PWA meta tags and manifest link
-- `App.tsx` - Integrated PWA initialization and status component
-- `vite.config.ts` - Updated build configuration for service worker
 
 ### Installation Instructions
 
@@ -37,26 +33,14 @@ This application has been converted to a Progressive Web App (PWA) with the foll
 1. **Chrome/Edge Desktop**: Visit the app → Look for install icon in address bar → Click "Install"
 2. **Chrome Mobile**: Visit the app → Menu → "Add to Home Screen"
 3. **Safari Mobile**: Visit the app → Share button → "Add to Home Screen"
-4. **Firefox**: Visit the app → Menu → "Install""
+4. **Firefox**: Visit the app → Menu → "Install"
 
 #### For Developers
 1. Open Chrome DevTools → Application tab
-2. Check "Service Workers" section for registration status
-3. Use "Manifest" section to verify PWA configuration
-4. Test offline functionality in "Network" tab (set to "Offline")
+2. Check "Manifest" section to verify PWA configuration
+3. Test that the app requires internet connectivity
 
 ### Testing PWA Features
-
-#### Service Worker Testing
-```bash
-# Start the development server
-npm run dev
-
-# In Chrome DevTools:
-# 1. Go to Application → Service Workers
-# 2. Verify service worker is registered and running
-# 3. Test offline mode by checking "Offline" in Network tab
-```
 
 #### Installation Testing
 ```bash
@@ -65,79 +49,44 @@ npm run dev
 # 2. Look for install banner or address bar icon
 # 3. Test installation process
 # 4. Verify app opens in standalone mode
+# 5. Confirm app requires internet connection to function
 ```
 
 ### PWA Manifest Configuration
 
 ```json
 {
-  "name": "SAP BASIS Pulse",
-  "short_name": "BASIS Pulse",
-  "description": "Enterprise SAP BASIS support management system",
+  "name": "Yuktor",
+  "short_name": "Yuktor",
+  "description": "Yuktor - Enterprise Support Management System",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#4F46E5",
-  "theme_color": "#4F46E5",
+  "background_color": "#1a1b23",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icons/icon-192x192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "icons/icon-512x512.png", 
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "categories": ["business", "productivity"]
 }
 ```
 
-### Service Worker Caching Strategy
+### Important Notes
 
-- **Cache First**: Static assets (JS, CSS, images)
-- **Network First**: API calls with offline fallback
-- **Stale While Revalidate**: HTML pages
-- **Background Sync**: Failed requests retry when online
-
-### Next Steps
-
-#### Convert SVG Icons to PNG (Required)
-The current icons are in SVG format. For better PWA compatibility, convert them to PNG:
-
-1. **Option 1: Online Converter**
-   - Use any SVG to PNG converter
-   - Convert `icon-192x192.svg` → `icon-192x192.png`
-   - Convert `icon-512x512.svg` → `icon-512x512.png`
-
-2. **Option 2: Command Line** (requires ImageMagick)
-   ```bash
-   # Install ImageMagick first
-   convert public/icons/icon-192x192.svg public/icons/icon-192x192.png
-   convert public/icons/icon-512x512.svg public/icons/icon-512x512.png
-   ```
-
-3. **Update manifest.json** after conversion to reference `.png` files
-
-#### Add App Screenshots (Optional)
-Add screenshots for better app store presentation:
-```bash
-mkdir public/screenshots
-# Add desktop and mobile screenshots of your app
-```
-
-#### Test on Different Devices
-- Test installation on various browsers and devices
-- Verify offline functionality works correctly
-- Check that cached data displays properly
-
-### PWA Status Component Features
-
-The `PWAStatus` component provides:
-- **Online/Offline indicator**: Shows connection status
-- **Install prompt**: Appears when app is installable
-- **Update notifications**: Notifies when new version available
-- **Background status**: Minimal UI when app is already installed
+- **No Offline Functionality**: The app requires an active internet connection to work
+- **No Service Worker**: Offline caching has been completely removed
+- **Online-Only Operation**: All features depend on server connectivity
 
 ### Development Commands
 
@@ -145,7 +94,7 @@ The `PWAStatus` component provides:
 # Start development server
 npm run dev
 
-# Build for production (includes service worker)
+# Build for production
 npm run build
 
 # Preview production build
@@ -160,17 +109,88 @@ npm run preview
 - ✅ Edge (Chromium-based)
 - ⚠️ Internet Explorer (Not supported)
 
-### Offline Features
+---
 
-When offline, the app provides:
-- Cached UI and static resources
-- Previously loaded ticket data
-- Basic navigation
-- User-friendly offline messaging
-- Automatic sync when connection restored
+🎯 **Your Yuktor app is now configured as an online-only PWA!**
+
+Users can install it on their devices for a native app-like experience, but it requires internet connectivity to function.
+
+#### For Developers
+1. Open Chrome DevTools → Application tab
+2. Check "Manifest" section to verify PWA configuration
+3. Test that the app requires internet connectivity
+
+### Testing PWA Features
+
+#### Installation Testing
+```bash
+# Test installation prompt
+# 1. Open app in Chrome
+# 2. Look for install banner or address bar icon
+# 3. Test installation process
+# 4. Verify app opens in standalone mode
+# 5. Confirm app requires internet connection to function
+```
+
+### PWA Manifest Configuration
+
+```json
+{
+  "name": "Yuktor",
+  "short_name": "Yuktor",
+  "description": "Yuktor - Enterprise Support Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1b23",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}
+```
+
+### Important Notes
+
+- **No Offline Functionality**: The app requires an active internet connection to work
+- **No Service Worker**: Offline caching has been completely removed
+- **Online-Only Operation**: All features depend on server connectivity
+
+### Development Commands
+
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Browser Support
+
+- ✅ Chrome/Chromium (Full support)
+- ✅ Firefox (Full support)
+- ✅ Safari (iOS 11.3+)
+- ✅ Edge (Chromium-based)
+- ⚠️ Internet Explorer (Not supported)
 
 ---
 
-🎉 **Your SAP BASIS Pulse app is now PWA-ready!** 
+🎯 **Your Yuktor app is now configured as an online-only PWA!**
 
-Users can install it on their devices for a native app-like experience with offline capabilities.
+Users can install it on their devices for a native app-like experience, but it requires internet connectivity to function.
