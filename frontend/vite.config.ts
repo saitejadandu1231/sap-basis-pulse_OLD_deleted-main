@@ -25,14 +25,49 @@ export default defineConfig(({ mode }) => ({
       }
     },
     {
-      name: 'copy-headers',
+      name: 'copy-vercel-files',
       closeBundle() {
+        if (!fs.existsSync('dist')) {
+          fs.mkdirSync('dist', { recursive: true });
+        }
+        
+        // Copy all Vercel config files
         if (fs.existsSync('public/_headers')) {
-          if (!fs.existsSync('dist')) {
-            fs.mkdirSync('dist', { recursive: true });
-          }
           fs.copyFileSync('public/_headers', 'dist/_headers');
         }
+        
+        if (fs.existsSync('public/_redirects')) {
+          fs.copyFileSync('public/_redirects', 'dist/_redirects');
+        }
+        
+        if (fs.existsSync('public/vercel.txt')) {
+          fs.copyFileSync('public/vercel.txt', 'dist/vercel.txt');
+        }
+        
+        // Create a web.config file for IIS servers
+        const webConfig = `<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+    <staticContent>
+      <mimeMap fileExtension=".js" mimeType="application/javascript" />
+      <mimeMap fileExtension=".css" mimeType="text/css" />
+      <mimeMap fileExtension=".json" mimeType="application/json" />
+    </staticContent>
+    <rewrite>
+      <rules>
+        <rule name="SPA Routes" stopProcessing="true">
+          <match url=".*" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_URI}" pattern="^/(assets|icons)" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/index.html" />
+        </rule>
+      </rules>
+    </rewrite>
+  </system.webServer>
+</configuration>`;
+        fs.writeFileSync('dist/web.config', webConfig);
       }
     }
   ].filter(Boolean),
