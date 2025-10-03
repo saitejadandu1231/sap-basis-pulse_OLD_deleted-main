@@ -135,23 +135,27 @@ namespace SapBasisPulse.Api.Services
         public async Task<IEnumerable<SupportRequestDto>> GetRecentForUserAsync(Guid userId, string? searchQuery = null)
         {
             var query = _context.Orders
-                .Include(o => o.SupportType)
-                .Include(o => o.SupportCategory)
-                .Include(o => o.SupportSubOption)
-                .Include(o => o.Consultant)
-                .Include(o => o.TimeSlot)
-                .Include(o => o.Status)
-                .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
                 .Where(o => o.CreatedByUserId == userId);
 
             // Apply search filter if provided
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
+                // Include necessary entities for search
+                query = query
+                    .Include(o => o.SupportType)
+                    .Include(o => o.SupportCategory)
+                    .Include(o => o.SupportSubOption)
+                    .Include(o => o.Consultant)
+                    .Include(o => o.CreatedByUser)
+                    .Include(o => o.Status);
+
                 var searchTerm = searchQuery.ToLower().Trim();
                 query = query.Where(o =>
                     o.OrderNumber.ToLower().Contains(searchTerm) ||
                     o.SrIdentifier.ToLower().Contains(searchTerm) ||
                     (o.SupportType != null && o.SupportType.Name.ToLower().Contains(searchTerm)) ||
+                    (o.SupportCategory != null && o.SupportCategory.Name.ToLower().Contains(searchTerm)) ||
+                    (o.SupportSubOption != null && o.SupportSubOption.Name.ToLower().Contains(searchTerm)) ||
                     (o.Description != null && o.Description.ToLower().Contains(searchTerm)) ||
                     (o.Consultant != null && (o.Consultant.FirstName + " " + o.Consultant.LastName).ToLower().Contains(searchTerm)) ||
                     (o.CreatedByUser != null && (o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName).ToLower().Contains(searchTerm)) ||
@@ -176,23 +180,27 @@ namespace SapBasisPulse.Api.Services
         public async Task<IEnumerable<SupportRequestDto>> GetRecentForConsultantAsync(Guid consultantId, string? searchQuery = null)
         {
             var query = _context.Orders
-                .Include(o => o.SupportType)
-                .Include(o => o.SupportCategory)
-                .Include(o => o.SupportSubOption)
-                .Include(o => o.Consultant)
-                .Include(o => o.TimeSlot)
-                .Include(o => o.Status)
-                .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
                 .Where(o => o.ConsultantId == consultantId);
 
             // Apply search filter if provided
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
+                // Include necessary entities for search
+                query = query
+                    .Include(o => o.SupportType)
+                    .Include(o => o.SupportCategory)
+                    .Include(o => o.SupportSubOption)
+                    .Include(o => o.Consultant)
+                    .Include(o => o.CreatedByUser)
+                    .Include(o => o.Status);
+
                 var searchTerm = searchQuery.ToLower().Trim();
                 query = query.Where(o =>
                     o.OrderNumber.ToLower().Contains(searchTerm) ||
                     o.SrIdentifier.ToLower().Contains(searchTerm) ||
                     (o.SupportType != null && o.SupportType.Name.ToLower().Contains(searchTerm)) ||
+                    (o.SupportCategory != null && o.SupportCategory.Name.ToLower().Contains(searchTerm)) ||
+                    (o.SupportSubOption != null && o.SupportSubOption.Name.ToLower().Contains(searchTerm)) ||
                     (o.Description != null && o.Description.ToLower().Contains(searchTerm)) ||
                     (o.Consultant != null && (o.Consultant.FirstName + " " + o.Consultant.LastName).ToLower().Contains(searchTerm)) ||
                     (o.CreatedByUser != null && (o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName).ToLower().Contains(searchTerm)) ||
@@ -217,12 +225,6 @@ namespace SapBasisPulse.Api.Services
         public async Task<IEnumerable<SupportRequestDto>> GetAllAsync()
         {
             var orders = await _context.Orders
-                .Include(o => o.SupportType)
-                .Include(o => o.SupportCategory)
-                .Include(o => o.SupportSubOption)
-                .Include(o => o.Consultant)
-                .Include(o => o.TimeSlot)
-                .Include(o => o.Status)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
 
