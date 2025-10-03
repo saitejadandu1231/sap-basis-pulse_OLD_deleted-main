@@ -140,7 +140,6 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.SupportSubOption)
                 .Include(o => o.Consultant)
                 .Include(o => o.TimeSlot)
-                .Include(o => o.CreatedByUser)
                 .Include(o => o.Status)
                 .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
                 .Where(o => o.CreatedByUserId == userId);
@@ -182,7 +181,6 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.SupportSubOption)
                 .Include(o => o.Consultant)
                 .Include(o => o.TimeSlot)
-                .Include(o => o.CreatedByUser)
                 .Include(o => o.Status)
                 .Include(o => o.OrderTimeSlots).ThenInclude(ots => ots.TimeSlot)
                 .Where(o => o.ConsultantId == consultantId);
@@ -224,7 +222,6 @@ namespace SapBasisPulse.Api.Services
                 .Include(o => o.SupportSubOption)
                 .Include(o => o.Consultant)
                 .Include(o => o.TimeSlot)
-                .Include(o => o.CreatedByUser)
                 .Include(o => o.Status)
                 .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
