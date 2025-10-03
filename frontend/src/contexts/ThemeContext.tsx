@@ -16,7 +16,9 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    // Debug log to help trace where this is called
+    console.error('useTheme called outside ThemeProvider! Stack:', new Error().stack);
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 };

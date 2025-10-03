@@ -28,6 +28,9 @@ class ErrorBoundary extends Component<Props, State> {
     if (process.env.NODE_ENV === 'production') {
       // You can integrate with error reporting services like Sentry here
       console.error('Production error:', error);
+        if (error && error.stack) {
+          console.error('Stack trace:', error.stack);
+        }
     }
   }
 
