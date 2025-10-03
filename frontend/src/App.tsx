@@ -125,104 +125,103 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <SuspenseBoundary>
-                <Routes>
-            <Route path="/" element={<RouteErrorBoundary><Index /></RouteErrorBoundary>} />
-            <Route path="/login" element={<RouteErrorBoundary><Login /></RouteErrorBoundary>} />
-            <Route path="/auth/callback" element={<RouteErrorBoundary><AuthCallback /></RouteErrorBoundary>} />
-            <Route path="/contact-us" element={<RouteErrorBoundary><ContactUs /></RouteErrorBoundary>} />
-            <Route path="/privacy-policy" element={<RouteErrorBoundary><PrivacyPolicy /></RouteErrorBoundary>} />
-            <Route path="/cancellation-refund-policy" element={<RouteErrorBoundary><CancellationRefundPolicy /></RouteErrorBoundary>} />
-            <Route path="/shipping-delivery-policy" element={<RouteErrorBoundary><ShippingDeliveryPolicy /></RouteErrorBoundary>} />
-            <Route path="/terms-conditions" element={<RouteErrorBoundary><TermsConditions /></RouteErrorBoundary>} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><Dashboard /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/support" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><SupportSelection /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/tickets" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><Tickets /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><Settings /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/help" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><Help /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/consultant/availability" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><ConsultantAvailability /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/consultant/skills" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><ConsultantSkills /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><AdminDashboard /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/users" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><AdminUsers /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/analytics" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><AdminAnalytics /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/settings" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><AdminSettings /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/taxonomy" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><SupportTaxonomyAdmin /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/sso-settings" element={
-              <ProtectedRoute>
-                <RouteErrorBoundary><AdminSSOSettings /></RouteErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="/messages" element={
-              <ProtectedRoute>
-                <MessagingProtectedRoute>
-                  <RouteErrorBoundary><MessagingPage /></RouteErrorBoundary>
-                </MessagingProtectedRoute>
-              </ProtectedRoute>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<RouteErrorBoundary><NotFound /></RouteErrorBoundary>} />
-          </Routes>
-              </SuspenseBoundary>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </ThemeProvider>
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <SuspenseBoundary>
+              <Routes>
+                <Route path="/" element={<RouteErrorBoundary><Index /></RouteErrorBoundary>} />
+                <Route path="/login" element={<RouteErrorBoundary><Login /></RouteErrorBoundary>} />
+                <Route path="/auth/callback" element={<RouteErrorBoundary><AuthCallback /></RouteErrorBoundary>} />
+                <Route path="/contact-us" element={<RouteErrorBoundary><ContactUs /></RouteErrorBoundary>} />
+                <Route path="/privacy-policy" element={<RouteErrorBoundary><PrivacyPolicy /></RouteErrorBoundary>} />
+                <Route path="/cancellation-refund-policy" element={<RouteErrorBoundary><CancellationRefundPolicy /></RouteErrorBoundary>} />
+                <Route path="/shipping-delivery-policy" element={<RouteErrorBoundary><ShippingDeliveryPolicy /></RouteErrorBoundary>} />
+                <Route path="/terms-conditions" element={<RouteErrorBoundary><TermsConditions /></RouteErrorBoundary>} />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><Dashboard /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/support" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><SupportSelection /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/tickets" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><Tickets /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><Settings /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/help" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><Help /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/consultant/availability" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><ConsultantAvailability /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/consultant/skills" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><ConsultantSkills /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><AdminDashboard /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/users" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><AdminUsers /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/analytics" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><AdminAnalytics /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/settings" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><AdminSettings /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/taxonomy" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><SupportTaxonomyAdmin /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/sso-settings" element={
+                  <ProtectedRoute>
+                    <RouteErrorBoundary><AdminSSOSettings /></RouteErrorBoundary>
+                  </ProtectedRoute>
+                } />
+                <Route path="/messages" element={
+                  <ProtectedRoute>
+                    <MessagingProtectedRoute>
+                      <RouteErrorBoundary><MessagingPage /></RouteErrorBoundary>
+                    </MessagingProtectedRoute>
+                  </ProtectedRoute>
+                } />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<RouteErrorBoundary><NotFound /></RouteErrorBoundary>} />
+              </Routes>
+            </SuspenseBoundary>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
-  </ErrorBoundary>
-);export default App;
+);
+export default App;
