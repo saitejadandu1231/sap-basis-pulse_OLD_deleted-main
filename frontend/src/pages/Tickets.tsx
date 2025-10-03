@@ -199,7 +199,7 @@ const Tickets = () => {
         key: paymentOrder.key,
         amount: paymentOrder.amount,
         currency: paymentOrder.currency,
-        name: 'SAP Basis Pulse',
+        name: 'Yuktor',
         description: `Payment for ${ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}`,
         order_id: paymentOrder.razorpayOrderId,
         handler: async function (response: any) {

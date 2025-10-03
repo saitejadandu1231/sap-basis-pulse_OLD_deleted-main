@@ -1,6 +1,6 @@
 # ✅ SSO Implementation Complete
 
-The Single Sign-On (SSO) integration with Supabase for Google and Apple authentication has been successfully implemented in your SAP BASIS Pulse project.
+The Single Sign-On (SSO) integration with Supabase for Google and Apple authentication has been successfully implemented in your Yuktor project.
 
 ## 🎯 Features Implemented
 
