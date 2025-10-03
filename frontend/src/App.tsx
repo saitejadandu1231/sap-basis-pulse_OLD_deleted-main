@@ -8,7 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MessagingProtectedRoute from "@/components/MessagingProtectedRoute";
-import ErrorBoundary from "@/components/ErrorBoundary";
+// import ErrorBoundary from "@/components/ErrorBoundary";
 import React, { lazy, Suspense } from "react";
 
 // Lazy load components for better performance
@@ -58,41 +58,19 @@ const LoadingSpinner = () => {
 
 // Suspense boundary with error recovery
 const SuspenseBoundary = ({ children }: { children: React.ReactNode }) => {
-  const [hasError, setHasError] = React.useState(false);
-  
-  React.useEffect(() => {
-    if (hasError) {
-      const timer = setTimeout(() => setHasError(false), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [hasError]);
-
-  if (hasError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Loading failed. Retrying...</p>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <React.Suspense fallback={<LoadingSpinner />}>
-      <ErrorBoundary>
-        {children}
-      </ErrorBoundary>
+      {children}
     </React.Suspense>
   );
 };
 
 // Error boundary for individual routes
-const RouteErrorBoundary = ({ children }: { children: React.ReactNode }) => (
-  <ErrorBoundary>
-    {children}
-  </ErrorBoundary>
-);
+// const RouteErrorBoundary = ({ children }: { children: React.ReactNode }) => (
+//   <ErrorBoundary>
+//     {children}
+//   </ErrorBoundary>
+// );
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -134,88 +112,88 @@ const App = () => (
           <BrowserRouter>
             <SuspenseBoundary>
               <Routes>
-                <Route path="/" element={<RouteErrorBoundary><Index /></RouteErrorBoundary>} />
-                <Route path="/login" element={<RouteErrorBoundary><Login /></RouteErrorBoundary>} />
-                <Route path="/auth/callback" element={<RouteErrorBoundary><AuthCallback /></RouteErrorBoundary>} />
-                <Route path="/contact-us" element={<RouteErrorBoundary><ContactUs /></RouteErrorBoundary>} />
-                <Route path="/privacy-policy" element={<RouteErrorBoundary><PrivacyPolicy /></RouteErrorBoundary>} />
-                <Route path="/cancellation-refund-policy" element={<RouteErrorBoundary><CancellationRefundPolicy /></RouteErrorBoundary>} />
-                <Route path="/shipping-delivery-policy" element={<RouteErrorBoundary><ShippingDeliveryPolicy /></RouteErrorBoundary>} />
-                <Route path="/terms-conditions" element={<RouteErrorBoundary><TermsConditions /></RouteErrorBoundary>} />
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/contact-us" element={<ContactUs />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/cancellation-refund-policy" element={<CancellationRefundPolicy />} />
+                <Route path="/shipping-delivery-policy" element={<ShippingDeliveryPolicy />} />
+                <Route path="/terms-conditions" element={<TermsConditions />} />
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><Dashboard /></RouteErrorBoundary>
+                    <Dashboard />
                   </ProtectedRoute>
                 } />
                 <Route path="/support" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><SupportSelection /></RouteErrorBoundary>
+                    <SupportSelection />
                   </ProtectedRoute>
                 } />
                 <Route path="/tickets" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><Tickets /></RouteErrorBoundary>
+                    <Tickets />
                   </ProtectedRoute>
                 } />
                 <Route path="/settings" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><Settings /></RouteErrorBoundary>
+                    <Settings />
                   </ProtectedRoute>
                 } />
                 <Route path="/help" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><Help /></RouteErrorBoundary>
+                    <Help />
                   </ProtectedRoute>
                 } />
                 <Route path="/consultant/availability" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><ConsultantAvailability /></RouteErrorBoundary>
+                    <ConsultantAvailability />
                   </ProtectedRoute>
                 } />
                 <Route path="/consultant/skills" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><ConsultantSkills /></RouteErrorBoundary>
+                    <ConsultantSkills />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><AdminDashboard /></RouteErrorBoundary>
+                    <AdminDashboard />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/users" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><AdminUsers /></RouteErrorBoundary>
+                    <AdminUsers />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/analytics" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><AdminAnalytics /></RouteErrorBoundary>
+                    <AdminAnalytics />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/settings" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><AdminSettings /></RouteErrorBoundary>
+                    <AdminSettings />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/taxonomy" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><SupportTaxonomyAdmin /></RouteErrorBoundary>
+                    <SupportTaxonomyAdmin />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin/sso-settings" element={
                   <ProtectedRoute>
-                    <RouteErrorBoundary><AdminSSOSettings /></RouteErrorBoundary>
+                    <AdminSSOSettings />
                   </ProtectedRoute>
                 } />
                 <Route path="/messages" element={
                   <ProtectedRoute>
                     <MessagingProtectedRoute>
-                      <RouteErrorBoundary><MessagingPage /></RouteErrorBoundary>
+                      <MessagingPage />
                     </MessagingProtectedRoute>
                   </ProtectedRoute>
                 } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<RouteErrorBoundary><NotFound /></RouteErrorBoundary>} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </SuspenseBoundary>
           </BrowserRouter>
