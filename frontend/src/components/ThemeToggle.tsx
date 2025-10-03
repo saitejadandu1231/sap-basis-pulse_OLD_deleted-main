@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/contexts/ThemeContext";
+import { ThemeContextBridge } from "@/components/ThemeContextBridge";
 import { Sun, Moon, Monitor, Palette } from "lucide-react";
 
 const ThemeToggle = () => {
@@ -74,55 +75,57 @@ const ThemeToggle = () => {
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-2 py-1.5">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-1">
-            <Palette className="w-4 h-4" />
-            Choose Theme
+      <ThemeContextBridge>
+        <DropdownMenuContent align="end" className="w-56">
+          <div className="px-2 py-1.5">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-1">
+              <Palette className="w-4 h-4" />
+              Choose Theme
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Select your preferred interface theme
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Select your preferred interface theme
-          </p>
-        </div>
-        <div className="h-px bg-border my-1" />
-        {themes.map((themeOption) => {
-          const IconComponent = themeOption.icon;
-          const isSelected = theme === themeOption.value;
-          
-          return (
-            <DropdownMenuItem
-              key={themeOption.value}
-              onClick={() => setTheme(themeOption.value)}
-              className={`cursor-pointer transition-colors duration-200 ${
-                isSelected 
-                  ? 'bg-primary/10 text-primary font-medium' 
-                  : 'hover:bg-accent/50'
-              }`}
-            >
-              <div className="flex items-center w-full gap-3">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+          <div className="h-px bg-border my-1" />
+          {themes.map((themeOption) => {
+            const IconComponent = themeOption.icon;
+            const isSelected = theme === themeOption.value;
+            
+            return (
+              <DropdownMenuItem
+                key={themeOption.value}
+                onClick={() => setTheme(themeOption.value)}
+                className={`cursor-pointer transition-colors duration-200 ${
                   isSelected 
-                    ? 'bg-primary/20 text-primary' 
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  <IconComponent className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">
-                    {themeOption.name}
+                    ? 'bg-primary/10 text-primary font-medium' 
+                    : 'hover:bg-accent/50'
+                }`}
+              >
+                <div className="flex items-center w-full gap-3">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                    isSelected 
+                      ? 'bg-primary/20 text-primary' 
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <IconComponent className="w-4 h-4" />
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {themeOption.description}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">
+                      {themeOption.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {themeOption.description}
+                    </div>
                   </div>
+                  {isSelected && (
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  )}
                 </div>
-                {isSelected && (
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                )}
-              </div>
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </ThemeContextBridge>
     </DropdownMenu>
   );
 };
