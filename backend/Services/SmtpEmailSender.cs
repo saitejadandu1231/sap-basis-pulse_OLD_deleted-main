@@ -20,6 +20,8 @@ namespace SapBasisPulse.Api.Services
         {
             var smtpSection = _config.GetSection("Smtp");
             
+            _logger.LogInformation("[EMAIL] Starting to send email to {To} with subject: {Subject}", to, subject);
+            
             // Check if email is disabled for development
             if (smtpSection["DisableInDevelopment"]?.ToLower() == "true" && 
                 _config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "development")
@@ -29,27 +31,65 @@ namespace SapBasisPulse.Api.Services
                 return; // Skip sending in development if disabled
             }
 
-            var client = new SmtpClient(smtpSection["Host"], int.Parse(smtpSection["Port"]))
-            {
-                Credentials = new NetworkCredential(smtpSection["Username"], smtpSection["Password"]),
-                EnableSsl = bool.Parse(smtpSection["EnableSsl"] ?? "true")
-            };
-            var mail = new MailMessage(smtpSection["From"], to, subject, htmlBody) { IsBodyHtml = true };
+            SmtpClient client = null;
+            MailMessage mail = null;
+            
             try
             {
-                await client.SendMailAsync(mail);
-                _logger.LogInformation("Email sent successfully to {To}", to);
-            }
-            catch (System.Exception ex)
-            {
-                // In development we don't want email send failures to block user registration.
-                _logger.LogWarning(ex, "Failed to send email to {To}. Continuing without blocking registration.", to);
+                _logger.LogInformation("[EMAIL] Creating SMTP client for host: {Host}:{Port}", smtpSection["Host"], smtpSection["Port"]);
                 
-                // Throw the exception if we're not in development environment to properly handle it upstream
-                if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() != "development")
+                client = new SmtpClient(smtpSection["Host"], int.Parse(smtpSection["Port"]))
+                {
+                    Credentials = new NetworkCredential(smtpSection["Username"], smtpSection["Password"]),
+                    EnableSsl = bool.Parse(smtpSection["EnableSsl"] ?? "true"),
+                    Timeout = 30000 // 30 seconds timeout
+                };
+                
+                _logger.LogInformation("[EMAIL] SMTP client created. EnableSsl: {EnableSsl}, Username: {Username}", 
+                    client.EnableSsl, smtpSection["Username"]);
+                
+                mail = new MailMessage(smtpSection["From"], to, subject, htmlBody) { IsBodyHtml = true };
+                
+                _logger.LogInformation("[EMAIL] Sending email from {From} to {To}...", smtpSection["From"], to);
+                
+                await client.SendMailAsync(mail);
+                
+                _logger.LogInformation("[EMAIL] Email sent successfully to {To}", to);
+            }
+            catch (SmtpException smtpEx)
+            {
+                _logger.LogError(smtpEx, "[EMAIL] SMTP error sending email to {To}. StatusCode: {StatusCode}", 
+                    to, smtpEx.StatusCode);
+                
+                // In production, we still want to continue registration even if email fails
+                if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "production")
+                {
+                    _logger.LogWarning("[EMAIL] Continuing registration despite email failure in production");
+                }
+                else
                 {
                     throw;
                 }
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "[EMAIL] General error sending email to {To}. Error: {Message}", to, ex.Message);
+                
+                // In production, we still want to continue registration even if email fails
+                if (_config["ASPNETCORE_ENVIRONMENT"]?.ToLower() == "production")
+                {
+                    _logger.LogWarning("[EMAIL] Continuing registration despite email failure in production");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            finally
+            {
+                mail?.Dispose();
+                client?.Dispose();
+                _logger.LogInformation("[EMAIL] Email sending process completed for {To}", to);
             }
         }
     }

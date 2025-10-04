@@ -127,8 +127,18 @@ namespace SapBasisPulse.Api.Services
                     
                     try
                     {
-                        await _emailSender.SendEmailAsync(user.Email, subject, body);
+                        Console.WriteLine($"[DEBUG] Starting email send with 15 second timeout...");
+                        
+                        // Add timeout to prevent hanging
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                        await _emailSender.SendEmailAsync(user.Email, subject, body).WaitAsync(cts.Token);
+                        
                         Console.WriteLine($"[DEBUG] Email sent successfully to: {user.Email}");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine($"[DEBUG] Email send timed out after 15 seconds for: {user.Email}");
+                        // Continue with registration even if email times out
                     }
                     catch (Exception ex)
                     {
