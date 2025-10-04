@@ -48,7 +48,12 @@ namespace SapBasisPulse.Api.Services
                 _logger.LogInformation("[EMAIL] SMTP client created. EnableSsl: {EnableSsl}, Username: {Username}", 
                     client.EnableSsl, smtpSection["Username"]);
                 
-                mail = new MailMessage(smtpSection["From"], to, subject, htmlBody) { IsBodyHtml = true };
+                mail = new MailMessage();
+                mail.From = new MailAddress(smtpSection["From"], "Yuktor SAP BASIS Support");
+                mail.To.Add(new MailAddress(to));
+                mail.Subject = subject;
+                mail.Body = htmlBody;
+                mail.IsBodyHtml = true;
                 
                 _logger.LogInformation("[EMAIL] Sending email from {From} to {To}...", smtpSection["From"], to);
                 
