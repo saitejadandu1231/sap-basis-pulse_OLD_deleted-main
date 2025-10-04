@@ -108,7 +108,7 @@ const Tickets = () => {
     color: option.colorCode
   })) || [
     { value: 'New', label: 'New', color: 'bg-blue-500' },
-    { value: 'InProgress', label: 'In Progress', color: 'bg-yellow-500' },
+    { value: 'In Progress', label: 'In Progress', color: 'bg-yellow-500' },
     { value: 'PendingCustomerAction', label: 'Pending Customer', color: 'bg-orange-500' },
     { value: 'TopicClosed', label: 'Topic Closed', color: 'bg-green-500' },
     { value: 'Closed', label: 'Closed', color: 'bg-muted' },
@@ -126,7 +126,7 @@ const Tickets = () => {
       case 'Closed':
       case 'Paid':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'InProgress':
+      case 'In Progress':
         return <Clock className="w-5 h-5 text-blue-500" />;
       default:
         return <AlertCircle className="w-5 h-5 text-orange-500" />;
@@ -137,7 +137,7 @@ const Tickets = () => {
     switch (status) {
       case 'Closed':
         return 'default' as const;
-      case 'InProgress':
+      case 'In Progress':
         return 'secondary' as const;
       case 'PendingCustomerAction':
         return 'outline' as const;

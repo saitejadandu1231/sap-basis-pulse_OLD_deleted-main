@@ -155,7 +155,7 @@ const RecentTickets = () => {
                   <div className="flex items-center gap-2">
                     <Badge variant={
                       ticket.status === 'New' ? 'secondary' :
-                      ticket.status === 'InProgress' ? 'default' :
+                      ticket.status === 'In Progress' ? 'default' :
                       ticket.status === 'Closed' ? 'outline' : 
                       ticket.status === 'PendingCustomerAction' ? 'destructive' :
                       ticket.status === 'TopicClosed' ? 'outline' :

@@ -24,7 +24,7 @@ const statusOptions = [
     description: 'Just submitted'
   },
   { 
-    value: 'InProgress', 
+    value: 'In Progress', 
     label: 'In Progress', 
     color: 'bg-yellow-500', 
     textColor: 'text-yellow-700',
