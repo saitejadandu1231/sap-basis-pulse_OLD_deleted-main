@@ -96,7 +96,21 @@ export const useSupabaseAuth = () => {
         })
       });
 
-      const result = await response.json();
+      if (response.status === 204) {
+        // 204 No Content - Email verification required
+        return { success: true, requiresVerification: true, message: 'Please check your email to verify your account before signing in.' };
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        if (response.ok) {
+          result = { message: 'Account created successfully!' };
+        } else {
+          throw new Error('Failed to complete signup');
+        }
+      }
       
       if (!response.ok) {
         throw new Error(result.error || 'Failed to complete signup');

@@ -31,6 +31,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CancellationRefundPolicy from "./pages/CancellationRefundPolicy";
 import ShippingDeliveryPolicy from "./pages/ShippingDeliveryPolicy";
 import TermsConditions from "./pages/TermsConditions";
+import ConfirmEmail from "./pages/ConfirmEmail";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/confirm-email" element={<ConfirmEmail />} />
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/cancellation-refund-policy" element={<CancellationRefundPolicy />} />

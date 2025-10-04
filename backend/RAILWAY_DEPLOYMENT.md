@@ -24,6 +24,18 @@ ASPNETCORE_ENVIRONMENT=Production
 JWT_SECRET=your_super_secure_production_jwt_secret_key_with_sufficient_length_minimum_32_characters
 CORS_ORIGINS=https://sap-basis-pulse-lye7.vercel.app
 
+# SMTP Email Configuration (Required for email notifications)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=satejadandu1231@gmail.com
+SMTP_PASSWORD=smxy ffzl tkel clrn
+SMTP_FROM=noreply@yuktor.com
+SMTP_ENABLE_SSL=true
+ADMIN_EMAILS=admin@yuktor.com,support@yuktor.com
+
+# Note: Gmail requires 2FA and app passwords. If you can't set up app passwords,
+# consider using Supabase SMTP instead (see EMAIL_SETUP_GUIDE.md for alternatives)
+
 # Optional (for Google SSO)
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret

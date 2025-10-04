@@ -150,11 +150,20 @@ const ConsultantAvailability = () => {
   // Calculate end date and time when start date/time or hours change
   useEffect(() => {
     if (startDate && startTime && numberOfHours >= 1) {
-      const startDateTime = new Date(`${startDate}T${startTime}:00`);
+      // Parse the date and time properly to avoid timezone issues
+      const [year, month, day] = startDate.split('-').map(Number);
+      const [hours, minutes] = startTime.split(':').map(Number);
+      
+      // Create date object using local timezone
+      const startDateTime = new Date(year, month - 1, day, hours, minutes, 0);
       const endDateTime = new Date(startDateTime.getTime() + (numberOfHours * 60 * 60 * 1000)); // Add hours in milliseconds
       
-      const endDateStr = endDateTime.toISOString().split('T')[0]; // YYYY-MM-DD format
-      const endTimeStr = endDateTime.toTimeString().slice(0, 5); // HH:MM format
+      // Format the end date and time
+      const endDateStr = endDateTime.getFullYear() + '-' + 
+                        String(endDateTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(endDateTime.getDate()).padStart(2, '0');
+      const endTimeStr = String(endDateTime.getHours()).padStart(2, '0') + ':' + 
+                        String(endDateTime.getMinutes()).padStart(2, '0');
       
       setCalculatedEndDate(endDateStr);
       setCalculatedEndTime(endTimeStr);

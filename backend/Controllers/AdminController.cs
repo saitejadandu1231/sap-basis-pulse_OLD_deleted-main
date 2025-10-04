@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SapBasisPulse.Api.Services;
+using SapBasisPulse.Api.DTOs;
 
 namespace SapBasisPulse.Api.Controllers
 {
@@ -12,11 +13,14 @@ namespace SapBasisPulse.Api.Controllers
         private readonly IUserService _userService;
         private readonly ISupportRequestService _supportRequestService;
         private readonly IAuditLogService _auditLogService;
-        public AdminController(IUserService userService, ISupportRequestService supportRequestService, IAuditLogService auditLogService)
+        private readonly IEmailSettingsService _emailSettingsService;
+        
+        public AdminController(IUserService userService, ISupportRequestService supportRequestService, IAuditLogService auditLogService, IEmailSettingsService emailSettingsService)
         {
             _userService = userService;
             _supportRequestService = supportRequestService;
             _auditLogService = auditLogService;
+            _emailSettingsService = emailSettingsService;
         }
 
         [HttpGet("users")]
@@ -43,6 +47,77 @@ namespace SapBasisPulse.Api.Controllers
             var adminId = User.Identity?.IsAuthenticated == true ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) : null;
             await _auditLogService.LogAsync(adminId != null ? Guid.Parse(adminId.Value) : (Guid?)null, "GetAllSupportRequests", "Order", "", "Fetched all support requests", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
             return Ok(requests);
+        }
+
+        [HttpGet("email-settings")]
+        public async Task<IActionResult> GetEmailSettings()
+        {
+            try
+            {
+                var settings = new EmailSettingsDto
+                {
+                    EnableEmailVerification = _emailSettingsService.IsEmailVerificationEnabled(),
+                    RequireEmailVerification = _emailSettingsService.IsEmailVerificationRequired(),
+                    EmailVerificationTokenExpiryHours = _emailSettingsService.GetEmailVerificationTokenExpiryHours()
+                };
+
+                var adminId = User.Identity?.IsAuthenticated == true ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) : null;
+                await _auditLogService.LogAsync(
+                    adminId != null ? Guid.Parse(adminId.Value) : (Guid?)null, 
+                    "GetEmailSettings", 
+                    "EmailSettings", 
+                    "", 
+                    "Retrieved email verification settings", 
+                    HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
+                );
+
+                return Ok(settings);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = $"Failed to retrieve email settings: {ex.Message}" });
+            }
+        }
+
+        [HttpPut("email-settings")]
+        public async Task<IActionResult> UpdateEmailSettings([FromBody] UpdateEmailSettingsDto dto)
+        {
+            try
+            {
+                // Note: This endpoint currently returns a NotImplementedException
+                // because we're using appsettings.json for configuration.
+                // In a production system, you would store these in the database.
+                
+                var adminId = User.Identity?.IsAuthenticated == true ? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) : null;
+                await _auditLogService.LogAsync(
+                    adminId != null ? Guid.Parse(adminId.Value) : (Guid?)null, 
+                    "UpdateEmailSettings", 
+                    "EmailSettings", 
+                    "", 
+                    $"Attempted to update email settings: EnableEmailVerification={dto.EnableEmailVerification}, RequireEmailVerification={dto.RequireEmailVerification}", 
+                    HttpContext.Connection.RemoteIpAddress?.ToString() ?? ""
+                );
+
+                await _emailSettingsService.UpdateEmailVerificationSettings(dto.EnableEmailVerification, dto.RequireEmailVerification);
+                
+                return Ok(new { message = "Email settings updated successfully" });
+            }
+            catch (NotImplementedException)
+            {
+                return BadRequest(new { 
+                    error = "Dynamic email settings updates are not yet supported. Please update appsettings.json manually and restart the application.",
+                    currentSettings = new EmailSettingsDto
+                    {
+                        EnableEmailVerification = _emailSettingsService.IsEmailVerificationEnabled(),
+                        RequireEmailVerification = _emailSettingsService.IsEmailVerificationRequired(),
+                        EmailVerificationTokenExpiryHours = _emailSettingsService.GetEmailVerificationTokenExpiryHours()
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = $"Failed to update email settings: {ex.Message}" });
+            }
         }
 
         // Add analytics/system settings endpoints as needed

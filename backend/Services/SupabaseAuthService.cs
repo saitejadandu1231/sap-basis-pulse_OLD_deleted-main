@@ -6,6 +6,7 @@ using SapBasisPulse.Api.Services;
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text;
 
 namespace SapBasisPulse.Api.Services
 {
@@ -21,15 +22,20 @@ namespace SapBasisPulse.Api.Services
         private readonly IAuthService _authService;
         private readonly IConfiguration _config;
         private readonly HttpClient _httpClient;
+        private readonly IEmailSettingsService _emailSettingsService;
+        private readonly IEmailSender _emailSender;
+        private readonly IConfiguration _configuration;
         private static readonly ConcurrentDictionary<string, PendingUser> _pendingUsers = new();
 
-        public SupabaseAuthService(AppDbContext context, IAuthService authService, IConfiguration config, HttpClient httpClient)
+        public SupabaseAuthService(AppDbContext context, IAuthService authService, IConfiguration config, HttpClient httpClient, IEmailSettingsService emailSettingsService, IEmailSender emailSender)
         {
             _context = context;
             _authService = authService;
             _config = config;
             _httpClient = httpClient;
-
+            _emailSettingsService = emailSettingsService;
+            _emailSender = emailSender;
+            _configuration = config; // Using same config for both _config and _configuration
         }
 
         public async Task<(bool Success, string? Error, AuthResponseDto? Response, bool RequiresAdditionalInfo, string? SupabaseUserId, string? FirstName, string? LastName)> HandleSupabaseAuthAsync(string supabaseAccessToken, string provider)
@@ -51,9 +57,29 @@ namespace SapBasisPulse.Api.Services
 
                 if (existingUser != null)
                 {
-                    // User exists, sign them in
-                    if (existingUser.Status != UserStatus.Active)
-                        return (false, "User account is not active", null, false, null, null, null);
+                    // User exists, check their status
+                    if (existingUser.Status == UserStatus.PendingVerification)
+                    {
+                        // Check if email verification is still required
+                        bool emailVerificationRequired = _emailSettingsService.IsEmailVerificationRequired();
+                        if (emailVerificationRequired)
+                        {
+                            return (false, "Please verify your email before logging in. Check your email for the verification link.", null, false, null, null, null);
+                        }
+                        else
+                        {
+                            // Email verification no longer required, activate the user
+                            existingUser.Status = UserStatus.Active;
+                            existingUser.EmailConfirmed = true;
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    else if (existingUser.Status != UserStatus.Active)
+                    {
+                        return (false, "User account is not active. Please contact support.", null, false, null, null, null);
+                    }
+
+                    // User exists and is active, sign them in
 
                     var token = _authService.GenerateJwtToken(existingUser);
                     return (true, null, new AuthResponseDto
@@ -107,6 +133,17 @@ namespace SapBasisPulse.Api.Services
                 var passwordHash = passwordHasher.HashPassword(tempUser, password);
 
                 // Create user in our database
+                // Check admin email verification settings for SSO users
+                bool emailVerificationEnabled = _emailSettingsService.IsEmailVerificationEnabled();
+                bool emailVerificationRequired = _emailSettingsService.IsEmailVerificationRequired();
+                
+                // For SSO users, since their email is already verified by the SSO provider (Google/Apple),
+                // we only require additional verification if admin has explicitly enabled it
+                UserStatus userStatus = (emailVerificationEnabled && emailVerificationRequired) ? UserStatus.PendingVerification : UserStatus.Active;
+                bool emailConfirmed = !emailVerificationRequired; // SSO users have verified emails from provider unless admin requires additional verification
+                
+                Console.WriteLine($"[DEBUG] SSO User Creation - EmailVerificationEnabled: {emailVerificationEnabled}, Required: {emailVerificationRequired}, UserStatus: {userStatus}, EmailConfirmed: {emailConfirmed}");
+
                 var user = new User
                 {
                     Id = Guid.NewGuid(),
@@ -115,9 +152,9 @@ namespace SapBasisPulse.Api.Services
                     FirstName = finalFirstName,
                     LastName = finalLastName,
                     Role = userRole,
-                    Status = UserStatus.Active,
+                    Status = userStatus,
                     SsoProvider = pendingUser.Provider,
-                    EmailConfirmed = true,
+                    EmailConfirmed = emailConfirmed,
                     NormalizedEmail = pendingUser.Email.ToUpper(),
                     NormalizedUserName = pendingUser.Email.ToUpper(),
                     PasswordHash = passwordHash, // Required hashed password
@@ -128,8 +165,38 @@ namespace SapBasisPulse.Api.Services
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
+                // Send verification email if required
+                if (emailVerificationEnabled && userStatus == UserStatus.PendingVerification)
+                {
+                    Console.WriteLine($"[DEBUG] Sending verification email to SSO user: {user.Email}");
+                    
+                    // Generate email confirmation token (simple base64 for demo, use secure token in prod)
+                    var confirmationToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user.Id}:{user.Email}:{Guid.NewGuid()}"));
+                    var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
+                    var confirmLink = $"{frontendUrl}/confirm-email?token={Uri.EscapeDataString(confirmationToken)}";
+                    var subject = "Confirm your email - Yuktor SAP BASIS Support";
+                    var body = $"<p>Hi {finalFirstName},</p><p>Welcome to Yuktor SAP BASIS Support! Please confirm your email by clicking <a href='{confirmLink}'>here</a>.</p><p>If you did not create this account, please ignore this email.</p><p>Best regards,<br>Yuktor Team</p>";
+                    
+                    try
+                    {
+                        await _emailSender.SendEmailAsync(user.Email, subject, body);
+                        Console.WriteLine($"[DEBUG] Verification email sent successfully to SSO user: {user.Email}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[DEBUG] Verification email send failed for SSO user: {ex.Message}");
+                        // Log the error but continue with registration
+                    }
+                }
+
                 // Clear pending user info
                 ClearPendingUserInfo(supabaseUserId);
+
+                // If user requires email verification, don't generate token yet
+                if (userStatus == UserStatus.PendingVerification)
+                {
+                    return (true, "Account created successfully! Please check your email to verify your account before logging in.", null);
+                }
 
                 var token = _authService.GenerateJwtToken(user);
                 return (true, null, new AuthResponseDto

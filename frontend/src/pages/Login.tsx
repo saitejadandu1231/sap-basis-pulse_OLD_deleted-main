@@ -149,11 +149,32 @@ const Login = () => {
         password, 
         firstName, 
         lastName, 
-        role: selectedRole
+        role: selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1) // Capitalize first letter
       };
       const res = await apiFetch('auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const result = await res.json();
-      const error = res.ok ? null : { message: result?.error ?? 'Registration failed' };
+      
+      let result;
+      let error = null;
+      
+      if (res.status === 204) {
+        // 204 No Content - Email verification required
+        result = { message: "Please check your email to verify your account before signing in." };
+      } else if (res.ok) {
+        // Success with content
+        try {
+          result = await res.json();
+        } catch (jsonError) {
+          result = { message: "Account created successfully!" };
+        }
+      } else {
+        // Error response
+        try {
+          result = await res.json();
+          error = { message: result?.error ?? result?.message ?? 'Registration failed' };
+        } catch (jsonError) {
+          error = { message: 'Registration failed' };
+        }
+      }
       
       if (error) {
         if (error.message?.includes('already')) {

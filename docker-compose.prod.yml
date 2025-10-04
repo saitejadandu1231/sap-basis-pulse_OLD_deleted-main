@@ -37,6 +37,13 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - SUPABASE_URL=https://zbsfyxakypvuftxntywm.supabase.co
       - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpic2Z5eGFreXB2dWZ0eG50eXdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MzEyMzMsImV4cCI6MjA3NDIwNzIzM30.xver5QMRzmuHURhZQgqZM9NUqp6janSl-JTWFI7nfSc
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM:-noreply@yuktor.com}
+      - SMTP_ENABLE_SSL=${SMTP_ENABLE_SSL:-true}
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-admin@yuktor.com}
     ports:
       - "5274:8080"
     depends_on:
