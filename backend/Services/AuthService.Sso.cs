@@ -31,6 +31,17 @@ namespace SapBasisPulse.Api.Services
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == payload.Email);
             if (user == null)
             {
+                // Check admin email verification settings for SSO users
+                bool emailVerificationEnabled = _emailSettingsService.IsEmailVerificationEnabled();
+                bool emailVerificationRequired = _emailSettingsService.IsEmailVerificationRequired();
+                
+                // For SSO users, since their email is already verified by the SSO provider (Google/Apple),
+                // we only require additional verification if admin has explicitly enabled it
+                UserStatus userStatus = (emailVerificationEnabled && emailVerificationRequired) ? UserStatus.PendingVerification : UserStatus.Active;
+                bool emailConfirmed = !emailVerificationRequired; // SSO users have verified emails from provider unless admin requires additional verification
+                
+                Console.WriteLine($"[DEBUG] Google SSO User Creation - EmailVerificationEnabled: {emailVerificationEnabled}, Required: {emailVerificationRequired}, UserStatus: {userStatus}, EmailConfirmed: {emailConfirmed}");
+
                 user = new User
                 {
                     Id = Guid.NewGuid(),
@@ -38,7 +49,8 @@ namespace SapBasisPulse.Api.Services
                     FirstName = payload.GivenName ?? "",
                     LastName = payload.FamilyName ?? "",
                     Role = UserRole.Customer, // Default or infer from payload
-                    Status = UserStatus.Active,
+                    Status = userStatus,
+                    EmailConfirmed = emailConfirmed,
                     SsoProvider = "Google"
                 };
                 _context.Users.Add(user);
@@ -116,6 +128,17 @@ namespace SapBasisPulse.Api.Services
                 var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == email);
                 if (user == null)
                 {
+                    // Check admin email verification settings for SSO users
+                    bool emailVerificationEnabled = _emailSettingsService.IsEmailVerificationEnabled();
+                    bool emailVerificationRequired = _emailSettingsService.IsEmailVerificationRequired();
+                    
+                    // For SSO users, since their email is already verified by the SSO provider (Google/Apple),
+                    // we only require additional verification if admin has explicitly enabled it
+                    UserStatus userStatus = (emailVerificationEnabled && emailVerificationRequired) ? UserStatus.PendingVerification : UserStatus.Active;
+                    bool emailConfirmed = !emailVerificationRequired; // SSO users have verified emails from provider unless admin requires additional verification
+                    
+                    Console.WriteLine($"[DEBUG] Apple SSO User Creation - EmailVerificationEnabled: {emailVerificationEnabled}, Required: {emailVerificationRequired}, UserStatus: {userStatus}, EmailConfirmed: {emailConfirmed}");
+
                     user = new User
                     {
                         Id = Guid.NewGuid(),
@@ -123,7 +146,8 @@ namespace SapBasisPulse.Api.Services
                         FirstName = "AppleUser",
                         LastName = "",
                         Role = UserRole.Customer,
-                        Status = UserStatus.Active,
+                        Status = userStatus,
+                        EmailConfirmed = emailConfirmed,
                         SsoProvider = "Apple"
                     };
                     _context.Users.Add(user);

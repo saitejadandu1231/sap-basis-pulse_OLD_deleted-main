@@ -185,6 +185,12 @@ namespace SapBasisPulse.Api.Controllers
                     return Ok(new { requiresAdditionalInfo = true, supabaseUserId, firstName, lastName });
                 }
 
+                // If response is null, it means email verification is required
+                if (response == null)
+                {
+                    return Ok(new { message = error, requiresEmailVerification = true });
+                }
+
                 return Ok(response);
             }
             catch (Exception ex)
@@ -228,6 +234,12 @@ namespace SapBasisPulse.Api.Controllers
                 if (!success)
                 {
                     return BadRequest(new { error });
+                }
+
+                // If response is null, it means email verification is required
+                if (response == null)
+                {
+                    return NoContent(); // 204 No Content - indicates email verification required
                 }
 
                 return Ok(response);

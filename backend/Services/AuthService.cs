@@ -20,8 +20,9 @@ namespace SapBasisPulse.Api.Services
         private readonly IEmailSender _emailSender;
         private readonly Microsoft.AspNetCore.Identity.UserManager<User> _userManager;
         private readonly ISupportTaxonomyService _supportTaxonomyService;
+        private readonly IEmailSettingsService _emailSettingsService;
 
-        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager, ISupportTaxonomyService supportTaxonomyService)
+        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager, ISupportTaxonomyService supportTaxonomyService, IEmailSettingsService emailSettingsService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
@@ -29,6 +30,7 @@ namespace SapBasisPulse.Api.Services
             _emailSender = emailSender;
             _userManager = userManager;
             _supportTaxonomyService = supportTaxonomyService;
+            _emailSettingsService = emailSettingsService;
         }
 
         public async Task<(bool Success, string? Error, AuthResponseDto? Response)> RegisterAsync(RegisterDto dto)
@@ -48,11 +50,28 @@ namespace SapBasisPulse.Api.Services
                     }
                 }
 
-                // Skip email verification if configured (works in any environment)
-                bool autoPendingVerification = true;
-                if (_config.GetSection("Auth")["AutoActivateInDevelopment"]?.ToLower() == "true")
+                // Check admin email verification settings
+                bool emailVerificationEnabled = _emailSettingsService.IsEmailVerificationEnabled();
+                bool emailVerificationRequired = _emailSettingsService.IsEmailVerificationRequired();
+                
+                // DEBUG: Log the email verification settings
+                Console.WriteLine($"[DEBUG] Email Verification - Enabled: {emailVerificationEnabled}, Required: {emailVerificationRequired}");
+                
+                // Determine user status based on admin settings
+                UserStatus userStatus;
+                bool emailConfirmed;
+                
+                if (emailVerificationEnabled && emailVerificationRequired)
                 {
-                    autoPendingVerification = false;
+                    // Email verification is enabled and required - user starts as PendingVerification
+                    userStatus = UserStatus.PendingVerification;
+                    emailConfirmed = false;
+                }
+                else
+                {
+                    // Email verification is disabled or not required - user starts as Active
+                    userStatus = UserStatus.Active;
+                    emailConfirmed = true;
                 }
 
                 var user = new User
@@ -63,8 +82,8 @@ namespace SapBasisPulse.Api.Services
                     FirstName = dto.FirstName,
                     LastName = dto.LastName,
                     Role = Enum.TryParse<UserRole>(dto.Role, true, out var role) ? role : UserRole.Customer,
-                    Status = autoPendingVerification ? UserStatus.PendingVerification : UserStatus.Active,
-                    EmailConfirmed = !autoPendingVerification
+                    Status = userStatus,
+                    EmailConfirmed = emailConfirmed
                 };
 
                 var result = await _userManager.CreateAsync(user, dto.Password);
@@ -92,21 +111,41 @@ namespace SapBasisPulse.Api.Services
                     }
                 }
 
-                // Generate email confirmation token (simple base64 for demo, use secure token in prod)
-                var confirmationToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user.Id}:{user.Email}:{Guid.NewGuid()}"));
-                var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:3000";
-                var confirmLink = $"{frontendUrl}/confirm-email?token={Uri.EscapeDataString(confirmationToken)}";
-                var subject = "Confirm your email";
-                var body = $"<p>Hi {user.FirstName},</p><p>Please confirm your email by clicking <a href='{confirmLink}'>here</a>.</p>";
+                // Send email confirmation only if email verification is enabled
+                Console.WriteLine($"[DEBUG] About to check if email should be sent. EmailVerificationEnabled: {emailVerificationEnabled}");
                 
-                try
+                if (emailVerificationEnabled)
                 {
-                    await _emailSender.SendEmailAsync(user.Email, subject, body);
+                    Console.WriteLine($"[DEBUG] Sending verification email to: {user.Email}");
+                    
+                    // Generate email confirmation token (simple base64 for demo, use secure token in prod)
+                    var confirmationToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user.Id}:{user.Email}:{Guid.NewGuid()}"));
+                    var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:3000";
+                    var confirmLink = $"{frontendUrl}/confirm-email?token={Uri.EscapeDataString(confirmationToken)}";
+                    var subject = "Confirm your email - Yuktor SAP BASIS Support";
+                    var body = $"<p>Hi {user.FirstName},</p><p>Welcome to Yuktor SAP BASIS Support! Please confirm your email by clicking <a href='{confirmLink}'>here</a>.</p><p>If you did not create this account, please ignore this email.</p><p>Best regards,<br>Yuktor Team</p>";
+                    
+                    try
+                    {
+                        await _emailSender.SendEmailAsync(user.Email, subject, body);
+                        Console.WriteLine($"[DEBUG] Email sent successfully to: {user.Email}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[DEBUG] Email send failed: {ex.Message}");
+                        // Log the error but continue with registration
+                        // We've already captured this in SmtpEmailSender
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    // Log the error but continue with registration
-                    // We've already captured this in SmtpEmailSender
+                    Console.WriteLine($"[DEBUG] Email verification is disabled, skipping email send");
+                }
+
+                // If email verification is required and user status is PendingVerification, don't generate token yet
+                if (emailVerificationEnabled && user.Status == UserStatus.PendingVerification)
+                {
+                    return (true, "Account created successfully! Please check your email to verify your account before logging in.", null);
                 }
 
                 var token = GenerateJwtToken(user);
@@ -156,20 +195,25 @@ namespace SapBasisPulse.Api.Services
                 if (result == PasswordVerificationResult.Failed)
                     return (false, "Invalid credentials", null);
 
-                // Allow logins regardless of user status if configured (works in any environment)
-                bool bypassStatusCheck = false;
-                if (_config.GetSection("Auth")["BypassStatusCheckInDevelopment"]?.ToLower() == "true")
+                // Check if email verification is required before allowing login
+                bool emailVerificationRequired = _emailSettingsService.IsEmailVerificationRequired();
+                
+                // Only enforce email verification if it's required by admin settings
+                if (emailVerificationRequired && user.Status != UserStatus.Active)
                 {
-                    bypassStatusCheck = true;
-                }
-
-                if (!bypassStatusCheck && user.Status != UserStatus.Active)
-                {
-                    // If the user exists but is not active, provide a more helpful message
+                    // If email verification is required and user hasn't verified email, block login
                     if (user.Status == UserStatus.PendingVerification)
-                        return (false, "Please verify your email before logging in", null);
+                        return (false, "Please verify your email before logging in. Check your email for the verification link.", null);
                     else
-                        return (false, "User is not active", null);
+                        return (false, "User account is not active. Please contact support.", null);
+                }
+                else if (!emailVerificationRequired && user.Status == UserStatus.PendingVerification)
+                {
+                    // If email verification is not required but user is still PendingVerification, 
+                    // activate them automatically (admin changed settings after user registered)
+                    user.Status = UserStatus.Active;
+                    user.EmailConfirmed = true;
+                    await _context.SaveChangesAsync();
                 }
 
                 var token = GenerateJwtToken(user);

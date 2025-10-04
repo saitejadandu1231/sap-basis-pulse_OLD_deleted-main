@@ -118,8 +118,15 @@ const AuthCallback = () => {
         return;
       }
 
+      if (result.requiresVerification) {
+        // Email verification required
+        toast.success(result.message || 'Please check your email to verify your account before signing in.');
+        navigate('/login', { replace: true });
+        return;
+      }
+
       // Sign in successful
-  await signIn(result.authData.email, '', result.authData);
+      await signIn(result.authData.email, '', result.authData);
       toast.success('Account created successfully!');
       navigate('/dashboard', { replace: true });
     } catch (error: any) {

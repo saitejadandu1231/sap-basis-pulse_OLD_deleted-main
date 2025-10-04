@@ -2,15 +2,21 @@ using Microsoft.EntityFrameworkCore;
 using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.DTOs;
 using SapBasisPulse.Api.Entities;
+using Microsoft.Extensions.Configuration;
 
 namespace SapBasisPulse.Api.Services
 {
     public class SupportRequestService : ISupportRequestService
     {
         private readonly AppDbContext _context;
-        public SupportRequestService(AppDbContext context)
+        private readonly IEmailSender _emailSender;
+        private readonly IConfiguration _config;
+
+        public SupportRequestService(AppDbContext context, IEmailSender emailSender, IConfiguration config)
         {
             _context = context;
+            _emailSender = emailSender;
+            _config = config;
         }
 
         public async Task<SupportRequestDto> CreateAsync(CreateSupportRequestDto dto, Guid createdByUserId)
@@ -129,6 +135,10 @@ namespace SapBasisPulse.Api.Services
             }
 
             await _context.SaveChangesAsync();
+
+            // Send email notifications
+            await SendSupportRequestEmailsAsync(order);
+
             return await ToDto(order);
         }
 
@@ -357,6 +367,69 @@ namespace SapBasisPulse.Api.Services
             _context.StatusChangeLogs.Add(statusChangeLog);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private async Task SendSupportRequestEmailsAsync(Order order)
+        {
+            try
+            {
+                // Get customer and consultant details
+                var customer = await _context.Users.FindAsync(order.CreatedByUserId);
+                var consultant = order.Consultant;
+                var supportType = order.SupportType;
+
+                if (customer == null || consultant == null || supportType == null)
+                    return;
+
+                // Send email to customer
+                var customerEmailBody = EmailTemplates.SupportRequestCreatedForCustomer(
+                    customer.FirstName,
+                    order.OrderNumber,
+                    supportType.Name,
+                    order.Priority);
+
+                await _emailSender.SendEmailAsync(
+                    customer.Email,
+                    "Support Request Created - Yuktor",
+                    customerEmailBody);
+
+                // Send email to consultant
+                var consultantEmailBody = EmailTemplates.SupportRequestAssignedToConsultant(
+                    consultant.FirstName,
+                    $"{customer.FirstName} {customer.LastName}",
+                    order.OrderNumber,
+                    supportType.Name,
+                    order.Priority,
+                    order.Description);
+
+                await _emailSender.SendEmailAsync(
+                    consultant.Email,
+                    "New Support Request Assigned - Yuktor",
+                    consultantEmailBody);
+
+                // Send email to admins
+                var adminEmails = _config.GetSection("AdminEmails").Get<string[]>() ?? new[] { "admin@yuktor.com" };
+                var adminEmailBody = EmailTemplates.SupportRequestCreatedForAdmin(
+                    $"{customer.FirstName} {customer.LastName}",
+                    order.OrderNumber,
+                    supportType.Name,
+                    order.Priority,
+                    order.Description);
+
+                foreach (var adminEmail in adminEmails)
+                {
+                    await _emailSender.SendEmailAsync(
+                        adminEmail,
+                        "New Support Request Requires Assignment - Yuktor",
+                        adminEmailBody);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't fail the request creation
+                // In production, you might want to use proper logging
+                Console.WriteLine($"Failed to send support request emails: {ex.Message}");
+            }
         }
     }
 }
