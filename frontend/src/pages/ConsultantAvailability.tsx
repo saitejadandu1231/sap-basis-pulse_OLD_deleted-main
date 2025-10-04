@@ -30,9 +30,10 @@ const ConsultantAvailability = () => {
   const { user, userRole, token } = useAuth();
   
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [numberOfHours, setNumberOfHours] = useState(1);
+  const [calculatedEndDate, setCalculatedEndDate] = useState("");
+  const [calculatedEndTime, setCalculatedEndTime] = useState("");
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [adminEmail, setAdminEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -84,7 +85,8 @@ const ConsultantAvailability = () => {
     const totalSlots = daySlots.length;
     const expiredSlots = daySlots.filter(slot => new Date(slot.slot_end_time) <= today).length;
     const activeSlots = totalSlots - expiredSlots;
-    const bookedSlots = daySlots.filter(slot => slot.booked_by_customer_choice_id !== null).length;
+    const activeDaySlots = daySlots.filter(slot => new Date(slot.slot_end_time) > today);
+    const bookedSlots = activeDaySlots.filter(slot => slot.booked_by_customer_choice_id !== null).length;
     const availableSlots = activeSlots - bookedSlots;
     
     return { displayDate, totalSlots, availableSlots, bookedSlots, expiredSlots, date };
@@ -96,9 +98,10 @@ const ConsultantAvailability = () => {
     const totalSlots = slots.length;
     const expiredSlots = slots.filter(slot => new Date(slot.slot_end_time) <= now).length;
     const activeSlots = totalSlots - expiredSlots;
-    const bookedSlots = slots.filter(slot => slot.booked_by_customer_choice_id !== null).length;
+    const activeSlotList = slots.filter(slot => new Date(slot.slot_end_time) > now);
+    const bookedSlots = activeSlotList.filter(slot => slot.booked_by_customer_choice_id !== null).length;
     const availableSlots = activeSlots - bookedSlots;
-    
+
     return { totalSlots, expiredSlots, activeSlots, bookedSlots, availableSlots };
   };
 
@@ -144,13 +147,30 @@ const ConsultantAvailability = () => {
     fetchData();
   }, [token, user?.id]);
 
+  // Calculate end date and time when start date/time or hours change
+  useEffect(() => {
+    if (startDate && startTime && numberOfHours >= 1) {
+      const startDateTime = new Date(`${startDate}T${startTime}:00`);
+      const endDateTime = new Date(startDateTime.getTime() + (numberOfHours * 60 * 60 * 1000)); // Add hours in milliseconds
+      
+      const endDateStr = endDateTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const endTimeStr = endDateTime.toTimeString().slice(0, 5); // HH:MM format
+      
+      setCalculatedEndDate(endDateStr);
+      setCalculatedEndTime(endTimeStr);
+    } else {
+      setCalculatedEndDate("");
+      setCalculatedEndTime("");
+    }
+  }, [startDate, startTime, numberOfHours]);
+
   const handleDefineBlock = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!startDate || !endDate || !startTime || !endTime) {
+    if (!startDate || !startTime || numberOfHours < 1) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all date and time fields",
+        description: "Please fill in start date, start time, and select number of hours",
         variant: "destructive"
       });
       return;
@@ -167,7 +187,7 @@ const ConsultantAvailability = () => {
         body: JSON.stringify({
           consultantId: user?.id,
           slotStartTime: formatDateForApi(startDate, startTime),
-          slotEndTime: formatDateForApi(endDate, endTime)
+          slotEndTime: formatDateForApi(calculatedEndDate, calculatedEndTime)
         })
       });
 
@@ -203,9 +223,10 @@ const ConsultantAvailability = () => {
 
       // Clear form
       setStartDate("");
-      setEndDate("");
+      setCalculatedEndDate("");
       setStartTime("");
-      setEndTime("");
+      setCalculatedEndTime("");
+      setNumberOfHours(1);
 
     } catch (error: any) {
       toast({
@@ -276,11 +297,12 @@ const ConsultantAvailability = () => {
                 <span>Define Availability Block</span>
               </CardTitle>
               <CardDescription>
-                Set a time block that will be broken into 1-hour bookable slots
+                Select start date/time and number of hours - the end time will be calculated automatically and broken into 1-hour bookable slots
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleDefineBlock} className="space-y-4">
+                {/* Start Date and Time Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start-date" className="text-sm font-medium">
@@ -299,24 +321,6 @@ const ConsultantAvailability = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="end-date" className="text-sm font-medium">
-                      End Date
-                    </Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        id="end-date"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="bg-background/50 border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20 pl-10 h-11"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="space-y-2">
                     <Label htmlFor="start-time" className="text-sm font-medium">
                       Start Time
                     </Label>
@@ -332,23 +336,62 @@ const ConsultantAvailability = () => {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="end-time" className="text-sm font-medium">
-                      End Time
-                    </Label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        id="end-time"
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        className="bg-background/50 border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20 pl-10 h-11"
-                        required
-                      />
+                </div>
+                
+                {/* Number of Hours Row */}
+                <div className="space-y-2">
+                  <Label htmlFor="hours" className="text-sm font-medium">
+                    Number of Hours
+                  </Label>
+                  <select
+                    id="hours"
+                    value={numberOfHours}
+                    onChange={(e) => setNumberOfHours(parseInt(e.target.value))}
+                    className="w-full bg-background/50 border border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20 rounded-md px-3 py-2 h-11"
+                    required
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(hour => (
+                      <option key={hour} value={hour}>
+                        {hour} hour{hour > 1 ? 's' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Calculated End Date and Time Row (Read-only display) */}
+                {calculatedEndDate && calculatedEndTime && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">
+                        Calculated End Date
+                      </Label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                        <Input
+                          type="date"
+                          value={calculatedEndDate}
+                          className="bg-muted/50 border-muted-foreground/30 pl-10 h-11 cursor-not-allowed"
+                          readOnly
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">
+                        Calculated End Time
+                      </Label>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                        <Input
+                          type="time"
+                          value={calculatedEndTime}
+                          className="bg-muted/50 border-muted-foreground/30 pl-10 h-11 cursor-not-allowed"
+                          readOnly
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+                
                 <Button
                   type="submit"
                   className="w-full btn-glow bg-yuktor-600 hover:bg-yuktor-700"

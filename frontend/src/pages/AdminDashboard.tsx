@@ -514,7 +514,7 @@ const AdminDashboard = () => {
                             <TableCell>
                               <Badge variant={
                                 request.status === 'Closed' || request.status === 'TopicClosed' ? 'outline' :
-                                request.status === 'InProgress' ? 'default' :
+                                request.status === 'In Progress' ? 'default' :
                                 request.status === 'New' ? 'secondary' : 'secondary'
                               }>
                                 {request.status}

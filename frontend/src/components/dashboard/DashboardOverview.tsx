@@ -2,6 +2,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadMessageCount } from '@/services/messagingHooks';
 import { useRecentTickets } from '@/hooks/useSupport';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api';
 import { 
   MessageSquare, 
   Ticket, 
@@ -26,13 +28,52 @@ const DashboardOverview = () => {
   const { data: featureFlags } = useFeatureFlags();
   const navigate = useNavigate();
 
+  // Get today's date for consultant slots
+  const today = new Date();
+
+  // Fetch all consultant slots (not filtered by date)
+  const { data: allSlots } = useQuery({
+    queryKey: ['consultant-all-slots', user?.id],
+    queryFn: async () => {
+      if (!user?.id || userRole !== 'consultant') return [];
+      const response = await apiFetch(`ConsultantAvailability/consultant/${user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch consultant slots');
+      }
+      return response.json();
+    },
+    enabled: !!user?.id && userRole === 'consultant',
+  });
+
+  const getTodaySlotsStats = () => {
+    if (!allSlots) return { total: 0, upcoming: 0 };
+
+    const now = new Date();
+    const todaySlotsFiltered = allSlots.filter((slot: any) => {
+      const slotDate = new Date(slot.slotStartTime).toDateString();
+      return slotDate === today.toDateString();
+    });
+
+    const upcoming = todaySlotsFiltered.filter((slot: any) => {
+      const slotStart = new Date(slot.slotStartTime);
+      return slotStart > now && slot.isBooked;
+    }).length;
+
+    return {
+      total: todaySlotsFiltered.length,
+      upcoming
+    };
+  };
+
+  const todayStats = getTodaySlotsStats();
+
   const getTicketStats = () => {
     if (!tickets) return { total: 0, open: 0, inProgress: 0, closed: 0 };
     
     return {
       total: tickets.length,
       open: tickets.filter(t => t.status === 'New').length,
-      inProgress: tickets.filter(t => t.status === 'InProgress').length,
+      inProgress: tickets.filter(t => t.status === 'In Progress').length,
       closed: tickets.filter(t => t.status === 'Closed').length
     };
   };
@@ -95,9 +136,9 @@ const DashboardOverview = () => {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{todayStats.total}</div>
               <p className="text-xs text-muted-foreground">
-                2 upcoming appointments
+                {todayStats.upcoming} upcoming appointments
               </p>
             </CardContent>
           </Card>
@@ -144,7 +185,7 @@ const DashboardOverview = () => {
                     <div className="flex-shrink-0">
                       {ticket.status === 'Closed' ? (
                         <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : ticket.status === 'InProgress' ? (
+                      ) : ticket.status === 'In Progress' ? (
                         <Clock className="w-5 h-5 text-blue-500" />
                       ) : (
                         <AlertCircle className="w-5 h-5 text-orange-500" />
