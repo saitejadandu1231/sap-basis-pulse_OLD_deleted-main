@@ -42,11 +42,26 @@ namespace SapBasisPulse.Api.Services
                 {
                     Credentials = new NetworkCredential(smtpSection["Username"], smtpSection["Password"]),
                     EnableSsl = bool.Parse(smtpSection["EnableSsl"] ?? "true"),
-                    Timeout = 30000 // 30 seconds timeout
+                    Timeout = 15000 // 15 seconds timeout to match our cancellation token
                 };
                 
-                _logger.LogInformation("[EMAIL] SMTP client created. EnableSsl: {EnableSsl}, Username: {Username}", 
-                    client.EnableSsl, smtpSection["Username"]);
+                _logger.LogInformation("[EMAIL] SMTP client created. EnableSsl: {EnableSsl}, Username: {Username}, Timeout: {Timeout}ms", 
+                    client.EnableSsl, smtpSection["Username"], client.Timeout);
+                
+                // Test TCP connection first
+                _logger.LogInformation("[EMAIL] Testing TCP connection to {Host}:{Port}...", smtpSection["Host"], smtpSection["Port"]);
+                try
+                {
+                    using var tcpClient = new System.Net.Sockets.TcpClient();
+                    var connectTask = tcpClient.ConnectAsync(smtpSection["Host"], int.Parse(smtpSection["Port"]));
+                    await connectTask.WaitAsync(TimeSpan.FromSeconds(10));
+                    _logger.LogInformation("[EMAIL] TCP connection successful to Gmail SMTP server");
+                }
+                catch (Exception tcpEx)
+                {
+                    _logger.LogError(tcpEx, "[EMAIL] TCP connection failed to {Host}:{Port}", smtpSection["Host"], smtpSection["Port"]);
+                    throw new InvalidOperationException($"Cannot reach Gmail SMTP server: {tcpEx.Message}", tcpEx);
+                }
                 
                 mail = new MailMessage();
                 mail.From = new MailAddress(smtpSection["From"], "Yuktor SAP BASIS Support");
@@ -55,9 +70,13 @@ namespace SapBasisPulse.Api.Services
                 mail.Body = htmlBody;
                 mail.IsBodyHtml = true;
                 
-                _logger.LogInformation("[EMAIL] Sending email from {From} to {To}...", smtpSection["From"], to);
+                _logger.LogInformation("[EMAIL] Mail message created. Attempting to send from {From} to {To}...", smtpSection["From"], to);
                 
+                var startTime = DateTime.UtcNow;
                 await client.SendMailAsync(mail);
+                var endTime = DateTime.UtcNow;
+                
+                _logger.LogInformation("[EMAIL] Email sent successfully to {To} in {Duration}ms", to, (endTime - startTime).TotalMilliseconds);
                 
                 _logger.LogInformation("[EMAIL] Email sent successfully to {To}", to);
             }
