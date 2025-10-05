@@ -119,7 +119,7 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
     {
       icon: Settings,
       label: 'Admin Settings',
-      path: '/settings',
+      path: '/admin/settings',
       roles: ['admin'],
       description: 'System configuration'
     },

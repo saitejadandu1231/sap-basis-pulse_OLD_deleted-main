@@ -28,6 +28,7 @@ namespace SapBasisPulse.Api.Data
         public DbSet<SSOConfiguration> SSOConfigurations { get; set; }
         public DbSet<ConsultantSkill> ConsultantSkills { get; set; }
         public DbSet<TicketNumberTemplate> TicketNumberTemplates { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -98,44 +98,50 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 relative">
+      <div className="w-full max-w-[100vw] overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-16 items-center px-2 sm:px-4">
-          {/* Mobile Menu Button */}
-          {showSidebar && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden mr-1 sm:mr-2 p-1 sm:p-2"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <Menu className="h-4 w-4" />
-              )}
-            </Button>
-          )}
-
-          {/* Logo */}
-          <div className="flex items-center space-x-1 sm:space-x-2 mr-2 sm:mr-4">
-            {/* <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xs sm:text-sm">SP</span>
-            </div> */}
-            <div className="hidden sm:block">
-              <button
-                onClick={() => navigate(dashboardPath)}
-                className="hover:opacity-80 transition-opacity text-left"
+      <header 
+        className="sticky top-0 z-[60] w-full border-b bg-background/95 backdrop-blur-sm border-border/40"
+        style={{ position: 'sticky', top: 0, zIndex: 60 }}
+      >
+        <div className="flex h-16 items-center justify-between px-3 md:px-6">
+          {/* Left Section: Menu + Logo */}
+          <div className="flex items-center space-x-3">
+            {/* Mobile Menu Button */}
+            {showSidebar && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden p-1.5 flex-shrink-0"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
               >
-                <h1 className="text-base sm:text-lg font-semibold">Yuktor</h1>
-                <p className="text-xs text-muted-foreground">{userRole} Portal</p>
-              </button>
-            </div>
+                {sidebarOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </Button>
+            )}
+
+            {/* Logo - Always Visible */}
+            <button
+              onClick={() => navigate(dashboardPath)}
+              className="hover:opacity-80 transition-opacity flex items-center space-x-2"
+            >
+              <div className="text-left">
+                <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
+                  Yuktor
+                </h1>
+                <p className="text-xs text-muted-foreground hidden sm:block capitalize">
+                  {userRole} Portal
+                </p>
+              </div>
+            </button>
           </div>
 
-          {/* Search Bar - Desktop only */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4">
+          {/* Center Section: Search Bar - Desktop only */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
@@ -157,33 +163,24 @@ const PageLayout: React.FC<PageLayoutProps> = ({
             </div>
           </div>
 
-          {/* Header Actions */}
-          <div className="flex items-center space-x-1 sm:space-x-2 ml-auto">
-            {/* Notifications */}
-            {/* <Button variant="ghost" size="sm" className="relative p-1 sm:p-2">
-              <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
-              {unreadCount && unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                  <span className="text-xs">{unreadCount > 9 ? '9+' : unreadCount}</span>
-                </div>
-              )}
-            </Button> */}
-
+          {/* Right Section: Actions */}
+          <div className="flex items-center space-x-1">
             {/* Messages */}
             {featureFlags?.messagingEnabled && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/messages')}
-                className="relative p-1 sm:p-2"
+                className="relative p-2"
+                title="Messages"
               >
-                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden md:inline-block ml-1">Messages</span>
+                <MessageSquare className="h-5 w-5" />
                 {unreadCount && unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-1 sm:ml-2 h-4 sm:h-5 px-1 sm:px-2 text-xs">
-                    {unreadCount}
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </Badge>
                 )}
+                <span className="sr-only">Messages</span>
               </Button>
             )}
 
@@ -192,83 +189,85 @@ const PageLayout: React.FC<PageLayoutProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => navigate('/settings')}
-              className="p-1 sm:p-2"
+              className="p-2"
+              title="Settings"
             >
-              <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden md:inline-block ml-1">Settings</span>
+              <Settings className="h-5 w-5" />
+              <span className="sr-only">Settings</span>
             </Button>
 
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            <Separator orientation="vertical" className="h-6" />
-
-            {/* User Menu */}
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium">{displayName}</p>
-                <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+            {/* User Avatar with Dropdown */}
+            <div className="flex items-center space-x-2 ml-2 pl-2 border-l border-border">
+              {/* User Info - Hidden on small screens */}
+              <div className="hidden md:block text-right text-sm">
+                <p className="font-medium leading-none">{displayName}</p>
+                <p className="text-muted-foreground text-xs capitalize mt-1">{userRole}</p>
               </div>
-              
+
               {/* Avatar */}
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-xs sm:text-sm">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-sm">
                   {firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </span>
               </div>
 
+              {/* Logout */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="p-1 sm:p-2 text-muted-foreground hover:text-foreground"
+                className="p-2 text-muted-foreground hover:text-destructive"
+                title="Sign Out"
               >
-                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only">Sign Out</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="relative flex">
-        {/* Sidebar */}
-        {showSidebar && (
-          <>
-            {/* Mobile Overlay */}
-            {sidebarOpen && (
-              <div
-                className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm md:hidden"
-                onClick={() => setSidebarOpen(false)}
-              />
-            )}
+      {/* Sidebar */}
+      {showSidebar && (
+        <>
+          {/* Mobile Overlay */}
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
 
-            {/* Sidebar Content */}
-            <aside className={cn(
-              "fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 transform border-r bg-background/95 backdrop-blur transition-transform md:translate-x-0",
-              sidebarOpen ? "translate-x-0" : "-translate-x-full"
-            )}>
-              <div className="p-4 h-full overflow-y-auto">
-                <RoleBasedNav />
-              </div>
-            </aside>
-          </>
-        )}
+          {/* Sidebar Content */}
+          <aside className={cn(
+            "fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 transform border-r bg-background/95 backdrop-blur transition-transform md:translate-x-0",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          )}>
+            <div className="p-4 h-full overflow-y-auto">
+              <RoleBasedNav />
+            </div>
+          </aside>
+        </>
+      )}
 
-        {/* Main Content */}
-        <main className={cn(
-          "flex-1 min-h-[calc(100vh-4rem)]",
-          showSidebar ? "md:ml-64" : ""
-        )}>
+      {/* Main Content */}
+      <main className={cn(
+        "min-h-[calc(100vh-4rem)] max-w-full overflow-x-hidden",
+        showSidebar ? "md:ml-64" : ""
+      )}>
           {/* Page Header */}
           {(title || description || actions) && (
             <div className="border-b bg-background/50 backdrop-blur">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-2 sm:p-4 md:p-6 max-w-full">
                 <div className="min-w-0 flex-1">
                   {title && (
-                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{title}</h1>
+                    <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight break-words">{title}</h1>
                   )}
                   {description && (
-                    <p className="text-muted-foreground mt-1 text-sm sm:text-base">{description}</p>
+                    <p className="text-muted-foreground mt-1 text-sm sm:text-base break-words">{description}</p>
                   )}
                 </div>
                 {actions && (
@@ -281,8 +280,10 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           )}
 
           {/* Page Content */}
-          <div className={cn("p-3 sm:p-6", className)}>
-            {children}
+          <div className={cn("p-2 sm:p-4 md:p-6 max-w-full", className)}>
+            <div className="w-full mx-auto overflow-x-hidden">
+              {children}
+            </div>
           </div>
         </main>
       </div>

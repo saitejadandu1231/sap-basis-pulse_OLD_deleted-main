@@ -138,7 +138,7 @@ const AdminUsers = () => {
               Add User
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="max-w-[95vw] sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
               <DialogDescription>
@@ -146,7 +146,7 @@ const AdminUsers = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input
@@ -205,16 +205,18 @@ const AdminUsers = () => {
                 </Select>
               </div>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-2">
               <Button 
                 variant="outline" 
                 onClick={() => setCreateUserOpen(false)}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleCreateUser}
                 disabled={isCreating}
+                className="w-full sm:w-auto"
               >
                 {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Create User
@@ -224,10 +226,10 @@ const AdminUsers = () => {
         </Dialog>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Filters and Search */}
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -238,9 +240,9 @@ const AdminUsers = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-32">
                     <SelectValue placeholder="Role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -251,7 +253,7 @@ const AdminUsers = () => {
                   </SelectContent>
                 </Select>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-32">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -261,8 +263,9 @@ const AdminUsers = () => {
                     <SelectItem value="blocked">Blocked</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full sm:w-auto">
                   <Filter className="w-4 h-4" />
+                  <span className="ml-2 sm:hidden">Filter</span>
                 </Button>
               </div>
             </div>
@@ -293,35 +296,37 @@ const AdminUsers = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredUsers && filteredUsers.length > 0 ? filteredUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors space-y-3 sm:space-y-0">
+                  <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white font-medium text-sm">
                         {(user.firstName || 'U').charAt(0)}{(user.lastName || 'U').charAt(0)}
                       </span>
                     </div>
-                    <div>
-                      <p className="font-medium">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">
                         {user.firstName || 'Unknown'} {user.lastName || 'User'}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground truncate">
                         {user.email}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-4">
-                    <Badge variant={getRoleBadgeVariant(user.role)}>
-                      {user.role}
-                    </Badge>
-                    <Badge variant={user.status.toLowerCase() === 'active' ? 'default' : 'secondary'}>
-                      {user.status}
-                    </Badge>
+                  <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-4 flex-shrink-0">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                        {user.role}
+                      </Badge>
+                      <Badge variant={user.status.toLowerCase() === 'active' ? 'default' : 'secondary'} className="text-xs">
+                        {user.status}
+                      </Badge>
+                    </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -351,28 +356,28 @@ const AdminUsers = () => {
         </Card>
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold">{totalUsers}</div>
+            <CardContent className="p-4 sm:p-6">
+              <div className="text-xl sm:text-2xl font-bold">{totalUsers}</div>
               <p className="text-xs text-muted-foreground">Total Users</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold">{customerCount}</div>
+            <CardContent className="p-4 sm:p-6">
+              <div className="text-xl sm:text-2xl font-bold">{customerCount}</div>
               <p className="text-xs text-muted-foreground">Customers</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold">{consultantCount}</div>
+            <CardContent className="p-4 sm:p-6">
+              <div className="text-xl sm:text-2xl font-bold">{consultantCount}</div>
               <p className="text-xs text-muted-foreground">Consultants</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold">{adminCount}</div>
+            <CardContent className="p-4 sm:p-6">
+              <div className="text-xl sm:text-2xl font-bold">{adminCount}</div>
               <p className="text-xs text-muted-foreground">Admins</p>
             </CardContent>
           </Card>

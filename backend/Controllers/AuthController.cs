@@ -11,21 +11,23 @@ namespace SapBasisPulse.Api.Controllers
 
         public class AuthController : ControllerBase
         {
-            private readonly IAuthService _authService;
-            private readonly IConfiguration _configuration;
+        private readonly IAuthService _authService;
+        private readonly IConfiguration _configuration;
+        private readonly ISystemSettingsService _systemSettingsService;
 
-            public AuthController(IAuthService authService, IConfiguration configuration)
-            {
-                _authService = authService;
-                _configuration = configuration;
-            }
+        public AuthController(IAuthService authService, IConfiguration configuration, ISystemSettingsService systemSettingsService)
+        {
+            _authService = authService;
+            _configuration = configuration;
+            _systemSettingsService = systemSettingsService;
+        }
 
-            [HttpGet("consultant-registration-status")]
-            public IActionResult GetConsultantRegistrationStatus()
-            {
-                bool isEnabled = _configuration.GetSection("Auth")["ConsultantRegistrationEnabled"]?.ToLower() == "true";
-                return Ok(new { isEnabled });
-            }
+        [HttpGet("consultant-registration-status")]
+        public async Task<IActionResult> GetConsultantRegistrationStatus()
+        {
+            bool isEnabled = await _systemSettingsService.GetBooleanSettingAsync("ConsultantRegistrationEnabled", true);
+            return Ok(new { isEnabled });
+        }
 
             [HttpGet("messaging-status")]
             public IActionResult GetMessagingStatus()

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useSystemSetting, useUpdateSystemSetting } from '@/hooks/useSystemSettings';
 import { useNavigate } from 'react-router-dom';
 import { 
   useAdminUsers, 
@@ -42,6 +44,8 @@ import PageLayout from '@/components/layout/PageLayout';
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { data: featureFlags, refetch: refetchFeatureFlags } = useFeatureFlags();
+  const { data: consultantRegistrationSetting } = useSystemSetting('ConsultantRegistrationEnabled');
+  const updateSystemSetting = useUpdateSystemSetting();
   const navigate = useNavigate();
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
@@ -165,10 +169,10 @@ const AdminDashboard = () => {
       title="Admin Dashboard"
       description="Manage users and monitor system activity"
     >
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 w-full max-w-full">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -219,8 +223,8 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/users')}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 max-w-full">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/users')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -254,7 +258,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card> */}
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/settings')}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/settings')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -271,7 +275,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/taxonomy')}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/taxonomy')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -288,7 +292,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/sr-identifiers')}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/sr-identifiers')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -305,7 +309,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/ticket-number-templates')}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/ticket-number-templates')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -325,27 +329,23 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 lg:w-fit">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Users
+          <TabsList className="grid w-full grid-cols-3 md:w-fit md:grid-cols-3">
+            <TabsTrigger value="users" className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 text-xs sm:text-sm min-h-[40px] sm:min-h-[44px]">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Users</span>
             </TabsTrigger>
-            {/* <TabsTrigger value="requests" className="flex items-center gap-2">
-              <Ticket className="w-4 h-4" />
-              Support Requests
-            </TabsTrigger> */}
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Analytics
+            <TabsTrigger value="analytics" className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 text-xs sm:text-sm min-h-[40px] sm:min-h-[44px]">
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Settings
+            <TabsTrigger value="settings" className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 text-xs sm:text-sm min-h-[40px] sm:min-h-[44px]">
+              <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Settings</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
+          <TabsContent value="users" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -357,7 +357,7 @@ const AdminDashboard = () => {
                         Create User
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-[95vw] sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle>Create New User</DialogTitle>
                         <DialogDescription>
@@ -365,7 +365,7 @@ const AdminDashboard = () => {
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleCreateUser} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="firstName">First Name</Label>
                             <Input
@@ -418,11 +418,11 @@ const AdminDashboard = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="flex gap-2">
-                          <Button type="submit" disabled={createUser.isPending}>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button type="submit" disabled={createUser.isPending} className="w-full sm:w-auto">
                             {createUser.isPending ? 'Creating...' : 'Create User'}
                           </Button>
-                          <Button type="button" variant="outline" onClick={() => setCreateUserOpen(false)}>
+                          <Button type="button" variant="outline" onClick={() => setCreateUserOpen(false)} className="w-full sm:w-auto">
                             Cancel
                           </Button>
                         </div>
@@ -439,11 +439,11 @@ const AdminDashboard = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead className="min-w-[120px]">Name</TableHead>
+                          <TableHead className="min-w-[200px]">Email</TableHead>
+                          <TableHead className="min-w-[100px]">Role</TableHead>
+                          <TableHead className="min-w-[80px]">Status</TableHead>
+                          <TableHead className="min-w-[100px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -459,7 +459,7 @@ const AdminDashboard = () => {
                                 onValueChange={(value) => handleRoleUpdate(user.id, value)}
                                 disabled={updateUserRole.isPending}
                               >
-                                <SelectTrigger className="w-32">
+                                <SelectTrigger className="w-28 sm:w-32">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -475,21 +475,24 @@ const AdminDashboard = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="flex gap-2">
+                              <div className="flex gap-1 sm:gap-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => openEditUser(user)}
+                                  className="p-2"
                                 >
                                   <Edit className="w-4 h-4" />
+                                  <span className="sr-only">Edit user</span>
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
-                                  className="text-red-600 hover:text-red-700"
+                                  className="text-red-600 hover:text-red-700 p-2"
                                 >
                                   <Trash2 className="w-4 h-4" />
+                                  <span className="sr-only">Delete user</span>
                                 </Button>
                               </div>
                             </TableCell>
@@ -557,8 +560,8 @@ const AdminDashboard = () => {
           </TabsContent> */}
 
           {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <TabsContent value="analytics" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               <Card>
                 <CardContent className="p-6">
                   <div className="text-center space-y-2">
@@ -620,7 +623,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
+          <TabsContent value="settings" className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>System Configuration</CardTitle>
@@ -687,24 +690,63 @@ const AdminDashboard = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
+                      <Switch
+                        checked={consultantRegistrationSetting?.value === 'true'}
+                        onCheckedChange={async (checked) => {
+                          try {
+                            await updateSystemSetting.mutateAsync({
+                              key: 'ConsultantRegistrationEnabled',
+                              value: checked.toString()
+                            });
+                            toast.success(`Consultant registration ${checked ? 'enabled' : 'disabled'}`);
+                          } catch (error) {
+                            toast.error('Failed to update setting');
+                          }
+                        }}
+                        disabled={updateSystemSetting.isPending}
+                      />
                       <Badge 
-                        variant={featureFlags?.consultantRegistrationEnabled ? "default" : "secondary"}
+                        variant={consultantRegistrationSetting?.value === 'true' ? "default" : "secondary"}
                         className="px-3 py-1"
                       >
-                        {featureFlags?.consultantRegistrationEnabled ? "Enabled" : "Disabled"}
+                        {consultantRegistrationSetting?.value === 'true' ? "Enabled" : "Disabled"}
                       </Badge>
                     </div>
                   </div>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-2">How to change this setting:</p>
-                    <p className="text-sm text-muted-foreground">
-                      Update the <code>ConsultantRegistrationEnabled</code> setting in the 
-                      <code>appsettings.json</code> configuration file and restart the application.
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Current value: <code>Auth:ConsultantRegistrationEnabled = {featureFlags?.consultantRegistrationEnabled ? 'true' : 'false'}</code>
-                    </p>
+                  <div className="text-sm text-muted-foreground">
+                    {consultantRegistrationSetting?.value === 'true' ? (
+                      <>
+                        <p>✓ New consultants can register through the public form</p>
+                        <p>✓ Registration endpoints are active</p>
+                        <p>✓ Account creation for consultant role is allowed</p>
+                      </>
+                    ) : (
+                      <>
+                        <p>✗ Consultant registration is blocked</p>
+                        <p>✗ Registration attempts will be rejected</p>
+                        <p>✗ Only admin can create consultant accounts</p>
+                      </>
+                    )}
                   </div>
+                  {consultantRegistrationSetting && (
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm font-medium mb-2">Setting details:</p>
+                      <p className="text-sm text-muted-foreground">
+                        Key: <code>{consultantRegistrationSetting.key}</code>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Current value: <code>{consultantRegistrationSetting.value}</code>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Last updated: {new Date(consultantRegistrationSetting.updatedAt).toLocaleString()}
+                      </p>
+                      {consultantRegistrationSetting.updatedBy && (
+                        <p className="text-sm text-muted-foreground">
+                          Updated by: {consultantRegistrationSetting.updatedBy}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Refresh Feature Flags */}
@@ -729,7 +771,7 @@ const AdminDashboard = () => {
 
         {/* Edit User Dialog */}
         <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
               <DialogDescription>
@@ -737,7 +779,7 @@ const AdminDashboard = () => {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleUpdateUser} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="editFirstName">First Name</Label>
                   <Input
@@ -770,11 +812,11 @@ const AdminDashboard = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" disabled={updateUser.isPending}>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="submit" disabled={updateUser.isPending} className="w-full sm:w-auto">
                   {updateUser.isPending ? 'Updating...' : 'Update User'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setEditUserOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setEditUserOpen(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
               </div>

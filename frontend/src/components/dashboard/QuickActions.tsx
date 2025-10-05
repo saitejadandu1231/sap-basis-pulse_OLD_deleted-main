@@ -133,7 +133,7 @@ const QuickActions = () => {
           icon: Settings,
           label: 'System Settings',
           description: 'Configure feature flags and settings',
-          path: '/settings',
+          path: '/admin/settings',
           variant: 'tertiary' as const,
           gradient: 'from-slate-500 to-gray-600',
           hoverGradient: 'from-slate-600 to-gray-700',

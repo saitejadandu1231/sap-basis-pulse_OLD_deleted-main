@@ -22,7 +22,59 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useSystemSetting, useUpdateSystemSetting } from '@/hooks/useSystemSettings';
 import { useNavigate } from 'react-router-dom';
+
+const ConsultantRegistrationCard = () => {
+  const { data: consultantRegistrationEnabled, isLoading } = useSystemSetting('ConsultantRegistrationEnabled');
+  const updateSystemSetting = useUpdateSystemSetting();
+
+  const handleToggleConsultantRegistration = async () => {
+    const newValue = consultantRegistrationEnabled?.value !== 'true';
+    await updateSystemSetting.mutateAsync({
+      key: 'ConsultantRegistrationEnabled',
+      value: newValue.toString()
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Settings className="w-5 h-5 mr-2" />
+          Registration Settings
+        </CardTitle>
+        <CardDescription>
+          Control user registration and account creation
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3 mb-2">
+              <Label htmlFor="consultantRegistration">Consultant Registration</Label>
+              <Badge 
+                variant={consultantRegistrationEnabled?.value === 'true' ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {isLoading ? 'Loading...' : (consultantRegistrationEnabled?.value === 'true' ? 'Enabled' : 'Disabled')}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Allow new consultants to register and create accounts on the platform
+            </p>
+          </div>
+          <Switch 
+            id="consultantRegistration"
+            checked={consultantRegistrationEnabled?.value === 'true'}
+            onCheckedChange={handleToggleConsultantRegistration}
+            disabled={isLoading || updateSystemSetting.isPending}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const AdminSettings = () => {
   const { data: featureFlags } = useFeatureFlags();
@@ -114,6 +166,9 @@ const AdminSettings = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Registration Settings */}
+        <ConsultantRegistrationCard />
 
         {/* SSO Configuration */}
         <Card>
