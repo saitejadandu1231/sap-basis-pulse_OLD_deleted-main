@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRecentTickets, useUpdateTicketStatus, useTicketRatings } from '@/hooks/useSupport';
 import { useStatusOptions } from '@/hooks/useStatus';
@@ -10,13 +10,14 @@ import StatusHistory from '@/components/StatusHistory';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, ChevronUp, ChevronRight, Eye } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, ChevronUp, ChevronRight, Eye, Filter, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { toast } from 'sonner';
@@ -72,6 +73,17 @@ const Tickets = () => {
   const [statusComment, setStatusComment] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [processingTicketId, setProcessingTicketId] = useState<string | null>(null);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    status: 'all',
+    priority: 'all',
+    supportType: 'all',
+    consultant: 'all',
+    paymentStatus: 'all',
+    dateRange: 'all'
+  });
+  const [showFilters, setShowFilters] = useState(false);
   const updateTicketStatus = useUpdateTicketStatus();
   const { data: statusOptionsData } = useStatusOptions();
   const createPaymentOrder = useCreatePaymentOrder();
@@ -83,6 +95,98 @@ const Tickets = () => {
   console.log('Tickets component - searchQuery:', searchQuery, 'searchParams:', searchParams.toString());
 
   const { data: tickets, isLoading, refetch } = useRecentTickets(searchQuery?.trim() || undefined);
+
+  // Filter tickets based on selected filters
+  const filteredTickets = useMemo(() => {
+    if (!tickets) return [];
+
+    return tickets.filter(ticket => {
+      // Status filter
+      if (filters.status !== 'all' && ticket.status !== filters.status) {
+        return false;
+      }
+
+      // Priority filter
+      if (filters.priority !== 'all' && ticket.priority !== filters.priority) {
+        return false;
+      }
+
+      // Support Type filter
+      if (filters.supportType !== 'all' && ticket.supportTypeName !== filters.supportType) {
+        return false;
+      }
+
+      // Consultant filter (only for admin/consultant roles)
+      if (filters.consultant !== 'all') {
+        if (userRole === 'admin' && ticket.consultantName !== filters.consultant) {
+          return false;
+        }
+        if (userRole === 'consultant' && ticket.consultantId !== filters.consultant) {
+          return false;
+        }
+      }
+
+      // Payment Status filter
+      if (filters.paymentStatus !== 'all' && ticket.paymentStatus !== filters.paymentStatus) {
+        return false;
+      }
+
+      // Date Range filter
+      if (filters.dateRange !== 'all') {
+        const ticketDate = new Date(ticket.createdAt);
+        const now = new Date();
+        const daysDiff = Math.floor((now.getTime() - ticketDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        switch (filters.dateRange) {
+          case 'today':
+            if (daysDiff > 0) return false;
+            break;
+          case 'week':
+            if (daysDiff > 7) return false;
+            break;
+          case 'month':
+            if (daysDiff > 30) return false;
+            break;
+          case 'quarter':
+            if (daysDiff > 90) return false;
+            break;
+        }
+      }
+
+      return true;
+    });
+  }, [tickets, filters, userRole]);
+
+  // Get unique values for filter options
+  const filterOptions = useMemo(() => {
+    if (!tickets) return {
+      statuses: [] as string[],
+      priorities: [] as string[],
+      supportTypes: [] as string[],
+      consultants: [] as string[],
+      paymentStatuses: [] as string[]
+    };
+
+    const statuses = [...new Set(tickets.map(t => t.status).filter(Boolean))] as string[];
+    const priorities = [...new Set(tickets.map(t => t.priority).filter(Boolean))] as string[];
+    const supportTypes = [...new Set(tickets.map(t => t.supportTypeName).filter(Boolean))] as string[];
+    const consultants = userRole === 'admin' 
+      ? [...new Set(tickets.map(t => t.consultantName).filter(Boolean))] as string[]
+      : [] as string[];
+    
+    // Ensure common payment statuses are always available as filter options
+    const ticketPaymentStatuses = [...new Set(tickets.map(t => t.paymentStatus).filter(Boolean))] as string[];
+    const commonPaymentStatuses = ['Pending', 'Paid', 'Failed', 'Refunded'];
+    const paymentStatuses = [...new Set([...commonPaymentStatuses, ...ticketPaymentStatuses])].sort();
+
+    return {
+      statuses: statuses.sort(),
+      priorities: priorities.sort(),
+      supportTypes: supportTypes.sort(),
+      consultants: consultants.sort(),
+      paymentStatuses: paymentStatuses.sort()
+    };
+  }, [tickets, userRole]);
 
   // Auto-open ticket from URL parameter
   useEffect(() => {
@@ -101,25 +205,36 @@ const Tickets = () => {
     }
   }, [ticketIdFromUrl, tickets, selectedTicket]);
 
-  // Transform API data to match component expectations with fallback to hardcoded options
+  // Transform API data to match component expectations
   const statusOptions = statusOptionsData?.map(option => ({
     value: option.statusCode,
     label: option.statusName,
-    color: option.colorCode
-  })) || [
-    { value: 'New', label: 'New', color: 'bg-blue-500' },
-    { value: 'In Progress', label: 'In Progress', color: 'bg-yellow-500' },
-    { value: 'PendingCustomerAction', label: 'Pending Customer', color: 'bg-orange-500' },
-    { value: 'TopicClosed', label: 'Topic Closed', color: 'bg-green-500' },
-    { value: 'Closed', label: 'Closed', color: 'bg-muted' },
-    { value: 'Paid', label: 'Paid', color: 'bg-emerald-500' },
-    { value: 'ReOpened', label: 'Re-Opened', color: 'bg-purple-500' }
-  ];
+    color: option.colorCode || 'bg-gray-500', // Fallback color if not provided
+    description: option.description
+  })) || [];
 
-  // Filter status options for consultants - remove TopicClosed and Paid
-  const filteredStatusOptions = userRole === 'consultant' 
-    ? statusOptions.filter(option => option.value !== 'TopicClosed' && option.value !== 'Paid')
-    : statusOptions;
+  // Filter status options based on user role and business rules
+  const getFilteredStatusOptions = (currentTicketStatus?: string) => {
+    if (userRole === 'consultant') {
+      // Consultants cannot set TopicClosed, Paid, or ReOpened
+      return statusOptions.filter(option => 
+        option.value !== 'TopicClosed' && 
+        option.value !== 'Paid' && 
+        option.value !== 'ReOpened'
+      );
+    } else if (userRole === 'customer') {
+      // Customers can only reopen closed tickets
+      const isTicketClosed = currentTicketStatus === 'Closed' || currentTicketStatus === 'TopicClosed';
+      return isTicketClosed 
+        ? statusOptions.filter(option => option.value === 'ReOpened')
+        : [];
+    } else {
+      // Admins can access all statuses
+      return statusOptions;
+    }
+  };
+
+  const filteredStatusOptions = getFilteredStatusOptions();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -293,16 +408,53 @@ const Tickets = () => {
            (userRole === 'consultant' && ticket.consultantId === user?.id); // Fixed incorrect comparison
   };
 
+  // Filter handlers
+  const handleFilterChange = (filterType: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({
+      status: 'all',
+      priority: 'all',
+      supportType: 'all',
+      consultant: 'all',
+      paymentStatus: 'all',
+      dateRange: 'all'
+    });
+  };
+
+  const hasActiveFilters = Object.values(filters).some(value => value !== 'all');
+
   return (
     <PageLayout
       title={userRole === 'admin' ? 'All Tickets' : 'My Tickets'}
       description={
         searchQuery 
-          ? `Search results for "${searchQuery}" (${tickets?.length || 0} results)`
+          ? `Search results for "${searchQuery}" (${filteredTickets?.length || 0} of ${tickets?.length || 0} results)`
+          : hasActiveFilters
+          ? `Showing ${filteredTickets?.length || 0} of ${tickets?.length || 0} tickets`
           : (userRole === 'admin' ? 'Manage all support requests' : 'View and manage your support tickets')
       }
       actions={
         <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters ? 'bg-secondary' : ''}
+          >
+            <Filter className="w-4 h-4 mr-1" />
+            Filters
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs">
+                {Object.values(filters).filter(v => v !== 'all').length}
+              </Badge>
+            )}
+          </Button>
           {searchQuery && (
             <Button 
               variant="outline" 
@@ -324,6 +476,191 @@ const Tickets = () => {
       }
     >
       <div className="space-y-6">
+        {/* Filter Panel */}
+        {showFilters && (
+          <Card>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Filter Tickets</CardTitle>
+                <div className="flex items-center space-x-2">
+                  {hasActiveFilters && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={clearAllFilters}
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Clear All
+                    </Button>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowFilters(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {/* Status Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Select 
+                    value={filters.status} 
+                    onValueChange={(value) => handleFilterChange('status', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      {filterOptions.statuses.map(status => (
+                        <SelectItem key={status} value={status}>
+                          {status.replace(/([A-Z])/g, ' $1').trim()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Priority Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Priority</Label>
+                  <Select 
+                    value={filters.priority} 
+                    onValueChange={(value) => handleFilterChange('priority', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priority</SelectItem>
+                      {filterOptions.priorities.map(priority => (
+                        <SelectItem key={priority} value={priority}>
+                          {priority}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Support Type Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Support Type</Label>
+                  <Select 
+                    value={filters.supportType} 
+                    onValueChange={(value) => handleFilterChange('supportType', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {filterOptions.supportTypes.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Consultant Filter - Only for Admin */}
+                {userRole === 'admin' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Consultant</Label>
+                    <Select 
+                      value={filters.consultant} 
+                      onValueChange={(value) => handleFilterChange('consultant', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Consultants" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Consultants</SelectItem>
+                        {filterOptions.consultants.map(consultant => (
+                          <SelectItem key={consultant} value={consultant}>
+                            {consultant}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Payment Status Filter - Hidden for consultants */}
+                {userRole !== 'consultant' && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Payment Status</Label>
+                    <Select 
+                      value={filters.paymentStatus} 
+                      onValueChange={(value) => handleFilterChange('paymentStatus', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Payment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Payment</SelectItem>
+                        {filterOptions.paymentStatuses.map(status => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Date Range Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Date Range</Label>
+                  <Select 
+                    value={filters.dateRange} 
+                    onValueChange={(value) => handleFilterChange('dateRange', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                      <SelectItem value="quarter">Last 3 Months</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Active Filters Summary */}
+              {hasActiveFilters && (
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-sm text-muted-foreground">Active filters:</span>
+                    {Object.entries(filters).map(([key, value]) => {
+                      if (value === 'all') return null;
+                      return (
+                        <Badge key={key} variant="secondary" className="flex items-center gap-1">
+                          {key === 'supportType' ? 'Type' : key.charAt(0).toUpperCase() + key.slice(1)}: {value}
+                          <button
+                            onClick={() => handleFilterChange(key, 'all')}
+                            className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
@@ -339,9 +676,9 @@ const Tickets = () => {
               </Card>
             ))}
           </div>
-        ) : tickets && tickets.length > 0 ? (
+        ) : filteredTickets && filteredTickets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tickets.map((ticket) => (
+            {filteredTickets.map((ticket) => (
               <Card 
                 key={ticket.id} 
                 className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full cursor-pointer"
@@ -357,33 +694,38 @@ const Tickets = () => {
                     </CardTitle>
                     <div className="flex items-center space-x-2">
                       {getStatusIcon(ticket.status)}
-                      {/* Quick Status Update for Consultants/Admins */}
-                      {(userRole === 'consultant' || userRole === 'admin') ? (
-                        <Select
-                          value={ticket.status}
-                          onValueChange={(newStatus) => handleQuickStatusUpdate(ticket.id, newStatus, ticket.status)}
-                        >
-                          <SelectTrigger className="w-auto h-6 text-xs border-none bg-transparent p-0 focus:ring-0 focus:ring-offset-0">
-                            <Badge variant={getStatusVariant(ticket.status)} className="text-xs cursor-pointer hover:bg-opacity-80">
-                              {(userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
-                            </Badge>
-                          </SelectTrigger>
-                          <SelectContent className="min-w-[200px]">
-                            {filteredStatusOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                <div className="flex items-center space-x-2">
-                                  <div className={`w-3 h-3 rounded-full ${option.color}`} />
-                                  <span>{option.label}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge variant={getStatusVariant(ticket.status === 'Paid' ? 'Closed' : ticket.status)} className="text-xs">
-                          {(ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
-                        </Badge>
-                      )}
+                      {/* Quick Status Update for Consultants/Admins/Customers with available options */}
+                      {(() => {
+                        const ticketFilteredOptions = getFilteredStatusOptions(ticket.status);
+                        const canUpdateTicketStatus = ticketFilteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
+                        
+                        return canUpdateTicketStatus ? (
+                          <Select
+                            value={ticket.status}
+                            onValueChange={(newStatus) => handleQuickStatusUpdate(ticket.id, newStatus, ticket.status)}
+                          >
+                            <SelectTrigger className="w-auto h-6 text-xs border-none bg-transparent p-0 focus:ring-0 focus:ring-offset-0">
+                              <Badge variant={getStatusVariant(ticket.status)} className="text-xs cursor-pointer hover:bg-opacity-80">
+                                {(userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
+                              </Badge>
+                            </SelectTrigger>
+                            <SelectContent className="min-w-[200px]">
+                              {ticketFilteredOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  <div className="flex items-center space-x-2">
+                                    <div className={`w-3 h-3 rounded-full ${option.color}`} />
+                                    <span>{option.label}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge variant={getStatusVariant(ticket.status === 'Paid' ? 'Closed' : ticket.status)} className="text-xs">
+                            {(ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
+                          </Badge>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
@@ -524,32 +866,49 @@ const Tickets = () => {
           <div className="text-center py-12">
             <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">
-              {searchQuery ? 'No tickets match your search' : 'No tickets found'}
+              {searchQuery 
+                ? 'No tickets match your search' 
+                : hasActiveFilters 
+                ? 'No tickets match your filters' 
+                : 'No tickets found'
+              }
             </h3>
             <p className="text-muted-foreground mb-6">
               {searchQuery 
                 ? `No tickets found matching "${searchQuery}". Try a different search term.`
+                : hasActiveFilters
+                ? 'Try adjusting your filter criteria or clear all filters to see more tickets.'
                 : (userRole === 'customer' 
                     ? "You haven't created any support tickets yet."
                     : "No tickets are currently assigned to you."
                   )
               }
             </p>
-            {searchQuery ? (
-              <Button 
-                variant="outline" 
-                onClick={() => setSearchParams({})}
-              >
-                Clear Search
-              </Button>
-            ) : (
-              userRole === 'customer' && (
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              {searchQuery && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchParams({})}
+                >
+                  Clear Search
+                </Button>
+              )}
+              {hasActiveFilters && (
+                <Button 
+                  variant="outline" 
+                  onClick={clearAllFilters}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear Filters
+                </Button>
+              )}
+              {!searchQuery && !hasActiveFilters && userRole === 'customer' && (
                 <Button onClick={() => navigate('/support')}>
                   <Plus className="w-4 h-4 mr-1" />
                   Create your first ticket
                 </Button>
-              )
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -572,34 +931,46 @@ const Tickets = () => {
           
           {selectedTicket && (
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className={`grid w-full text-xs sm:text-sm overflow-x-auto ${userRole === 'customer' ? 'grid-cols-3' : 'grid-cols-4'}`}>
-            <TabsTrigger value="details" className="min-w-0 px-2 sm:px-4">
-              <span className="truncate">
-                <span className="hidden sm:inline">Ticket </span>Details
-              </span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="min-w-0 px-2 sm:px-4">
-              <span className="truncate">
-                <span className="hidden sm:inline">Status </span>History
-              </span>
-            </TabsTrigger>
-            {(userRole === 'consultant' || userRole === 'admin') && (
-              <TabsTrigger value="status" className="min-w-0 px-2 sm:px-4">
-                <span className="truncate">
-                  <span className="hidden sm:inline">Status </span>Manage
-                </span>
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="ratings" className="min-w-0 px-2 sm:px-4">
-              <span className="truncate">
-                {userRole === 'customer' ? (
-                  <><span className="hidden sm:inline">Rate </span>Consultant</>
-                ) : (
-                  <><span className="hidden sm:inline">Ratings & </span>Feedback</>
+          {(() => {
+            const filteredOptions = getFilteredStatusOptions(selectedTicket.status);
+            const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
+            const tabCount = canUpdateStatus ? 4 : 3;
+            
+            return (
+              <TabsList className={`grid w-full text-xs sm:text-sm overflow-x-auto grid-cols-${tabCount}`}>
+                <TabsTrigger value="details" className="min-w-0 px-2 sm:px-4">
+                  <span className="truncate">
+                    <span className="hidden sm:inline">Ticket </span>Details
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="history" className="min-w-0 px-2 sm:px-4">
+                  <span className="truncate">
+                    <span className="hidden sm:inline">Status </span>History
+                  </span>
+                </TabsTrigger>
+                {canUpdateStatus && (
+                  <TabsTrigger value="status" className="min-w-0 px-2 sm:px-4">
+                    <span className="truncate">
+                      {userRole === 'customer' ? (
+                        <><span className="hidden sm:inline">Re</span>open</>
+                      ) : (
+                        <><span className="hidden sm:inline">Status </span>Manage</>
+                      )}
+                    </span>
+                  </TabsTrigger>
                 )}
-              </span>
-            </TabsTrigger>
-          </TabsList>
+                <TabsTrigger value="ratings" className="min-w-0 px-2 sm:px-4">
+                  <span className="truncate">
+                    {userRole === 'customer' ? (
+                      <><span className="hidden sm:inline">Rate </span>Consultant</>
+                    ) : (
+                      <><span className="hidden sm:inline">Ratings & </span>Feedback</>
+                    )}
+                  </span>
+                </TabsTrigger>
+              </TabsList>
+            );
+          })()}
           
           <TabsContent value="details" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
             {/* Ticket Details */}
@@ -669,16 +1040,27 @@ const Tickets = () => {
             <StatusHistory orderId={selectedTicket.id} />
           </TabsContent>
           
-          {(userRole === 'consultant' || userRole === 'admin') && (
-            <TabsContent value="status" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
-              {/* Status Management */}
-              <TicketStatusUpdater
-            orderId={selectedTicket.id}
-            currentStatus={selectedTicket.status}
-            onStatusUpdate={(newStatus) => handleStatusUpdate(selectedTicket.id, newStatus)}
-              />
-            </TabsContent>
-          )}
+          {(() => {
+            const filteredOptions = getFilteredStatusOptions(selectedTicket.status);
+            const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
+            
+            return canUpdateStatus && (
+              <TabsContent value="status" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
+                {/* Status Management */}
+                <TicketStatusUpdater
+                  orderId={selectedTicket.id}
+                  currentStatus={selectedTicket.status}
+                  onStatusUpdate={(newStatus) => handleStatusUpdate(selectedTicket.id, newStatus)}
+                  allowedStatusOptions={filteredOptions.map(option => ({
+                    ...option,
+                    textColor: `text-${option.color?.replace('bg-', '').replace('-500', '-700')}` || 'text-gray-700',
+                    bgColor: `bg-${option.color?.replace('bg-', '').replace('-500', '-50')}` || 'bg-gray-50',
+                  }))}
+                  userRole={userRole}
+                />
+              </TabsContent>
+            );
+          })()}
           
           <TabsContent value="ratings" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
             {/* Rating Management */}

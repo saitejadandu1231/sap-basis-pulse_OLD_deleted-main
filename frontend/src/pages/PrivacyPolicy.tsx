@@ -5,7 +5,7 @@ const PrivacyPolicy = () => {
   return (
     <PageLayout
       title="Privacy Policy"
-      description="Learn how SAI TEJA DANDU protects your privacy"
+      description="Learn how Yuktor Technologies protects your privacy"
       showSidebar={false}
     >
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -14,20 +14,20 @@ const PrivacyPolicy = () => {
 
           <div className="bg-muted/30 rounded-lg p-6 mb-8">
             <p className="text-sm text-muted-foreground mb-6">
-              Last updated on Sep 26 2025
+              Last updated on Oct 5 2025
             </p>
 
             <div className="space-y-6">
               <p>
-                This privacy policy sets out how SAI TEJA DANDU uses and protects any information that you give SAI TEJA DANDU when you visit their website and/or agree to purchase from them.
+                This privacy policy sets out how Yuktor Technologies uses and protects any information that you give Yuktor Technologies when you visit their website and/or agree to purchase from them.
               </p>
 
               <p>
-                SAI TEJA DANDU is committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, and then you can be assured that it will only be used in accordance with this privacy statement.
+                Yuktor Technologies is committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, and then you can be assured that it will only be used in accordance with this privacy statement.
               </p>
 
               <p>
-                SAI TEJA DANDU may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you adhere to these changes.
+                Yuktor Technologies may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you adhere to these changes.
               </p>
 
               <div>
@@ -83,13 +83,13 @@ const PrivacyPolicy = () => {
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground mb-3">
                   <li>whenever you are asked to fill in a form on the website, look for the box that you can click to indicate that you do not want the information to be used by anybody for direct marketing purposes</li>
-                  <li>if you have previously agreed to us using your personal information for direct marketing purposes, you may change your mind at any time by writing to or emailing us at saitejadandu1231@gmail.com</li>
+                  <li>if you have previously agreed to us using your personal information for direct marketing purposes, you may change your mind at any time by writing to or emailing us at privacy@yuktor.com</li>
                 </ul>
                 <p className="text-muted-foreground mb-3">
                   We will not sell, distribute or lease your personal information to third parties unless we have your permission or are required by law to do so. We may use your personal information to send you promotional information about third parties which we think you may find interesting if you tell us that you wish this to happen.
                 </p>
                 <p className="text-muted-foreground">
-                  If you believe that any information we are holding on you is incorrect or incomplete, please write to 201, plot no 856,maruthi sri nagar, sadhya school road, miyapur Hyderabad TELANGANA 500049 . or contact us at 7842691231 or saitejadandu1231@gmail.com as soon as possible. We will promptly correct any information found to be incorrect.
+                  If you believe that any information we are holding on you is incorrect or incomplete, please write to Suite 204, Tech Park Plaza, Cyber City, Hyderabad India or contact us at +91-124-4567890 or support@yuktor.com as soon as possible. We will promptly correct any information found to be incorrect.
                 </p>
               </div>
             </div>

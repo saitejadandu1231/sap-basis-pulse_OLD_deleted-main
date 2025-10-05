@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardPath } from '@/hooks/useDashboardPath';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const dashboardPath = useDashboardPath();
   const { signIn } = useAuth();
   const { handleAuthCallback, completeSignup } = useSupabaseAuth();
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ const AuthCallback = () => {
         console.log('[AuthCallback] Auth data received, redirecting to dashboard');
         // Sign in successful
   await signIn(result.authData.email, '', result.authData);
-        navigate('/dashboard', { replace: true });
+        navigate(dashboardPath, { replace: true });
       }
     } catch (error: any) {
       console.error('[AuthCallback] Exception:', error);
@@ -128,7 +130,7 @@ const AuthCallback = () => {
       // Sign in successful
       await signIn(result.authData.email, '', result.authData);
       toast.success('Account created successfully!');
-      navigate('/dashboard', { replace: true });
+      navigate(dashboardPath, { replace: true });
     } catch (error: any) {
       toast.error('Failed to complete signup: ' + error.message);
     } finally {

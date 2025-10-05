@@ -211,7 +211,7 @@ const Settings = () => {
         </Card>
 
         {/* Notification Settings */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Bell className="w-5 h-5 mr-2" />
@@ -254,7 +254,7 @@ const Settings = () => {
               <Switch id="messageNotifications" defaultChecked />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Security Settings */}
         <Card>

@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useDashboardPath } from '@/hooks/useDashboardPath';
 import { 
   Home, 
   MessageSquare, 
@@ -41,6 +42,7 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
 }) => {
   const { userRole } = useAuth();
   const { data: featureFlags } = useFeatureFlags();
+  const dashboardPath = useDashboardPath();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,7 +50,7 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
     {
       icon: Home,
       label: 'Dashboard',
-      path: '/dashboard',
+      path: dashboardPath,
       description: 'Overview and quick actions'
     },
     {
@@ -90,6 +92,7 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
       icon: Settings,
       label: 'Settings',
       path: '/settings',
+      roles: ['customer', 'consultant'],
       description: 'Account settings and preferences'
     },
     {
@@ -106,17 +109,17 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
       roles: ['admin'],
       description: 'View all support requests'
     },
-    {
-      icon: BarChart3,
-      label: 'Analytics',
-      path: '/admin/analytics',
-      roles: ['admin'],
-      description: 'System metrics and reports'
-    },
+    // {
+    //   icon: BarChart3,
+    //   label: 'Analytics',
+    //   path: '/admin/analytics',
+    //   roles: ['admin'],
+    //   description: 'System metrics and reports'
+    // },
     {
       icon: Settings,
       label: 'Admin Settings',
-      path: '/admin/settings',
+      path: '/settings',
       roles: ['admin'],
       description: 'System configuration'
     },
@@ -143,8 +146,8 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
   });
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/' || location.pathname === '/dashboard';
+    if (path === dashboardPath) {
+      return location.pathname === '/' || location.pathname === dashboardPath || location.pathname === '/dashboard';
     }
     return location.pathname.startsWith(path);
   };
@@ -161,13 +164,13 @@ const RoleBasedNav: React.FC<RoleBasedNavProps> = ({
         <Button
           variant="ghost" 
           size="sm"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(dashboardPath)}
           className="text-muted-foreground hover:text-foreground"
         >
           <Home className="w-4 h-4" />
           {showLabels && <span className="ml-1">Home</span>}
         </Button>
-        {currentItem && currentItem.path !== '/dashboard' && (
+        {currentItem && currentItem.path !== dashboardPath && (
           <>
             <span className="text-muted-foreground">/</span>
             <span className="text-foreground font-medium">{currentItem.label}</span>

@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { useDashboardPath } from '@/hooks/useDashboardPath';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -15,11 +17,10 @@ import {
   Bell,
   Search
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUnreadMessageCount } from '@/services/messagingHooks';
 import RoleBasedNav from '../navigation/RoleBasedNav';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -41,10 +42,55 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   const { user, userRole, firstName, lastName, signOut } = useAuth();
   const { data: featureFlags } = useFeatureFlags();
   const { data: unreadCount } = useUnreadMessageCount();
+  const dashboardPath = useDashboardPath();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
   const displayName = firstName && lastName ? `${firstName} ${lastName}` : user?.email;
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Trigger search when debounced query changes
+  useEffect(() => {
+    if (debouncedSearchQuery.trim()) {
+      navigate(`/tickets?search=${encodeURIComponent(debouncedSearchQuery.trim())}`);
+    } else if (location.pathname === '/tickets' && debouncedSearchQuery === '') {
+      // Only clear search params if we're on tickets page and query is empty
+      navigate('/tickets');
+    }
+  }, [debouncedSearchQuery, navigate, location.pathname]);
+
+  // Clear search query when navigating away from tickets page
+  useEffect(() => {
+    if (location.pathname !== '/tickets') {
+      setSearchQuery('');
+      setDebouncedSearchQuery('');
+    }
+  }, [location.pathname]);
+
+  const handleSearch = (query: string) => {
+    if (query.trim()) {
+      navigate(`/tickets?search=${encodeURIComponent(query.trim())}`);
+    } else {
+      navigate('/tickets');
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch(searchQuery);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -79,7 +125,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
             </div> */}
             <div className="hidden sm:block">
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate(dashboardPath)}
                 className="hover:opacity-80 transition-opacity text-left"
               >
                 <h1 className="text-base sm:text-lg font-semibold">Yuktor</h1>
@@ -92,11 +138,22 @@ const PageLayout: React.FC<PageLayoutProps> = ({
           <div className="hidden md:flex flex-1 max-w-md mx-4">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <input
+              <Input
                 type="text"
-                placeholder="Search tickets, messages..."
-                className="w-full pl-10 pr-4 py-2 text-sm bg-muted/50 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Search tickets..."
+                className="pl-10 pr-10 bg-muted/50 border-border"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
               />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearch(searchQuery)}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 

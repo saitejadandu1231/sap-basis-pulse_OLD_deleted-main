@@ -17,6 +17,7 @@ namespace SapBasisPulse.Api.Services
         {
             return await _context.ConsultantAvailabilitySlots
                 .Where(s => s.ConsultantId == consultantId)
+                .OrderBy(s => s.SlotStartTime) // Sort by time
                 .Select(s => new ConsultantAvailabilitySlotDto
                 {
                     Id = s.Id,
@@ -42,12 +43,16 @@ namespace SapBasisPulse.Api.Services
             // Set the end date to the end of the day
             endDateUtc = endDateUtc.Date.AddDays(1).AddSeconds(-1);
             
+            // Add 1-hour buffer time for booking slots - consultants need advance notice
+            var minimumBookingTime = DateTime.UtcNow.AddHours(1);
+            
             return await _context.ConsultantAvailabilitySlots
-                .Where(s => s.ConsultantId == consultantId && 
+                .Where(s => s.ConsultantId == consultantId &&
                            s.SlotStartTime >= startDateUtc && 
                            s.SlotStartTime <= endDateUtc &&
-                           s.SlotStartTime > DateTime.UtcNow && // Only future slots
+                           s.SlotStartTime > minimumBookingTime && // Only slots starting at least 1 hour from now
                            s.BookedByCustomerChoiceId == null) // Only available slots
+                .OrderBy(s => s.SlotStartTime) // Sort by time
                 .Select(s => new ConsultantAvailabilitySlotDto
                 {
                     Id = s.Id,

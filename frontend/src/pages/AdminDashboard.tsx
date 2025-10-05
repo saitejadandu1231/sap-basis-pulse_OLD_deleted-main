@@ -8,10 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ThemeToggle from '@/components/ThemeToggle';
 import { 
   Users, 
-  Shield, 
   BarChart3, 
   Settings, 
   Plus, 
@@ -24,7 +22,8 @@ import {
   CheckCircle,
   MessageSquare,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -38,6 +37,7 @@ import {
   useDeleteUser 
 } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
+import PageLayout from '@/components/layout/PageLayout';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -161,22 +161,11 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage users and monitor system activity</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              <span className="font-medium">{user.firstName} {user.lastName}</span>
-            </div>
-          </div>
-        </div>
+    <PageLayout
+      title="Admin Dashboard"
+      description="Manage users and monitor system activity"
+    >
+      <div className="space-y-6">
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -230,7 +219,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/users')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -248,7 +237,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/analytics')}>
+          {/* <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/analytics')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -263,9 +252,9 @@ const AdminDashboard = () => {
                 Detailed analytics dashboard with metrics, charts, and exportable reports
               </p>
             </CardContent>
-          </Card>
+          </Card> */}
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/settings')}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/settings')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -298,6 +287,40 @@ const AdminDashboard = () => {
               </p>
             </CardContent>
           </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/sr-identifiers')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  SR Identifiers
+                </div>
+                <ExternalLink className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Manage service request identifiers that customers can select during ticket creation
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/admin/ticket-number-templates')}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Ticket Number Templates
+                </div>
+                <ExternalLink className="w-4 h-4" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Configure custom ticket numbering patterns for different support types and categories
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content Tabs */}
@@ -307,10 +330,10 @@ const AdminDashboard = () => {
               <Users className="w-4 h-4" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="requests" className="flex items-center gap-2">
+            {/* <TabsTrigger value="requests" className="flex items-center gap-2">
               <Ticket className="w-4 h-4" />
               Support Requests
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
               Analytics
@@ -481,7 +504,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           {/* Support Requests Tab */}
-          <TabsContent value="requests" className="space-y-6">
+          {/* <TabsContent value="requests" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>All Support Requests</CardTitle>
@@ -531,7 +554,7 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
@@ -604,7 +627,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Messaging Feature Toggle */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -649,7 +672,7 @@ const AdminDashboard = () => {
                       Current value: <code>Auth:MessagingEnabled = {featureFlags?.messagingEnabled ? 'true' : 'false'}</code>
                     </p>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Consultant Registration Feature Toggle */}
                 <div className="space-y-4 pt-6 border-t">
@@ -759,7 +782,7 @@ const AdminDashboard = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

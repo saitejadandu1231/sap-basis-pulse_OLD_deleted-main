@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardPath } from '@/hooks/useDashboardPath';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import {
 
 const ConsultantSkills = () => {
   const navigate = useNavigate();
+  const dashboardPath = useDashboardPath();
   const { user } = useAuth();
   const [selectedSkills, setSelectedSkills] = useState<{supportTypeId: string; supportCategoryId?: string}[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -249,7 +251,7 @@ const ConsultantSkills = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate(dashboardPath)}
               className="flex items-center space-x-2"
             >
               <ArrowLeft className="w-4 h-4" />

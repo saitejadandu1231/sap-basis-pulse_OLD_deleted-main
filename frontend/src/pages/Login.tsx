@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getDashboardPath } from "@/hooks/useDashboardPath";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -38,7 +39,7 @@ const Login = () => {
   const { signIn, signUp, user } = useAuth();
   
   // Get the redirect path from location state if available
-  const from = (location.state as { from?: string })?.from || '/dashboard';
+  const from = (location.state as { from?: string })?.from || getDashboardPath();
   // domain validation removed; we call backend register API directly
   
   const [email, setEmail] = useState("");

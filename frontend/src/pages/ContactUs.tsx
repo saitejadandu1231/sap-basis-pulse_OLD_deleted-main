@@ -5,7 +5,7 @@ const ContactUs = () => {
   return (
     <PageLayout
       title="Contact Us"
-      description="Get in touch with SAI TEJA DANDU"
+      description="Get in touch with Yuktor Technologies"
       showSidebar={false}
     >
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -14,7 +14,7 @@ const ContactUs = () => {
 
           <div className="bg-muted/30 rounded-lg p-6 mb-8">
             <p className="text-sm text-muted-foreground mb-4">
-              Last updated on Sep 26 2025
+              Last updated on Oct 5 2025
             </p>
 
             <p className="mb-6">
@@ -24,31 +24,31 @@ const ContactUs = () => {
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-foreground">Merchant Legal entity name:</h3>
-                <p className="text-muted-foreground">SAI TEJA DANDU</p>
+                <p className="text-muted-foreground">Yuktor Technologies Private Limited</p>
               </div>
 
               <div>
                 <h3 className="font-semibold text-foreground">Registered Address:</h3>
                 <p className="text-muted-foreground">
-                  201, plot no 856,maruthi sri nagar, sadhya school road, miyapur Hyderabad TELANGANA 500049
+                  Suite 204, Tech Park Plaza, Cyber City, Hyderabad India
                 </p>
               </div>
 
               <div>
                 <h3 className="font-semibold text-foreground">Operational Address:</h3>
                 <p className="text-muted-foreground">
-                  201, plot no 856,maruthi sri nagar, sadhya school road, miyapur Hyderabad TELANGANA 500049
+                  Suite 204, Tech Park Plaza, Cyber City, Hyderabad India
                 </p>
               </div>
 
               <div>
                 <h3 className="font-semibold text-foreground">Telephone No:</h3>
-                <p className="text-muted-foreground">7842691231</p>
+                <p className="text-muted-foreground">+91-124-4567890</p>
               </div>
 
               <div>
                 <h3 className="font-semibold text-foreground">E-Mail ID:</h3>
-                <p className="text-muted-foreground">saitejadandu1231@gmail.com</p>
+                <p className="text-muted-foreground">support@yuktor.com</p>
               </div>
             </div>
           </div>

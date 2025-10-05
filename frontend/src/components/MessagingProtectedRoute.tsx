@@ -1,5 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { getDashboardPath } from '@/hooks/useDashboardPath';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MessagingProtectedRouteProps {
   children: React.ReactNode;
@@ -7,6 +9,7 @@ interface MessagingProtectedRouteProps {
 
 const MessagingProtectedRoute: React.FC<MessagingProtectedRouteProps> = ({ children }) => {
   const { data: featureFlags, isLoading } = useFeatureFlags();
+  const { userRole } = useAuth();
 
   if (isLoading) {
     return (
@@ -21,7 +24,7 @@ const MessagingProtectedRoute: React.FC<MessagingProtectedRouteProps> = ({ child
 
   if (!featureFlags?.messagingEnabled) {
     // Redirect to dashboard if messaging is disabled
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getDashboardPath(userRole)} replace />;
   }
 
   return <>{children}</>;
