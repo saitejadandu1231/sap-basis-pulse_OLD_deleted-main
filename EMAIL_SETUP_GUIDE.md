@@ -1,29 +1,25 @@
 # Email Configuration Guide
 
-## Option 1: Use Your Backend SMTP (Recommended)
+## Using Brevo Email Service (Recommended)
 
-Your application already has SMTP email functionality built-in. Configure these environment variables in your production deployment:
+Your application has been updated to use Brevo (formerly SendinBlue) for reliable email delivery. Configure these environment variables in your production deployment:
 
 ### Railway Environment Variables
 ```bash
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-gmail-app-password
-SMTP_FROM=noreply@yuktor.com
-SMTP_ENABLE_SSL=true
+BREVO_API_KEY=your_brevo_api_key_here
+Brevo__ApiKey=your_brevo_api_key_here
+Brevo__FromEmail=noreply@yuktor.com
+Brevo__FromName=Yuktor SAP BASIS Support
 ADMIN_EMAILS=admin@yuktor.com,support@yuktor.com
 ```
 
 ### Docker Compose Environment Variables
 If deploying with Docker Compose, set these environment variables:
 ```bash
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-gmail-app-password
-SMTP_FROM=noreply@yuktor.com
-SMTP_ENABLE_SSL=true
+BREVO_API_KEY=your_brevo_api_key_here
+Brevo__ApiKey=your_brevo_api_key_here
+Brevo__FromEmail=noreply@yuktor.com
+Brevo__FromName=Yuktor SAP BASIS Support
 ADMIN_EMAILS=admin@yuktor.com,support@yuktor.com
 ```
 

@@ -54,7 +54,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<ISupportRequestService, SupportRequestService>();
-builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<IEmailSender, BrevoEmailSender>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITicketRatingService, TicketRatingService>();
 builder.Services.AddScoped<ISupportTaxonomyService, SupportTaxonomyService>();
