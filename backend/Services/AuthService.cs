@@ -21,8 +21,9 @@ namespace SapBasisPulse.Api.Services
         private readonly Microsoft.AspNetCore.Identity.UserManager<User> _userManager;
         private readonly ISupportTaxonomyService _supportTaxonomyService;
         private readonly IEmailSettingsService _emailSettingsService;
+        private readonly ISystemSettingsService _systemSettingsService;
 
-        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager, ISupportTaxonomyService supportTaxonomyService, IEmailSettingsService emailSettingsService)
+        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager, ISupportTaxonomyService supportTaxonomyService, IEmailSettingsService emailSettingsService, ISystemSettingsService systemSettingsService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
@@ -31,6 +32,7 @@ namespace SapBasisPulse.Api.Services
             _userManager = userManager;
             _supportTaxonomyService = supportTaxonomyService;
             _emailSettingsService = emailSettingsService;
+            _systemSettingsService = systemSettingsService;
         }
 
         public async Task<(bool Success, string? Error, AuthResponseDto? Response)> RegisterAsync(RegisterDto dto)
@@ -43,7 +45,7 @@ namespace SapBasisPulse.Api.Services
                 // Check if consultant registration is enabled when role is Consultant
                 if (dto.Role?.Equals("Consultant", StringComparison.OrdinalIgnoreCase) == true)
                 {
-                    bool consultantRegistrationEnabled = _config.GetSection("Auth")["ConsultantRegistrationEnabled"]?.ToLower() == "true";
+                    bool consultantRegistrationEnabled = await _systemSettingsService.GetBooleanSettingAsync("ConsultantRegistrationEnabled", true);
                     if (!consultantRegistrationEnabled)
                     {
                         return (false, "Consultant registration is currently disabled. Please contact AppAdmin at appadmin@yuktor.com for assistance.", null);

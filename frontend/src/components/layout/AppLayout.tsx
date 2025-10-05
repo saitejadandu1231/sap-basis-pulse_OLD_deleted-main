@@ -145,7 +145,7 @@ const AppLayout = () => {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
-      href: '/settings',
+      href: '/admin/settings',
       roles: ['admin']
     }
   ];
@@ -341,6 +341,16 @@ const AppLayout = () => {
               >
                 <Menu className="w-5 h-5" />
               </Button>
+              
+              {/* App name visible on mobile */}
+              <div className="lg:hidden">
+                <button
+                  onClick={() => navigate(dashboardPath)}
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <h1 className="font-semibold text-gray-900 text-lg">Yuktor</h1>
+                </button>
+              </div>
               
               <div className="flex items-center space-x-4 max-w-md flex-1">
                 <div className="relative flex-1">
