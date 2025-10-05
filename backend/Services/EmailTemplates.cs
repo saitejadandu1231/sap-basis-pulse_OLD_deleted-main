@@ -48,7 +48,7 @@ namespace SapBasisPulse.Api.Services
                         </ul>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://your-frontend-url.com/dashboard' class='button'>View in Dashboard</a>
+                            <a href='https://yuktor.vercel.app/' class='button'>View in Dashboard</a>
                         </div>
 
                         <p>If you have any questions, feel free to reply to this email or contact our support team.</p>

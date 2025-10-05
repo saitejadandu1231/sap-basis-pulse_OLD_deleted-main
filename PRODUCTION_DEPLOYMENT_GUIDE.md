@@ -50,13 +50,11 @@ GOOGLE_CLIENT_SECRET=your_production_google_client_secret
 SUPABASE_URL=https://zbsfyxakypvuftxntywm.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpic2Z5eGFreXB2dWZ0eG50eXdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MzEyMzMsImV4cCI6MjA3NDIwNzIzM30.xver5QMRzmuHURhZQgqZM9NUqp6janSl-JTWFI7nfSc
 
-# SMTP Configuration (Production)
-SMTP_HOST=your_smtp_host
-SMTP_PORT=587
-SMTP_USERNAME=your_smtp_username
-SMTP_PASSWORD=your_smtp_password
-SMTP_FROM=noreply@yourdomain.com
-SMTP_ENABLE_SSL=true
+# Brevo Email Configuration (Production)
+BREVO_API_KEY=your_brevo_api_key_here
+Brevo__ApiKey=your_brevo_api_key_here
+Brevo__FromEmail=noreply@yourdomain.com
+Brevo__FromName=Yuktor SAP BASIS Support
 ```
 
 ### Frontend (Vercel)
