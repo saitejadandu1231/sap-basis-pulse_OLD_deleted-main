@@ -5,16 +5,17 @@
 
 ## 📝 **Your Brevo API Key**
 ```
-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
+YOUR_BREVO_API_KEY_HERE
 ```
 ⚠️ **Keep this key private and secure!**
+⚠️ **Replace YOUR_BREVO_API_KEY_HERE with your actual API key from Brevo dashboard**
 
 ## 🚀 **Production Deployment (Railway)**
 
 ### Environment Variables to Set:
 ```bash
-BREVO_API_KEY=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
-Brevo__ApiKey=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
+BREVO_API_KEY=YOUR_BREVO_API_KEY_HERE
+Brevo__ApiKey=YOUR_BREVO_API_KEY_HERE
 Brevo__FromEmail=noreply@brevo.com
 Brevo__FromName=Yuktor SAP BASIS Support
 Brevo__DisableInDevelopment=false
@@ -25,7 +26,7 @@ Brevo__DisableInDevelopment=false
 ### Option 1: Environment Variables (Recommended)
 Set these in your system/IDE:
 ```bash
-BREVO_API_KEY=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
+BREVO_API_KEY=YOUR_BREVO_API_KEY_HERE
 ```
 
 ### Option 2: Local Settings File (Not Committed)
@@ -33,7 +34,7 @@ Create `backend/appsettings.local.json`:
 ```json
 {
   "Brevo": {
-    "ApiKey": "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",
+    "ApiKey": "YOUR_BREVO_API_KEY_HERE",
     "FromEmail": "noreply@brevo.com",
     "FromName": "Yuktor SAP BASIS Support",
     "DisableInDevelopment": false
@@ -46,7 +47,7 @@ Create `backend/appsettings.local.json`:
 ### Manual Test (PowerShell):
 ```powershell
 # Replace YOUR_API_KEY with actual key
-$apiKey = "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"
+$apiKey = "YOUR_BREVO_API_KEY_HERE"
 $email = "your-test-email@gmail.com"
 
 $payload = @{
