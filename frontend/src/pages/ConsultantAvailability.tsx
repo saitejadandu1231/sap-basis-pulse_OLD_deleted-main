@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardPath } from "@/hooks/useDashboardPath";
 import { Calendar, Clock, Trash2, Mail, ChevronDown } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import PageLayout from "@/components/layout/PageLayout";
@@ -26,6 +27,7 @@ const formatDateForApi = (dateString: string, timeString: string): string => {
 
 const ConsultantAvailability = () => {
   const navigate = useNavigate();
+  const dashboardPath = useDashboardPath();
   const { toast } = useToast();
   const { user, userRole, token } = useAuth();
   
@@ -108,10 +110,10 @@ const ConsultantAvailability = () => {
   // Redirect if not consultant
   useEffect(() => {
     if (userRole && userRole !== 'consultant') {
-      navigate('/dashboard');
+      navigate(dashboardPath);
       return;
     }
-  }, [userRole, navigate]);
+  }, [userRole, navigate, dashboardPath]);
 
   // Fetch admin email and slots
   useEffect(() => {

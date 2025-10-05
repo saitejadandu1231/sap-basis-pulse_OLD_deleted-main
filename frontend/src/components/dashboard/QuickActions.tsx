@@ -107,17 +107,17 @@ const QuickActions = () => {
           bgColor: 'bg-cyan-50 dark:bg-cyan-950/20',
           textColor: 'text-cyan-900 dark:text-cyan-100'
         },
-        {
-          icon: BarChart3,
-          label: 'View Analytics',
-          description: 'System metrics and reports',
-          path: '/admin/analytics',
-          variant: 'secondary' as const,
-          gradient: 'from-pink-500 to-rose-600',
-          hoverGradient: 'from-pink-600 to-rose-700',
-          bgColor: 'bg-pink-50 dark:bg-pink-950/20',
-          textColor: 'text-pink-900 dark:text-pink-100'
-        },
+        // {
+        //   icon: BarChart3,
+        //   label: 'View Analytics',
+        //   description: 'System metrics and reports',
+        //   path: '/admin/analytics',
+        //   variant: 'secondary' as const,
+        //   gradient: 'from-pink-500 to-rose-600',
+        //   hoverGradient: 'from-pink-600 to-rose-700',
+        //   bgColor: 'bg-pink-50 dark:bg-pink-950/20',
+        //   textColor: 'text-pink-900 dark:text-pink-100'
+        // },
         {
           icon: Layers,
           label: 'Manage Taxonomy',
@@ -133,7 +133,7 @@ const QuickActions = () => {
           icon: Settings,
           label: 'System Settings',
           description: 'Configure feature flags and settings',
-          path: '/admin/settings',
+          path: '/settings',
           variant: 'tertiary' as const,
           gradient: 'from-slate-500 to-gray-600',
           hoverGradient: 'from-slate-600 to-gray-700',
@@ -215,7 +215,7 @@ const QuickActions = () => {
                 >
                   {/* Card with glassmorphism effect */}
                   <div
-                    className={`relative overflow-hidden rounded-2xl transition-all duration-500 ease-out hover:scale-[1.02] hover:shadow-2xl cursor-pointer border border-white/20 dark:border-gray-700/30 min-h-[200px] flex flex-col ${action.bgColor}`}
+                    className={`relative overflow-hidden rounded-2xl transition-all duration-500 ease-out hover:scale-[1.02] hover:shadow-2xl cursor-pointer border border-white/20 dark:border-gray-700/30 h-[200px] flex flex-col ${action.bgColor}`}
                     onClick={() => navigate(action.path)}
                     title={action.shortcut ? `${action.description} (${action.shortcut})` : action.description}
                   >

@@ -2,30 +2,47 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateTicketStatus } from '@/hooks/useSupport';
+import { useStatusOptions } from '@/hooks/useStatus';
 import { toast } from 'sonner';
 
 interface CompactTicketStatusUpdaterProps {
   orderId: string;
   currentStatus: string;
   onStatusUpdate?: (newStatus: string) => void;
+  allowedStatusOptions?: Array<{value: string; label: string; color: string}>;
+  userRole?: string;
 }
-
-const statusOptions = [
-  { value: 'New', label: 'New', color: 'bg-blue-100 text-blue-800' },
-  { value: 'In Progress', label: 'In Progress', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'PendingCustomerAction', label: 'Pending Customer Action', color: 'bg-orange-100 text-orange-800' },
-  { value: 'TopicClosed', label: 'Topic Closed', color: 'bg-green-100 text-green-800' },
-  { value: 'Closed', label: 'Closed', color: 'bg-gray-100 text-gray-800' },
-  { value: 'ReOpened', label: 'Re-Opened', color: 'bg-purple-100 text-purple-800' }
-];
 
 const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
   orderId,
   currentStatus,
-  onStatusUpdate
+  onStatusUpdate,
+  allowedStatusOptions,
+  userRole
 }) => {
   const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
   const updateStatus = useUpdateTicketStatus();
+  const { data: statusOptionsData, isLoading: statusLoading } = useStatusOptions();
+
+  // Transform full API data for status info lookup
+  const allStatusOptions = statusOptionsData?.map(option => ({
+    value: option.statusCode,
+    label: option.statusName,
+    color: `bg-${option.colorCode?.replace('bg-', '').replace('-500', '-100')} text-${option.colorCode?.replace('bg-', '').replace('-500', '-800')}` || 'bg-gray-100 text-gray-800'
+  })) || [];
+
+  // Use provided filtered status options for dropdown or fallback to all options
+  const statusOptions = allowedStatusOptions || allStatusOptions;
+
+  // Show loading state while fetching status options
+  if (statusLoading) {
+    return <div className="text-sm text-muted-foreground">Loading...</div>;
+  }
+
+  // If no status options available, show current status only
+  if (!statusOptions || statusOptions.length === 0) {
+    return <span className="text-sm font-medium">{currentStatus}</span>;
+  }
 
   const handleStatusUpdate = async () => {
     if (selectedStatus === currentStatus) {

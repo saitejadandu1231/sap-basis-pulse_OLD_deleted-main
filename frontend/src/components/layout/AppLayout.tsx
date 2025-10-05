@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { useUnreadMessageCount } from '@/services/messagingHooks';
+import { useDashboardPath } from '@/hooks/useDashboardPath';
 import { 
   LayoutDashboard, 
   Ticket, 
@@ -52,6 +53,7 @@ const AppLayout = () => {
   const { user, userRole, signOut } = useAuth();
   const { data: featureFlags } = useFeatureFlags();
   const { data: unreadCount } = useUnreadMessageCount();
+  const dashboardPath = useDashboardPath();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -87,7 +89,7 @@ const AppLayout = () => {
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
-      href: '/dashboard'
+      href: dashboardPath
     },
     {
       id: 'tickets',
@@ -125,13 +127,13 @@ const AppLayout = () => {
       href: '/admin/users',
       roles: ['admin']
     },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: BarChart3,
-      href: '/admin/analytics',
-      roles: ['admin']
-    },
+    // {
+    //   id: 'analytics',
+    //   label: 'Analytics',
+    //   icon: BarChart3,
+    //   href: '/admin/analytics',
+    //   roles: ['admin']
+    // },
     {
       id: 'taxonomy',
       label: 'Support Taxonomy',
@@ -143,7 +145,7 @@ const AppLayout = () => {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
-      href: '/admin/settings',
+      href: '/settings',
       roles: ['admin']
     }
   ];
@@ -205,7 +207,7 @@ const AppLayout = () => {
             {!sidebarCollapsed && (
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate(dashboardPath)}
                   className="hover:opacity-80 transition-opacity"
                 >
                   <h1 className="font-semibold text-gray-900">Yuktor</h1>
@@ -237,7 +239,7 @@ const AppLayout = () => {
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href || 
-              (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+              (item.href !== dashboardPath && location.pathname.startsWith(item.href));
             
             return (
               <button
@@ -344,7 +346,7 @@ const AppLayout = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input 
-                    placeholder="Search tickets, messages..." 
+                    placeholder="Search tickets..." 
                     className="pl-10 pr-10 bg-gray-50 border-gray-200"
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}

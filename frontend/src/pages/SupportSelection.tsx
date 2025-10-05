@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useDashboardPath } from '@/hooks/useDashboardPath';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -32,7 +33,7 @@ import {
     useConsultantReviews,
     useConsultantsBySkills
 } from '@/hooks/useSupport';
-import { useValidateServiceRequestIdentifier } from '@/hooks/useServiceRequestIdentifier';
+import SrIdentifierAutocomplete from '@/components/SrIdentifierAutocomplete';
 
 const priorityOptions = [
     { id: 'Low', name: 'Low', color: 'bg-blue-100 text-blue-800', icon: '🔵' },
@@ -51,6 +52,7 @@ const STEPS = [
 
 const SupportSelection = () => {
   const navigate = useNavigate();
+  const dashboardPath = useDashboardPath();
   const { user, userRole } = useAuth();
   
   // Step management
@@ -66,17 +68,16 @@ const SupportSelection = () => {
   const [selectedConsultant, setSelectedConsultant] = useState('');
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [consultantShowingReviews, setConsultantShowingReviews] = useState<string | null>(null);
+  // SR validation is now handled by the SrIdentifierAutocomplete component
   
-  // Validate SR Identifier if it's entered
-  const { data: srValidationResult, isLoading: validatingSrIdentifier } = 
-    useValidateServiceRequestIdentifier(srIdentifier);
+  // SR Identifier validation is now handled by the autocomplete component
 
   useEffect(() => {
     if (userRole === 'consultant') {
       toast.error('Consultants cannot create support requests');
-      navigate('/dashboard');
+      navigate(dashboardPath);
     }
-  }, [userRole, navigate]);
+  }, [userRole, navigate, dashboardPath]);
 
   const { data: supportTypes, isLoading: loadingTypes } = useSupportTypes();
   const { data: supportCategories, isLoading: loadingCategories } = useSupportCategories(selectedSupport);
@@ -118,18 +119,7 @@ const SupportSelection = () => {
   const { data: supportSubOptionsData, isLoading: loadingSubOptions } = useSupportSubOptions(selectedSupport || undefined);
   const supportSubOptions = useMemo(() => selectedSupport ? supportSubOptionsData : [], [selectedSupport, supportSubOptionsData]);
 
-  // Auto-advance when SR identifier becomes valid
-  useEffect(() => {
-    if (currentStep === 1 && selectedSubOption && srIdentifier && srValidationResult?.isValid) {
-      const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
-      const needsSrIdentifier = selectedSubOptionObj?.name === 'Service Request (SR)';
-      
-      if (needsSrIdentifier) {
-        // Small delay to allow user to see the validation success message
-        setTimeout(() => nextStep(), 800);
-      }
-    }
-  }, [currentStep, selectedSubOption, srIdentifier, srValidationResult?.isValid, supportSubOptions]);
+  // Auto-advance removed - users can manually proceed after selecting SR identifier
 
   // Get today's and next week's date strings for availability slot range
   const today = new Date();
@@ -211,7 +201,8 @@ const SupportSelection = () => {
           const needsSrIdentifier = selectedSubOptionObj?.name === 'Service Request (SR)';
           if (needsSrIdentifier) {
             if (!srIdentifier.trim()) return false;
-            if (!srValidationResult?.isValid) return false;
+            // Basic validation - detailed validation is handled by autocomplete component  
+            if (srIdentifier.trim().length < 3) return false;
           }
         }
         return true;
@@ -248,10 +239,7 @@ const SupportSelection = () => {
         toast.error('SR Identifier is required for this request type.');
         return;
       }
-      if (!srValidationResult?.isValid) {
-        toast.error('Please enter a valid SR Identifier.');
-        return;
-      }
+      // Validation is handled by the autocomplete component
     }
 
     try {
@@ -266,7 +254,7 @@ const SupportSelection = () => {
         timeSlotIds: selectedTimeSlots
       });
       toast.success('Support request created successfully!');
-      navigate('/dashboard');
+      navigate(dashboardPath);
     } catch (error: any) {
       console.error('Error creating support request:', error);
       toast.error(error?.message || 'Failed to create support request');
@@ -605,25 +593,16 @@ const SupportSelection = () => {
                   <p className="text-muted-foreground">Enter your Service Request identifier</p>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="srIdentifier" className="text-base font-semibold">
-                    Service Request Identifier *
-                  </Label>
-                  <Input
-                    id="srIdentifier"
-                    placeholder="Enter SR number (e.g., SR123456789)"
-                    value={srIdentifier}
-                    onChange={(e) => setSrIdentifier(e.target.value)}
-                  />
-                  {validatingSrIdentifier && (
-                    <p className="text-sm text-muted-foreground">Validating...</p>
-                  )}
-                  {srIdentifier && srValidationResult && (
-                    <p className={`text-sm ${srValidationResult.isValid ? 'text-green-600' : 'text-red-600'}`}>
-                      {srValidationResult.message}
-                    </p>
-                  )}
-                </div>
+                <SrIdentifierAutocomplete
+                  value={srIdentifier}
+                  onChange={(value) => {
+                    setSrIdentifier(value);
+                    // You can add validation state updates here if needed
+                  }}
+                  placeholder="Enter or search SR number (e.g., SR123456789)"
+                  label="Service Request Identifier"
+                  required={true}
+                />
               </div>
             )}
           </div>

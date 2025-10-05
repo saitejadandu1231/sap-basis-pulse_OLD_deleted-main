@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardPath } from "@/hooks/useDashboardPath";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
   ArrowRight, 
@@ -28,6 +29,7 @@ import {
 
 const Index = () => {
   const navigate = useNavigate();
+  const dashboardPath = useDashboardPath();
   const { user } = useAuth();
 
   const features = [
@@ -122,7 +124,7 @@ const Index = () => {
             <div className="flex items-center space-x-4">
               <ThemeToggle />
               {user ? (
-                <Button onClick={() => navigate('/dashboard')} className="btn-glow">
+                <Button onClick={() => navigate(dashboardPath)} className="btn-glow">
                   Dashboard
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -161,7 +163,7 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
               {user ? (
-                <Button size="lg" onClick={() => navigate('/dashboard')} className="btn-glow text-lg px-8 py-4">
+                <Button size="lg" onClick={() => navigate(dashboardPath)} className="btn-glow text-lg px-8 py-4">
                   <BarChart3 className="mr-2 w-5 h-5" />
                   Go to Dashboard
                 </Button>

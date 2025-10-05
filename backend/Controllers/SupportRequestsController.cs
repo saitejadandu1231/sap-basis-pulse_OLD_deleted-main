@@ -67,10 +67,41 @@ namespace SapBasisPulse.Api.Controllers
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var userRole = User.FindFirstValue(ClaimTypes.Role);
 
-            // Allow consultants and admins to update status
-            if (userRole != "Consultant" && userRole != "Admin")
+            // Basic permission check
+            if (userRole != "Consultant" && userRole != "Admin" && userRole != "Customer")
             {
-                return Forbid("Only consultants and admins can update ticket status.");
+                return Forbid("Only consultants, customers, and admins can update ticket status.");
+            }
+
+            // Get current ticket status to enforce business rules
+            var currentOrder = await _context.Orders
+                .Include(o => o.Status)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+            
+            if (currentOrder == null)
+            {
+                return BadRequest(new { error = "Ticket not found" });
+            }
+
+            var currentStatus = currentOrder.Status.StatusCode;
+            bool isCurrentlyClosed = currentStatus == "Closed" || currentStatus == "TopicClosed";
+
+            // Business rule: Only customers can reopen closed tickets
+            if (dto.Status == "ReOpened" && userRole != "Customer" && userRole != "Admin")
+            {
+                return Forbid("Only customers can reopen closed tickets.");
+            }
+
+            // Business rule: Customers can only reopen tickets, not set other statuses
+            if (userRole == "Customer" && dto.Status != "ReOpened")
+            {
+                return Forbid("Customers can only reopen tickets.");
+            }
+
+            // Business rule: Consultants cannot modify closed tickets (they must wait for customer to reopen)
+            if (userRole == "Consultant" && isCurrentlyClosed)
+            {
+                return Forbid("Cannot modify closed tickets. Only customers can reopen closed tickets.");
             }
 
             var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment);

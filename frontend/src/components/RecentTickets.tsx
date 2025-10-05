@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRecentTickets, useTicketRatings } from "@/hooks/useSupport";
+import { useStatusOptions } from "@/hooks/useStatus";
 import { Clock, Ticket, Settings, Star, MessageSquare, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import CompactTicketStatusUpdater from "./CompactTicketStatusUpdater";
@@ -15,9 +16,39 @@ import { toast } from "sonner";
 
 const RecentTickets = () => {
   const { data: tickets, isLoading, error } = useRecentTickets();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
+  const { data: statusOptionsData } = useStatusOptions();
   const navigate = useNavigate();
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
+
+  // Transform API data to match component expectations
+  const statusOptions = statusOptionsData?.map(option => ({
+    value: option.statusCode,
+    label: option.statusName,
+    color: option.colorCode || 'bg-gray-500',
+    description: option.description
+  })) || [];
+
+  // Filter status options based on user role and business rules
+  const getFilteredStatusOptions = (currentTicketStatus?: string) => {
+    if (userRole === 'consultant') {
+      // Consultants cannot set TopicClosed, Paid, or ReOpened
+      return statusOptions.filter(option => 
+        option.value !== 'TopicClosed' && 
+        option.value !== 'Paid' && 
+        option.value !== 'ReOpened'
+      );
+    } else if (userRole === 'customer') {
+      // Customers can only reopen closed tickets
+      const isTicketClosed = currentTicketStatus === 'Closed' || currentTicketStatus === 'TopicClosed';
+      return isTicketClosed 
+        ? statusOptions.filter(option => option.value === 'ReOpened')
+        : [];
+    } else {
+      // Admins can access all statuses
+      return statusOptions;
+    }
+  };
   const createConversation = useCreateConversation();
   const { isEnabled: messagingEnabled } = useMessagingEnabled();
 
@@ -144,7 +175,9 @@ const RecentTickets = () => {
         <div className="space-y-4">
           {tickets.map((ticket) => {
             const isExpanded = expandedTickets.has(ticket.id);
-            const canUpdateStatus = user?.role === 'consultant' || user?.role === 'admin';
+            // Check if user can update this specific ticket's status
+            const filteredOptions = getFilteredStatusOptions(ticket.status);
+            const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
             
             return (
               <div key={ticket.id} className="border border-muted/20 rounded-lg p-4 space-y-3">
@@ -246,6 +279,8 @@ const RecentTickets = () => {
                       <CompactTicketStatusUpdater
                         orderId={ticket.id}
                         currentStatus={ticket.status}
+                        allowedStatusOptions={filteredOptions}
+                        userRole={userRole}
                         onStatusUpdate={(newStatus) => {
                           // Optionally close the expanded view after update
                           setExpandedTickets(prev => {

@@ -89,6 +89,9 @@ namespace SapBasisPulse.Api.Utilities
             
             Console.WriteLine("Support sub-options added successfully.");
             
+            // Seed ticket number templates after basic taxonomy is created
+            await TicketNumberTemplateSeedData.SeedDefaultTemplatesAsync(context);
+            
             Console.WriteLine("Seeding complete.");
         }
     }

@@ -11,12 +11,14 @@ namespace SapBasisPulse.Api.Services
         private readonly AppDbContext _context;
         private readonly IEmailSender _emailSender;
         private readonly IConfiguration _config;
+        private readonly ITicketNumberService _ticketNumberService;
 
-        public SupportRequestService(AppDbContext context, IEmailSender emailSender, IConfiguration config)
+        public SupportRequestService(AppDbContext context, IEmailSender emailSender, IConfiguration config, ITicketNumberService ticketNumberService)
         {
             _context = context;
             _emailSender = emailSender;
             _config = config;
+            _ticketNumberService = ticketNumberService;
         }
 
         public async Task<SupportRequestDto> CreateAsync(CreateSupportRequestDto dto, Guid createdByUserId)
@@ -90,14 +92,18 @@ namespace SapBasisPulse.Api.Services
             }
 
             // Create support request (Order)
-            string orderNumber = $"SR-{DateTime.UtcNow:yyyy-MMdd}-{new Random().Next(1000, 9999)}";
-            
             var supportType = await _context.SupportTypes.FindAsync(dto.SupportTypeId);
             string supportTypeName = supportType?.Name ?? "Unknown";
             
+            // Generate ticket number using the new service
+            string orderNumber = await _ticketNumberService.GenerateTicketNumberAsync(
+                dto.SupportTypeId, 
+                dto.SupportCategoryId, 
+                dto.SupportSubOptionId);
+            
             string srIdentifier = !string.IsNullOrWhiteSpace(dto.SrIdentifier) 
                 ? dto.SrIdentifier 
-                : $"AUTO-{orderNumber}";
+                : orderNumber; // Use generated ticket number directly instead of AUTO prefix
                 
             var order = new Order
             {

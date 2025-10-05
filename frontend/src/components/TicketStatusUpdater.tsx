@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useUpdateTicketStatus } from '@/hooks/useSupport';
+import { useStatusOptions } from '@/hooks/useStatus';
 import { toast } from 'sonner';
 import { ArrowRight, MessageSquare, CheckCircle } from 'lucide-react';
 
@@ -12,67 +13,45 @@ interface TicketStatusUpdaterProps {
   orderId: string;
   currentStatus: string;
   onStatusUpdate?: (newStatus: string) => void;
+  allowedStatusOptions?: Array<{value: string; label: string; color: string; textColor: string; bgColor: string; description: string}>;
+  userRole?: string;
 }
-
-const statusOptions = [
-  { 
-    value: 'New', 
-    label: 'New', 
-    color: 'bg-blue-500', 
-    textColor: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    description: 'Just submitted'
-  },
-  { 
-    value: 'In Progress', 
-    label: 'In Progress', 
-    color: 'bg-yellow-500', 
-    textColor: 'text-yellow-700',
-    bgColor: 'bg-yellow-50',
-    description: 'Being worked on'
-  },
-  { 
-    value: 'PendingCustomerAction', 
-    label: 'Pending Customer Action', 
-    color: 'bg-orange-500', 
-    textColor: 'text-orange-700',
-    bgColor: 'bg-orange-50',
-    description: 'Waiting for customer'
-  },
-  { 
-    value: 'TopicClosed', 
-    label: 'Topic Closed', 
-    color: 'bg-green-500', 
-    textColor: 'text-green-700',
-    bgColor: 'bg-green-50',
-    description: 'Issue resolved'
-  },
-  { 
-    value: 'Closed', 
-    label: 'Closed', 
-    color: 'bg-muted', 
-    textColor: 'text-muted-foreground',
-    bgColor: 'bg-muted/50',
-    description: 'Ticket closed'
-  },
-  { 
-    value: 'ReOpened', 
-    label: 'Re-Opened', 
-    color: 'bg-purple-500', 
-    textColor: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    description: 'Reopened for review'
-  }
-];
 
 const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   orderId,
   currentStatus,
-  onStatusUpdate
+  onStatusUpdate,
+  allowedStatusOptions,
+  userRole
 }) => {
   const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
   const [comment, setComment] = React.useState('');
+  const [isUpdating, setIsUpdating] = React.useState(false);
   const updateStatus = useUpdateTicketStatus();
+  const { data: statusOptionsData, isLoading: statusLoading } = useStatusOptions();
+
+  // Transform full API data for status info lookup
+  const allStatusOptions = statusOptionsData?.map(option => ({
+    value: option.statusCode,
+    label: option.statusName,
+    color: option.colorCode || 'bg-gray-500',
+    textColor: `text-${option.colorCode?.replace('bg-', '').replace('-500', '-700')}` || 'text-gray-700',
+    bgColor: `bg-${option.colorCode?.replace('bg-', '').replace('-500', '-50')}` || 'bg-gray-50',
+    description: option.description || ''
+  })) || [];
+
+  // Use provided filtered status options for dropdown or fallback to all options
+  const statusOptions = allowedStatusOptions || allStatusOptions;
+
+  // Show loading state while fetching status options
+  if (statusLoading) {
+    return <div className="p-4 text-center">Loading status options...</div>;
+  }
+
+  // If no status options available, show error
+  if (!statusOptions || statusOptions.length === 0) {
+    return <div className="p-4 text-center text-red-500">Unable to load status options</div>;
+  }
 
   const handleStatusUpdate = async () => {
     if (selectedStatus === currentStatus && !comment.trim()) {
@@ -97,11 +76,13 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   };
 
   const getCurrentStatusInfo = () => {
-    return statusOptions.find(opt => opt.value === currentStatus) || statusOptions[0];
+    // Use full status options to find current status info (for display)
+    return allStatusOptions.find(opt => opt.value === currentStatus) || allStatusOptions[0] || statusOptions[0];
   };
 
   const getSelectedStatusInfo = () => {
-    return statusOptions.find(opt => opt.value === selectedStatus) || statusOptions[0];
+    // Use full status options to find selected status info (for display)
+    return allStatusOptions.find(opt => opt.value === selectedStatus) || allStatusOptions[0] || statusOptions[0];
   };
 
   const isStatusChanged = selectedStatus !== currentStatus;

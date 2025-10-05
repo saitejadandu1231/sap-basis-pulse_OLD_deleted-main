@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import DashboardRouter from "./pages/DashboardRouter";
 import SupportSelection from "./pages/SupportSelection";
 import ConsultantAvailability from "./pages/ConsultantAvailability";
 import ConsultantSkills from "./pages/ConsultantSkills";
@@ -25,6 +26,8 @@ import AdminUsers from "./pages/admin/Users";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminSettings from "./pages/admin/AdminSettings";
 import SupportTaxonomyAdmin from "./pages/admin/SupportTaxonomy";
+import ServiceRequestIdentifiersAdmin from "./pages/admin/ServiceRequestIdentifiers";
+import { TicketNumberTemplatesAdmin } from "./pages/TicketNumberTemplatesAdmin";
 import AdminSSOSettings from "./pages/AdminSSOSettings";
 import ContactUs from "./pages/ContactUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -55,7 +58,7 @@ const App = () => (
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardRouter />
               </ProtectedRoute>
             } />
             <Route path="/support" element={
@@ -98,12 +101,12 @@ const App = () => (
                 <AdminUsers />
               </ProtectedRoute>
             } />
-            <Route path="/admin/analytics" element={
+            {/* <Route path="/admin/analytics" element={
               <ProtectedRoute>
                 <AdminAnalytics />
               </ProtectedRoute>
-            } />
-            <Route path="/admin/settings" element={
+            } /> */}
+            <Route path="/settings" element={
               <ProtectedRoute>
                 <AdminSettings />
               </ProtectedRoute>
@@ -111,6 +114,16 @@ const App = () => (
             <Route path="/admin/taxonomy" element={
               <ProtectedRoute>
                 <SupportTaxonomyAdmin />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/sr-identifiers" element={
+              <ProtectedRoute>
+                <ServiceRequestIdentifiersAdmin />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/ticket-number-templates" element={
+              <ProtectedRoute>
+                <TicketNumberTemplatesAdmin />
               </ProtectedRoute>
             } />
             <Route path="/admin/sso-settings" element={

@@ -65,6 +65,7 @@ builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValid
 builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
 builder.Services.AddScoped<IPaymentService, RazorpayPaymentService>();
 builder.Services.AddScoped<IEmailSettingsService, EmailSettingsService>();
+builder.Services.AddScoped<ITicketNumberService, TicketNumberService>();
 
 // Add HttpClient for Supabase API calls
 builder.Services.AddHttpClient();
