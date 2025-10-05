@@ -3,7 +3,7 @@ param(
     [string]$ToEmail = "saitejadandu9999@gmail.com"
 )
 
-$BrevoApiKey = "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"
+$BrevoApiKey = "YOUR_BREVO_API_KEY_HERE"
 
 Write-Host "🔧 Testing Brevo Email Delivery" -ForegroundColor Green
 Write-Host "===============================" -ForegroundColor Green

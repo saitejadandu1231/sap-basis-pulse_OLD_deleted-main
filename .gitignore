@@ -1,0 +1,40 @@
+# Build outputs
+bin/
+obj/
+*.dll
+*.pdb
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Environment files with secrets
+appsettings.local.json
+*.secrets.json
+
+# Test files with API keys
+*-test*.ps1
+test-*.ps1
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# Production files
+dist/
+build/

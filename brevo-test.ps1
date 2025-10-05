@@ -1,5 +1,5 @@
 # Simple Brevo Test
-$BrevoApiKey = "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"
+$BrevoApiKey = "YOUR_BREVO_API_KEY_HERE"
 $ToEmail = "saitejadandu9999@gmail.com"
 
 Write-Host "Testing Brevo Email..." -ForegroundColor Green
