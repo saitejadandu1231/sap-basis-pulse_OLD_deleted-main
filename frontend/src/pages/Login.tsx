@@ -40,6 +40,11 @@ const Login = () => {
   
   // Get the redirect path from location state if available
   const from = (location.state as { from?: string })?.from || getDashboardPath();
+  
+  // Check URL parameters to determine default tab
+  const searchParams = new URLSearchParams(location.search);
+  const mode = searchParams.get('mode');
+  const defaultTab = mode === 'signup' ? 'signup' : 'signin';
   // domain validation removed; we call backend register API directly
   
   const [email, setEmail] = useState("");
@@ -316,7 +321,7 @@ const Login = () => {
 
           <Card className="glass-card border-border/50">
             <div className="p-3 sm:p-6">
-              <Tabs defaultValue="signin" className="w-full">
+              <Tabs defaultValue={defaultTab} className="w-full">
                 <div className="p-1 bg-secondary/10 rounded-xl mb-4 sm:mb-6 border border-border/30">
                 <TabsList className="grid w-full grid-cols-2 bg-transparent h-12 p-1">
                   <TabsTrigger 

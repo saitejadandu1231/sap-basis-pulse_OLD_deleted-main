@@ -133,8 +133,8 @@ const Index = () => {
                   <Button variant="ghost" onClick={() => navigate('/login')}>
                     Sign In
                   </Button>
-                  <Button onClick={() => navigate('/login')} className="btn-glow">
-                    Get Started
+                  <Button onClick={() => navigate('/login?mode=signup')} className="btn-glow">
+                    Join Now
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </>
@@ -169,11 +169,11 @@ const Index = () => {
                 </Button>
               ) : (
                 <>
-                  <Button size="lg" onClick={() => navigate('/login')} className="btn-glow text-lg px-8 py-4">
+                  <Button size="lg" onClick={() => navigate('/login?mode=signup')} className="btn-glow text-lg px-8 py-4">
                     <Zap className="mr-2 w-5 h-5" />
                     Start Free Trial
                   </Button>
-                  <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-lg px-8 py-4">
+                  <Button size="lg" variant="outline" onClick={() => navigate('/login?mode=signin')} className="text-lg px-8 py-4">
                     <MessageSquare className="mr-2 w-5 h-5" />
                     Schedule Demo
                   </Button>
@@ -298,11 +298,11 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {!user && (
               <>
-                <Button size="lg" onClick={() => navigate('/login')} className="btn-glow text-lg px-8 py-4">
+                <Button size="lg" onClick={() => navigate('/login?mode=signup')} className="btn-glow text-lg px-8 py-4">
                   <Zap className="mr-2 w-5 h-5" />
-                  Get Started Now
+                  Start Free
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-lg px-8 py-4">
+                <Button size="lg" variant="outline" onClick={() => navigate('/login?mode=signin')} className="text-lg px-8 py-4">
                   <HeadphonesIcon className="mr-2 w-5 h-5" />
                   Talk to Expert
                 </Button>

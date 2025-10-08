@@ -216,7 +216,17 @@ const Tickets = () => {
   // Filter status options based on user role and business rules
   const getFilteredStatusOptions = (currentTicketStatus?: string) => {
     if (userRole === 'consultant') {
-      // Consultants cannot set TopicClosed, Paid, or ReOpened
+      // Check if ticket is closed - consultants cannot change status of closed tickets
+      const isTicketClosed = currentTicketStatus === 'Closed' || 
+                           currentTicketStatus === 'TopicClosed' || 
+                           currentTicketStatus === 'Paid';
+      
+      // If ticket is closed, consultants cannot change status until customer reopens
+      if (isTicketClosed) {
+        return [];
+      }
+      
+      // For open tickets, consultants cannot set TopicClosed, Paid, or ReOpened
       return statusOptions.filter(option => 
         option.value !== 'TopicClosed' && 
         option.value !== 'Paid' && 
@@ -930,27 +940,27 @@ const Tickets = () => {
           </DialogHeader>
           
           {selectedTicket && (
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs defaultValue="details" className="w-full ticket-tabs">
           {(() => {
             const filteredOptions = getFilteredStatusOptions(selectedTicket.status);
             const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
             const tabCount = canUpdateStatus ? 4 : 3;
             
             return (
-              <TabsList className={`grid w-full text-xs sm:text-sm overflow-x-auto grid-cols-${tabCount}`}>
-                <TabsTrigger value="details" className="min-w-0 px-2 sm:px-4">
-                  <span className="truncate">
+              <TabsList className={`grid w-full ${canUpdateStatus ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'} gap-1 sm:gap-2 p-1`}>
+                <TabsTrigger value="details" className="flex-1 min-w-0 px-2 sm:px-4 py-2 text-center">
+                  <span className="truncate text-xs sm:text-sm">
                     <span className="hidden sm:inline">Ticket </span>Details
                   </span>
                 </TabsTrigger>
-                <TabsTrigger value="history" className="min-w-0 px-2 sm:px-4">
-                  <span className="truncate">
+                <TabsTrigger value="history" className="flex-1 min-w-0 px-2 sm:px-4 py-2 text-center">
+                  <span className="truncate text-xs sm:text-sm">
                     <span className="hidden sm:inline">Status </span>History
                   </span>
                 </TabsTrigger>
                 {canUpdateStatus && (
-                  <TabsTrigger value="status" className="min-w-0 px-2 sm:px-4">
-                    <span className="truncate">
+                  <TabsTrigger value="status" className="flex-1 min-w-0 px-2 sm:px-4 py-2 text-center">
+                    <span className="truncate text-xs sm:text-sm">
                       {userRole === 'customer' ? (
                         <><span className="hidden sm:inline">Re</span>open</>
                       ) : (
@@ -959,8 +969,8 @@ const Tickets = () => {
                     </span>
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="ratings" className="min-w-0 px-2 sm:px-4">
-                  <span className="truncate">
+                <TabsTrigger value="ratings" className="flex-1 min-w-0 px-2 sm:px-4 py-2 text-center">
+                  <span className="truncate text-xs sm:text-sm">
                     {userRole === 'customer' ? (
                       <><span className="hidden sm:inline">Rate </span>Consultant</>
                     ) : (
