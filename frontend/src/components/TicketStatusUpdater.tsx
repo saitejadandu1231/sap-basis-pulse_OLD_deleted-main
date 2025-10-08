@@ -48,8 +48,29 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
     return <div className="p-4 text-center">Loading status options...</div>;
   }
 
-  // If no status options available, show error
+  // If no status options available, show appropriate message
   if (!statusOptions || statusOptions.length === 0) {
+    // Check if it's a consultant trying to modify a closed ticket
+    const isTicketClosed = currentStatus === 'Closed' || 
+                          currentStatus === 'TopicClosed' || 
+                          currentStatus === 'Paid';
+    
+    if (userRole === 'consultant' && isTicketClosed) {
+      return (
+        <div className="p-6 text-center space-y-3">
+          <div className="flex justify-center">
+            <CheckCircle className="w-12 h-12 text-green-500" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg">Ticket is Closed</h3>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">
+              This ticket has been marked as closed. Only the customer can reopen it if further assistance is needed.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
     return <div className="p-4 text-center text-red-500">Unable to load status options</div>;
   }
 

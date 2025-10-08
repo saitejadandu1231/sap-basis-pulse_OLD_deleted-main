@@ -303,7 +303,10 @@
     /* Enhanced tab styling for mobile */
     [data-state="active"][role="tab"] {
       font-weight: 600;
-      color: hsl(var(--primary));
+      color: hsl(var(--foreground)) !important;
+      background-color: hsl(var(--background)) !important;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+      border: 1px solid hsl(var(--border)) !important;
     }
 
     [role="tab"] {
@@ -316,6 +319,41 @@
     /* Better touch targets for mobile tabs */
     [role="tablist"] {
       gap: 0.125rem;
+    }
+
+    /* Ensure ticket detail tabs display side by side */
+    .ticket-tabs [role="tablist"] {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)) !important;
+      width: 100% !important;
+      overflow-x: auto !important;
+    }
+
+    .ticket-tabs [role="tab"] {
+      flex: 1 !important;
+      min-width: 60px !important;
+      text-align: center !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+  }
+
+  /* Desktop styles for ticket tabs */
+  @media (min-width: 641px) {
+    .ticket-tabs [role="tablist"] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr 1fr 1fr !important;
+      width: 100% !important;
+      gap: 0.5rem !important;
+    }
+
+    .ticket-tabs [role="tab"] {
+      flex: 1 !important;
+      min-width: 120px !important;
+      text-align: center !important;
+      padding: 0.75rem 1rem !important;
+      font-size: 0.875rem !important;
     }
   }
 
@@ -349,5 +387,25 @@
 
   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
     background-color: rgba(155, 155, 155, 0.7);
+  }
+
+  /* Ensure header is truly fixed and doesn't scroll */
+  header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 60 !important;
+    width: 100% !important;
+  }
+
+  /* Ensure body doesn't interfere with fixed header */
+  body {
+    padding-top: 0 !important;
+  }
+
+  /* Ensure main content accounts for fixed header */
+  main {
+    padding-top: 4rem !important; /* 64px header height */
   }
 }

@@ -102,8 +102,8 @@ const PageLayout: React.FC<PageLayoutProps> = ({
       <div className="w-full max-w-[100vw] overflow-x-hidden">
       {/* Header */}
       <header 
-        className="sticky top-0 z-[60] w-full border-b bg-background/95 backdrop-blur-sm border-border/40"
-        style={{ position: 'sticky', top: 0, zIndex: 60 }}
+        className="fixed top-0 z-[60] w-full border-b bg-background/95 backdrop-blur-sm border-border/40"
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 60 }}
       >
         <div className="flex h-16 items-center justify-between px-3 md:px-6">
           {/* Left Section: Menu + Logo */}
@@ -255,7 +255,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
 
       {/* Main Content */}
       <main className={cn(
-        "min-h-[calc(100vh-4rem)] max-w-full overflow-x-hidden",
+        "min-h-[calc(100vh-4rem)] max-w-full overflow-x-hidden pt-16",
         showSidebar ? "md:ml-64" : ""
       )}>
           {/* Page Header */}
