@@ -12,6 +12,7 @@ namespace SapBasisPulse.Api.Services
         Task<(bool Success, string? Error, UserDto? User)> UpdateAsync(Guid id, UpdateUserDto dto);
         Task<(bool Success, string? Error)> DeleteAsync(Guid id);
         Task<bool> UpdateUserRoleAsync(Guid userId, string role);
+        Task<(bool Success, string? Error)> UpdateUserStatusAsync(Guid userId, string status);
         Task<(bool Success, string? Error)> UpdateHourlyRateAsync(Guid userId, decimal hourlyRate);
         Task<(bool Success, string? Error)> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
     }

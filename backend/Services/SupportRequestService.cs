@@ -333,15 +333,21 @@ namespace SapBasisPulse.Api.Services
                 TotalAmount = o.TotalAmount,
                 PaymentStatus = o.PaymentStatus,
                 ConsultantHourlyRate = o.Consultant?.HourlyRate,
-                TotalHours = totalHours
+                TotalHours = totalHours,
+                HoursWorked = o.HoursWorked,
+                HourlyRateAtCompletion = o.HourlyRate,
+                CalculatedAmount = o.CalculatedAmount
             };
         }
 
-                public async Task<bool> UpdateStatusAsync(Guid orderId, string status, Guid changedByUserId, string? comment = null)
+                public async Task<bool> UpdateStatusAsync(Guid orderId, string status, Guid changedByUserId, string? comment = null, decimal? hoursWorked = null)
         {
             // The orderId parameter is the Order ID from the frontend
             var order = await _context.Orders
                 .Include(o => o.Status)
+                .Include(o => o.CreatedByUser)
+                .Include(o => o.Consultant)
+                .Include(o => o.SupportType)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null) return false;
 
@@ -349,9 +355,29 @@ namespace SapBasisPulse.Api.Services
             var statusMaster = await _context.StatusMaster.FirstOrDefaultAsync(sm => sm.StatusCode == status);
             if (statusMaster == null) return false;
 
-            // Store the old status for logging
+            // Store the old status for logging and email triggering
             var oldStatusId = order.StatusId;
             var oldStatus = order.Status;
+            var oldStatusCode = oldStatus?.StatusCode;
+
+            // Validation for closing ticket with hours worked
+            if ((status == "Completed" || status == "Closed" || status == "TopicClosed") && order.Consultant != null)
+            {
+                if (!hoursWorked.HasValue || hoursWorked <= 0)
+                {
+                    throw new ArgumentException("Hours worked is required when closing a ticket and must be greater than 0.");
+                }
+
+                if (!order.Consultant.HourlyRate.HasValue)
+                {
+                    throw new ArgumentException("Consultant must have an hourly rate set to calculate the final amount.");
+                }
+
+                // Calculate and store the work details
+                order.HoursWorked = hoursWorked.Value;
+                order.HourlyRate = order.Consultant.HourlyRate.Value; // Store rate at time of completion for historical accuracy
+                order.CalculatedAmount = hoursWorked.Value * order.Consultant.HourlyRate.Value;
+            }
 
             // Update the order status
             order.StatusId = statusMaster.Id;
@@ -372,7 +398,116 @@ namespace SapBasisPulse.Api.Services
 
             _context.StatusChangeLogs.Add(statusChangeLog);
             await _context.SaveChangesAsync();
+
+            // EMAIL NOTIFICATIONS: Send emails based on status changes
+            if (oldStatusCode == "New" && status == "In-Progress")
+            {
+                await SendStatusChangeToInProgressEmails(order, changedByUserId);
+            }
+            else if ((status == "Completed" || status == "Closed" || status == "TopicClosed") && 
+                     order.HoursWorked.HasValue && order.CalculatedAmount.HasValue)
+            {
+                await SendTicketCompletedEmails(order);
+            }
+
             return true;
+        }
+
+        private async Task SendStatusChangeToInProgressEmails(Order order, Guid changedByUserId)
+        {
+            try
+            {
+                var customer = order.CreatedByUser;
+                var consultant = order.Consultant;
+                var supportType = order.SupportType;
+
+                if (customer == null || consultant == null || supportType == null)
+                {
+                    // Log warning - missing required data for email notification
+                    return;
+                }
+
+                // Send email to customer
+                var customerSubject = $"Status Update: Your Support Request #{order.OrderNumber} is Now In Progress";
+                var customerEmailBody = EmailTemplates.StatusChangedToInProgressForCustomer(
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    supportType.Name
+                );
+
+                await _emailSender.SendEmailAsync(customer.Email, customerSubject, customerEmailBody);
+
+                // Send email to consultant (confirmation)
+                var consultantSubject = $"Status Updated: Support Request #{order.OrderNumber} - In Progress";
+                var consultantEmailBody = EmailTemplates.StatusChangedToInProgressForConsultant(
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    supportType.Name,
+                    order.Priority,
+                    order.Description ?? "No description provided"
+                );
+
+                await _emailSender.SendEmailAsync(consultant.Email, consultantSubject, consultantEmailBody);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the status update
+                // In production, you might want to add proper logging here
+                // For now, we'll silently continue - status update should not fail due to email issues
+            }
+        }
+
+        private async Task SendTicketCompletedEmails(Order order)
+        {
+            try
+            {
+                var customer = order.CreatedByUser;
+                var consultant = order.Consultant;
+                var supportType = order.SupportType;
+
+                if (customer == null || consultant == null || supportType == null || 
+                    !order.HoursWorked.HasValue || !order.HourlyRate.HasValue || !order.CalculatedAmount.HasValue)
+                {
+                    // Log warning - missing required data for completion email notification
+                    return;
+                }
+
+                // Send invoice email to customer
+                var customerSubject = $"✅ Support Request Completed - Invoice #{order.OrderNumber}";
+                var customerEmailBody = EmailTemplates.TicketCompletedForCustomer(
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    supportType.Name,
+                    order.HoursWorked.Value,
+                    order.HourlyRate.Value,
+                    order.CalculatedAmount.Value
+                );
+
+                await _emailSender.SendEmailAsync(customer.Email, customerSubject, customerEmailBody);
+
+                // Send earnings confirmation to consultant
+                var consultantSubject = $"🎉 Ticket Completed #{order.OrderNumber}";
+                var consultantEmailBody = EmailTemplates.TicketCompletedForConsultant(
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    supportType.Name,
+                    order.HoursWorked.Value,
+                    order.HourlyRate.Value,
+                    order.CalculatedAmount.Value
+                );
+
+                await _emailSender.SendEmailAsync(consultant.Email, consultantSubject, consultantEmailBody);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the status update
+                // In production, you might want to add proper logging here
+                // For now, we'll silently continue - status update should not fail due to email issues
+            }
         }
 
         private async Task SendSupportRequestEmailsAsync(Order order)

@@ -28,14 +28,23 @@ dotnet ef database update --verbose
 #### Step 3: Verify Database Updates
 ```sql
 -- Connect to your Railway PostgreSQL and verify:
--- 1. Check if TicketNumberTemplates table exists
+-- 1. Check if new Orders columns exist (AddHoursWorkedAndCalculatedAmount migration)
+SELECT column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name = 'Orders' 
+AND column_name IN ('HoursWorked', 'HourlyRate', 'CalculatedAmount');
+
+-- 2. Check if TicketNumberTemplates table exists
 SELECT table_name FROM information_schema.tables WHERE table_name = 'TicketNumberTemplates';
 
--- 2. Verify SSO configurations
+-- 3. Verify SSO configurations
 SELECT * FROM "SSOConfigurations";
 
--- 3. Check latest migration applied
+-- 4. Check latest migration applied (should include AddHoursWorkedAndCalculatedAmount)
 SELECT * FROM "__EFMigrationsHistory" ORDER BY "MigrationId" DESC LIMIT 5;
+
+-- 5. Verify Orders table structure
+\d "Orders"
 ```
 
 ### **Method 2: Railway CLI Database Update**
@@ -81,11 +90,14 @@ railway connect postgresql
 
 Based on your latest migrations, you'll need these updates:
 
-1. **TicketNumberTemplates Table** (20251005105925_AddTicketNumberTemplate)
-2. **Rating Comments Optional** (20251002105856_MakeTicketRatingCommentsOptional)
-3. **Consultant Skills** (20250928141742_AddConsultantSkills)
-4. **Payment Support** (20250928054555_AddPaymentAndMultiSlotSupport)
-5. **Status Management** (20250923070115_AddStatusMasterAndStatusChangeLogTables)
+1. **Work Hours Tracking** (20251018091800_AddHoursWorkedAndCalculatedAmount)
+   - Adds `HoursWorked`, `HourlyRate`, and `CalculatedAmount` columns to Orders table
+   - Required for new Work Summary and payment calculation features
+2. **TicketNumberTemplates Table** (20251005105925_AddTicketNumberTemplate)
+3. **Rating Comments Optional** (20251002105856_MakeTicketRatingCommentsOptional)
+4. **Consultant Skills** (20250928141742_AddConsultantSkills)
+5. **Payment Support** (20250928054555_AddPaymentAndMultiSlotSupport)
+6. **Status Management** (20250923070115_AddStatusMasterAndStatusChangeLogTables)
 
 ### **Pre-Deployment Checklist**
 

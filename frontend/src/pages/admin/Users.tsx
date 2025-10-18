@@ -7,19 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Loader2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Users, Plus, Search, Filter, MoreHorizontal, Edit, PlayCircle, PauseCircle, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAdminUsers, useCreateUser } from '@/hooks/useAdmin';
+import { useAdminUsers, useCreateUser, useUpdateUserStatus } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 
 const AdminUsers = () => {
   const { data: users, isLoading, error } = useAdminUsers();
   const { mutate: createUser, isPending: isCreating } = useCreateUser();
+  const updateUserStatus = useUpdateUserStatus();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -31,6 +33,37 @@ const AdminUsers = () => {
     lastName: '',
     role: 'Customer' as 'Customer' | 'Consultant' | 'Admin'
   });
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    userName: '',
+    action: '' as 'activate' | 'deactivate',
+    onConfirm: () => {}
+  });
+
+  const handleToggleUserStatus = async (userId: string, userName: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+    const action = newStatus === 'Active' ? 'activate' : 'deactivate';
+    
+    setConfirmDialog({
+      isOpen: true,
+      title: `${action === 'activate' ? 'Activate' : 'Deactivate'} User`,
+      message: `Are you sure you want to ${action} this user? This will ${action === 'activate' ? 'restore their access to the system' : 'remove their access to the system'}.`,
+      userName: userName,
+      action: action,
+      onConfirm: async () => {
+        try {
+          await updateUserStatus.mutateAsync({ userId, status: newStatus });
+          toast.success(`User ${action}d successfully`);
+        } catch (error: any) {
+          toast.error(error.message || `Failed to ${action} user`);
+        }
+      }
+    });
+  };
 
   // Filter users based on search term, role, and status
   const filteredUsers = useMemo(() => {
@@ -335,9 +368,21 @@ const AdminUsers = () => {
                           <Edit className="w-4 h-4 mr-2" />
                           Edit User
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete User
+                        <DropdownMenuItem 
+                          onClick={() => handleToggleUserStatus(user.id, `${user.firstName} ${user.lastName}`, user.status)}
+                          className={user.status === 'Active' ? 'text-orange-600' : 'text-green-600'}
+                        >
+                          {user.status === 'Active' ? (
+                            <>
+                              <PauseCircle className="w-4 h-4 mr-2" />
+                              Deactivate User
+                            </>
+                          ) : (
+                            <>
+                              <PlayCircle className="w-4 h-4 mr-2" />
+                              Activate User
+                            </>
+                          )}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -382,6 +427,20 @@ const AdminUsers = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Confirm Dialog */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmDialog.onConfirm}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          userName={confirmDialog.userName}
+          action={confirmDialog.action}
+          variant={confirmDialog.action}
+          confirmLabel={confirmDialog.action === 'activate' ? 'Activate User' : 'Deactivate User'}
+          cancelLabel="Cancel"
+        />
       </div>
     </PageLayout>
   );

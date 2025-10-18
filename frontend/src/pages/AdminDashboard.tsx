@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -15,8 +16,10 @@ import {
   Settings, 
   Plus, 
   Edit, 
-  Trash2, 
   UserCheck,
+  UserX,
+  PlayCircle,
+  PauseCircle,
   AlertTriangle,
   Ticket,
   Clock,
@@ -24,7 +27,9 @@ import {
   MessageSquare,
   ArrowRight,
   ExternalLink,
-  FileText
+  FileText,
+  DollarSign,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -36,7 +41,7 @@ import {
   useUpdateUserRole, 
   useCreateUser, 
   useUpdateUser, 
-  useDeleteUser 
+  useUpdateUserStatus
 } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import PageLayout from '@/components/layout/PageLayout';
@@ -66,13 +71,23 @@ const AdminDashboard = () => {
     role: 'Customer' as 'Customer' | 'Consultant' | 'Admin'
   });
 
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    userName: '',
+    action: '' as 'activate' | 'deactivate',
+    onConfirm: () => {}
+  });
+
   // API hooks
   const { data: users, isLoading: usersLoading } = useAdminUsers();
   const { data: supportRequests, isLoading: requestsLoading } = useAdminSupportRequests();
   const updateUserRole = useUpdateUserRole();
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
-  const deleteUser = useDeleteUser();
+  const updateUserStatus = useUpdateUserStatus();
 
   // Redirect if not admin
   if (user?.role !== 'admin') {
@@ -96,6 +111,17 @@ const AdminDashboard = () => {
   const totalRequests = supportRequests?.length || 0;
   const openRequests = supportRequests?.filter(r => r.status !== 'Closed' && r.status !== 'TopicClosed').length || 0;
   const closedRequests = supportRequests?.filter(r => r.status === 'Closed' || r.status === 'TopicClosed').length || 0;
+
+  // Platform earnings calculations
+  const completedRequestsWithEarnings = supportRequests?.filter(r => 
+    (r.status === 'Closed' || r.status === 'TopicClosed') && r.calculatedAmount
+  ) || [];
+  const totalPlatformEarnings = completedRequestsWithEarnings.reduce((sum, request) => 
+    sum + (request.calculatedAmount || 0), 0
+  );
+  const totalWorkHours = completedRequestsWithEarnings.reduce((sum, request) => 
+    sum + (request.hoursWorked || 0), 0
+  );
 
   const handleRoleUpdate = async (userId: string, newRole: string) => {
     try {
@@ -141,17 +167,25 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleToggleUserStatus = async (userId: string, userName: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+    const action = newStatus === 'Active' ? 'activate' : 'deactivate';
     
-    try {
-      await deleteUser.mutateAsync(userId);
-      toast.success('User deleted successfully');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete user');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: `${action === 'activate' ? 'Activate' : 'Deactivate'} User`,
+      message: `Are you sure you want to ${action} this user? This will ${action === 'activate' ? 'restore their access to the system' : 'remove their access to the system'}.`,
+      userName: userName,
+      action: action,
+      onConfirm: async () => {
+        try {
+          await updateUserStatus.mutateAsync({ userId, status: newStatus });
+          toast.success(`User ${action}d successfully`);
+        } catch (error: any) {
+          toast.error(error.message || `Failed to ${action} user`);
+        }
+      }
+    });
   };
 
   const openEditUser = (user: any) => {
@@ -222,6 +256,66 @@ const AdminDashboard = () => {
           </Card>
         </div>
 
+        {/* Platform Earnings Summary */}
+        {/* {totalPlatformEarnings > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                <span>Platform Earnings Overview</span>
+              </CardTitle>
+              <CardDescription>
+                Revenue and work statistics from completed consultations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <DollarSign className="w-4 h-4 text-green-600" />
+                    <span className="font-medium text-green-800 dark:text-green-200">Total Revenue</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">₹{totalPlatformEarnings.toFixed(2)}</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    From {completedRequestsWithEarnings.length} completed consultations
+                  </p>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium text-blue-800 dark:text-blue-200">Total Hours</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">{totalWorkHours.toFixed(1)}</p>
+                  <p className="text-xs text-blue-600 mt-1">Hours of consultation delivered</p>
+                </div>
+
+                <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-purple-600" />
+                    <span className="font-medium text-purple-800 dark:text-purple-200">Avg per Hour</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">
+                    ₹{totalWorkHours > 0 ? (totalPlatformEarnings / totalWorkHours).toFixed(2) : '0.00'}
+                  </p>
+                  <p className="text-xs text-purple-600 mt-1">Average hourly rate</p>
+                </div>
+
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <CheckCircle className="w-4 h-4 text-yellow-600" />
+                    <span className="font-medium text-yellow-800 dark:text-yellow-200">Completion Rate</span>
+                  </div>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {totalRequests > 0 ? Math.round((completedRequestsWithEarnings.length / totalRequests) * 100) : 0}%
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">Tickets with work completed</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )} */}
+
         {/* Quick Navigation */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 max-w-full">
           <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/users')}>
@@ -258,7 +352,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card> */}
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/settings')}>
+          {/* <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/settings')}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -273,7 +367,7 @@ const AdminDashboard = () => {
                 Configure feature flags, security settings, and system-wide preferences
               </p>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card className="hover:shadow-md transition-shadow cursor-pointer max-w-full" onClick={() => navigate('/admin/taxonomy')}>
             <CardHeader>
@@ -457,7 +551,7 @@ const AdminDashboard = () => {
                               <Select
                                 value={user.role}
                                 onValueChange={(value) => handleRoleUpdate(user.id, value)}
-                                disabled={updateUserRole.isPending}
+                                disabled={true}
                               >
                                 <SelectTrigger className="w-28 sm:w-32">
                                   <SelectValue />
@@ -488,11 +582,21 @@ const AdminDashboard = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
-                                  className="text-red-600 hover:text-red-700 p-2"
+                                  onClick={() => handleToggleUserStatus(user.id, `${user.firstName} ${user.lastName}`, user.status)}
+                                  className={user.status === 'Active' ? 'text-orange-600 hover:text-orange-700 p-2' : 'text-green-600 hover:text-green-700 p-2'}
+                                  disabled={updateUserStatus.isPending}
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span className="sr-only">Delete user</span>
+                                  {user.status === 'Active' ? (
+                                    <>
+                                      <PauseCircle className="w-4 h-4" />
+                                      <span className="sr-only">Deactivate user</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <PlayCircle className="w-4 h-4" />
+                                      <span className="sr-only">Activate user</span>
+                                    </>
+                                  )}
                                 </Button>
                               </div>
                             </TableCell>
@@ -787,6 +891,7 @@ const AdminDashboard = () => {
                     value={editForm.firstName}
                     onChange={(e) => setEditForm(prev => ({ ...prev, firstName: e.target.value }))}
                     required
+                    disabled
                   />
                 </div>
                 <div className="space-y-2">
@@ -796,12 +901,18 @@ const AdminDashboard = () => {
                     value={editForm.lastName}
                     onChange={(e) => setEditForm(prev => ({ ...prev, lastName: e.target.value }))}
                     required
+                    disabled
                   />
                 </div>
               </div>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800 mb-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Note:</strong> Name changes are currently disabled. Contact support if you need to update user names.
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="editRole">Role</Label>
-                <Select value={editForm.role} onValueChange={(value: any) => setEditForm(prev => ({ ...prev, role: value }))}>
+                <Select value={editForm.role} onValueChange={(value: any) => setEditForm(prev => ({ ...prev, role: value }))} disabled={true}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -811,6 +922,11 @@ const AdminDashboard = () => {
                     <SelectItem value="Admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800 mb-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Note:</strong> Role changes are currently disabled for security reasons. Contact support if you need to update user roles.
+                </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="submit" disabled={updateUser.isPending} className="w-full sm:w-auto">
@@ -823,6 +939,20 @@ const AdminDashboard = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Confirm Dialog */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmDialog.onConfirm}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          userName={confirmDialog.userName}
+          action={confirmDialog.action}
+          variant={confirmDialog.action}
+          confirmLabel={confirmDialog.action === 'activate' ? 'Activate User' : 'Deactivate User'}
+          cancelLabel="Cancel"
+        />
       </div>
     </PageLayout>
   );

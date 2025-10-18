@@ -1,9 +1,10 @@
 #!/usr/bin/env pwsh
 
-# Apply SystemSettings migration to production database
-# This script updates the Railway production database with the missing SystemSettings table
+# Apply latest migrations to production database
+# This script updates the Railway production database with all pending migrations
+# Including: SystemSettings, AddHoursWorkedAndCalculatedAmount, and other pending migrations
 
-Write-Host "Applying SystemSettings migration to production database..." -ForegroundColor Green
+Write-Host "Applying all pending migrations to production database..." -ForegroundColor Green
 
 # Change to backend directory
 Set-Location "backend"
@@ -38,8 +39,10 @@ try {
     Write-Host "Database migration completed successfully!" -ForegroundColor Green
     
     Write-Host ""
-    Write-Host "SystemSettings table has been created in production database" -ForegroundColor Green
-    Write-Host "The ConsultantRegistrationEnabled setting has been initialized with value 'true'" -ForegroundColor Cyan
+    Write-Host "Database migrations applied successfully!" -ForegroundColor Green
+    Write-Host "✓ SystemSettings table has been created/updated" -ForegroundColor Cyan
+    Write-Host "✓ Orders table updated with HoursWorked, HourlyRate, and CalculatedAmount columns" -ForegroundColor Cyan
+    Write-Host "✓ All other pending migrations have been applied" -ForegroundColor Cyan
     
 } catch {
     Write-Host "Migration failed: $($_.Exception.Message)" -ForegroundColor Red
@@ -53,6 +56,8 @@ try {
 
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Magenta
-Write-Host "1. The SystemSettings API endpoints should now work" -ForegroundColor White
-Write-Host "2. Test the consultant registration toggle in the admin dashboard" -ForegroundColor White
-Write-Host "3. Verify the settings are persisted correctly" -ForegroundColor White
+Write-Host "1. Test the SystemSettings API endpoints" -ForegroundColor White
+Write-Host "2. Verify the consultant registration toggle in the admin dashboard" -ForegroundColor White
+Write-Host "3. Test the new Work Summary functionality with hours tracking" -ForegroundColor White
+Write-Host "4. Verify payment calculations are working correctly" -ForegroundColor White
+Write-Host "5. Check that existing data is preserved and new columns are available" -ForegroundColor White

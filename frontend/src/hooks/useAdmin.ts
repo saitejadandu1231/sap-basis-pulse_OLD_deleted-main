@@ -37,6 +37,10 @@ interface AdminSupportRequest {
   conversationId?: string | null;
   hasConversation: boolean;
   unreadMessageCount: number;
+  // Work completion information
+  hoursWorked?: number | null;
+  hourlyRateAtCompletion?: number | null;
+  calculatedAmount?: number | null;
 }
 
 // Get all users
@@ -142,6 +146,30 @@ export const useUpdateUser = () => {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update user');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+};
+
+// Update user status (Active/Inactive)
+export const useUpdateUserStatus = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ userId, status }: { userId: string; status: 'Active' | 'Inactive' }) => {
+      const response = await apiFetch(`Users/${userId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user status');
       }
       
       return await response.json();

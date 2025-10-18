@@ -106,7 +106,7 @@ const App = () => (
                 <AdminAnalytics />
               </ProtectedRoute>
             } /> */}
-            <Route path="/settings" element={
+            <Route path="/admin/settings" element={
               <ProtectedRoute>
                 <AdminSettings />
               </ProtectedRoute>

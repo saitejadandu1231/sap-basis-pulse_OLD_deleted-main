@@ -54,6 +54,11 @@ namespace SapBasisPulse.Api.Entities
         public string? RazorpayPaymentId { get; set; } // Razorpay payment ID
         public DateTime? PaymentCompletedAt { get; set; } // When payment was completed
         
+        // Work tracking fields
+        public decimal? HoursWorked { get; set; } // Actual hours worked by consultant
+        public decimal? HourlyRate { get; set; } // Consultant's hourly rate at time of work (for historical accuracy)
+        public decimal? CalculatedAmount { get; set; } // Hours * HourlyRate = final calculated amount
+        
         // Navigation properties
         public ICollection<StatusChangeLog> StatusChangeLogs { get; set; } = new List<StatusChangeLog>();
     }

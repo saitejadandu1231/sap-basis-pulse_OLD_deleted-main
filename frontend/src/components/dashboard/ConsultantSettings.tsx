@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Save, Settings, ExternalLink } from 'lucide-react';
+import { DollarSign, Save, Settings, ExternalLink, IndianRupee } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/lib/api';
 import { toast } from 'sonner';
@@ -54,7 +54,7 @@ const ConsultantSettings = () => {
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="hourlyRate" className="flex items-center gap-2">
-          <DollarSign className="w-4 h-4" />
+          <IndianRupee className="w-4 h-4" />
           Hourly Rate
         </Label>
         <div className="flex gap-2">

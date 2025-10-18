@@ -94,7 +94,7 @@ namespace SapBasisPulse.Api.Services
                 }
                 else if (result.Contains("{SupportType}"))
                 {
-                    result = result.Replace("{SupportType}", "TYPE");
+                    result = result.Replace("{SupportType}", "TY");
                 }
 
                 // Replace category placeholder
@@ -106,7 +106,7 @@ namespace SapBasisPulse.Api.Services
                 }
                 else if (result.Contains("{Category}"))
                 {
-                    result = result.Replace("{Category}", "CAT");
+                    result = result.Replace("{Category}", "CA");
                 }
 
                 // Replace sub-type placeholder
@@ -118,7 +118,7 @@ namespace SapBasisPulse.Api.Services
                 }
                 else if (result.Contains("{SubType}"))
                 {
-                    result = result.Replace("{SubType}", "SUB");
+                    result = result.Replace("{SubType}", "SU");
                 }
 
                 return result.ToUpper();
@@ -216,28 +216,22 @@ namespace SapBasisPulse.Api.Services
         private string CreateShortName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
-                return "UNK";
+                return "UN";
 
-            // Remove common words and create abbreviation
+            // Remove common words and clean the name
             var cleanName = name.Replace("Service Request", "SR")
                                .Replace("(SR)", "SR")
                                .Replace(" ", "")
                                .Replace("-", "")
-                               .Replace("/", "");
+                               .Replace("/", "")
+                               .Replace("_", "");
 
-            // Take up to first 5 characters or create acronym
-            if (cleanName.Length <= 5)
-                return cleanName;
+            // Always take only the first 2 characters
+            if (cleanName.Length >= 2)
+                return cleanName.Substring(0, 2);
 
-            // Create acronym from words
-            var words = name.Split(new[] { ' ', '-', '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (words.Length > 1)
-            {
-                var acronym = string.Join("", words.Select(w => w.Substring(0, 1)));
-                return acronym.Length <= 5 ? acronym : acronym.Substring(0, 5);
-            }
-
-            return cleanName.Substring(0, Math.Min(5, cleanName.Length));
+            // If less than 2 characters, pad with 'X'
+            return cleanName.PadRight(2, 'X');
         }
 
         private async Task UpdateSequenceCounterAsync(Guid templateId)

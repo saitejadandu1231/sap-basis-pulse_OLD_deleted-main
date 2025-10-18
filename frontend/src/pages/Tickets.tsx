@@ -7,6 +7,7 @@ import { useCreatePaymentOrder, useVerifyPayment } from '@/hooks/usePayment';
 import TicketStatusUpdater from '@/components/TicketStatusUpdater';
 import TicketRatingContainer from '@/components/TicketRatingContainer';
 import StatusHistory from '@/components/StatusHistory';
+import WorkSummary from '@/components/WorkSummary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, ChevronUp, ChevronRight, Eye, Filter, X } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle, AlertCircle, Plus, Settings, User, Calendar, ChevronDown, Star, ChevronUp, ChevronRight, Eye, Filter, X, DollarSign } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 import { toast } from 'sonner';
@@ -69,8 +70,9 @@ const Tickets = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
-  const [statusChangeDialog, setStatusChangeDialog] = useState({ open: false, ticketId: '', newStatus: '', oldStatus: '' });
+  const [statusChangeDialog, setStatusChangeDialog] = useState({ open: false, ticketId: '', newStatus: '', oldStatus: '', consultantHourlyRate: null as number | null });
   const [statusComment, setStatusComment] = useState('');
+  const [dialogHoursWorked, setDialogHoursWorked] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [processingTicketId, setProcessingTicketId] = useState<string | null>(null);
   
@@ -226,8 +228,9 @@ const Tickets = () => {
         return [];
       }
       
-      // For open tickets, consultants cannot set TopicClosed, Paid, or ReOpened
+      // For open tickets, consultants cannot set New, TopicClosed, Paid, or ReOpened
       return statusOptions.filter(option => 
+        option.value !== 'New' &&
         option.value !== 'TopicClosed' && 
         option.value !== 'Paid' && 
         option.value !== 'ReOpened'
@@ -292,24 +295,48 @@ const Tickets = () => {
       return;
     }
 
+    // Find the ticket to get consultant hourly rate
+    const ticket = tickets?.find(t => t.id === ticketId);
+    const consultantHourlyRate = ticket?.consultantHourlyRate || null;
+
     // Open comment dialog for status change
-    setStatusChangeDialog({ open: true, ticketId, newStatus, oldStatus: currentStatus });
+    setStatusChangeDialog({ open: true, ticketId, newStatus, oldStatus: currentStatus, consultantHourlyRate });
     setStatusComment('');
+    setDialogHoursWorked('');
   };
 
   const confirmStatusChange = async () => {
-    const { ticketId, newStatus } = statusChangeDialog;
+    const { ticketId, newStatus, oldStatus } = statusChangeDialog;
+    
+    // Check if this is a completion status and user is consultant
+    const isCompletionStatus = newStatus === 'Completed' || newStatus === 'Closed' || newStatus === 'TopicClosed';
+    const isTransitioningToCompletion = isCompletionStatus && oldStatus !== newStatus && userRole === 'consultant';
+    
+    // Validate hours worked for completion statuses
+    if (isTransitioningToCompletion) {
+      const hours = parseFloat(dialogHoursWorked);
+      if (!dialogHoursWorked || isNaN(hours) || hours <= 0) {
+        toast.error('Please enter valid hours worked');
+        return;
+      }
+      if (hours > 24) {
+        toast.error('Hours worked cannot exceed 24 hours per ticket');
+        return;
+      }
+    }
     
     try {
       await updateTicketStatus.mutateAsync({
         orderId: ticketId,
         status: newStatus as any,
-        comment: statusComment.trim() || undefined
+        comment: statusComment.trim() || undefined,
+        hoursWorked: isTransitioningToCompletion ? parseFloat(dialogHoursWorked) : undefined
       });
       toast.success('Status updated successfully');
       refetch();
-      setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' });
+      setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '', consultantHourlyRate: null });
       setStatusComment('');
+      setDialogHoursWorked('');
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update status');
@@ -384,7 +411,7 @@ const Tickets = () => {
 
     try {
       setProcessingTicketId(ticket.id);
-      const amount = ticket.totalAmount || 100; // Use ticket total amount or default
+      const amount = ticket.calculatedAmount || ticket.totalAmount || 100; // Use calculated amount first, then total amount, or default
       
       const paymentOrder = await createPaymentOrder.mutateAsync({
         orderId: ticket.id,
@@ -810,7 +837,7 @@ const Tickets = () => {
                     )}
 
                     {/* Payment status button - shows "Paid" when payment is completed */}
-                    {ticket.paymentStatus === 'Paid' && ticket.totalAmount > 0 && userRole !== 'consultant' && (
+                    {ticket.paymentStatus === 'Paid' && ticket.calculatedAmount > 0 && userRole !== 'consultant' && (
                       <Button
                         variant="default"
                         size="sm"
@@ -826,12 +853,12 @@ const Tickets = () => {
 
                     {/* Payment button for customers when ticket is closed and payment is pending */}
                     {(() => {
-                      const shouldShow = userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'Paid') && ticket.paymentStatus !== 'Paid' && ticket.totalAmount >= 0;
-                      console.log('Pay Now button debug:', {
+                      const shouldShow = userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'Paid') && ticket.paymentStatus !== 'Paid' && ticket.calculatedAmount >= 0;
+                        console.log('Pay Now button debug:', {
                         userRole,
                         ticketStatus: ticket.status,
                         paymentStatus: ticket.paymentStatus,
-                        totalAmount: ticket.totalAmount,
+                        calculatedAmount: ticket.calculatedAmount,
                         shouldShow
                       });
                       return shouldShow;
@@ -1012,14 +1039,14 @@ const Tickets = () => {
                 <span className="font-medium text-muted-foreground text-xs sm:text-sm">Consultant:</span>
                 <p className="text-sm break-words">{selectedTicket.consultantName || 'Unassigned'}</p>
               </div>
-              {selectedTicket.totalAmount > 0 && userRole !== 'consultant' && (
+              {selectedTicket.calculatedAmount > 0 && userRole !== 'consultant' && (
                 <div className="space-y-1">
                   <span className="font-medium text-muted-foreground text-xs sm:text-sm">Payment:</span>
                   <p className="text-sm">
                     {selectedTicket.paymentStatus === 'Paid' ? (
                       <span className="text-green-600 font-medium">✓ Completed</span>
                     ) : (
-                      <span className="text-orange-600">Pending: ₹{selectedTicket.totalAmount?.toFixed(2)}</span>
+                      <span className="text-orange-600">Pending: ₹{selectedTicket.calculatedAmount?.toFixed(2)}</span>
                     )}
                   </p>
                 </div>
@@ -1043,6 +1070,19 @@ const Tickets = () => {
             )}
           </CardContent>
             </Card>
+
+            {/* Work Summary - Show for completed tickets */}
+            {/* <WorkSummary 
+              ticket={{
+                status: selectedTicket.status,
+                consultantName: selectedTicket.consultantName || 'Unknown',
+                hoursWorked: selectedTicket.hoursWorked,
+                hourlyRateAtCompletion: selectedTicket.hourlyRateAtCompletion,
+                calculatedAmount: selectedTicket.calculatedAmount,
+                consultantHourlyRate: selectedTicket.consultantHourlyRate
+              }}
+              userRole={userRole}
+            /> */}
           </TabsContent>
           
           <TabsContent value="history" className="space-y-3 sm:space-y-6 mt-3 sm:mt-6">
@@ -1124,7 +1164,7 @@ const Tickets = () => {
             {/* Payment Button for Customers */}
             {userRole === 'customer' && selectedTicket && 
              (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed' || selectedTicket.status === 'Paid') && 
-             selectedTicket.paymentStatus !== 'Paid' && selectedTicket.totalAmount >= 0 && (
+             selectedTicket.paymentStatus !== 'Paid' && selectedTicket.calculatedAmount >= 0 && (
               <Button
                 variant="default"
                 size="sm"
@@ -1133,7 +1173,7 @@ const Tickets = () => {
                 className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
               >
                 <span className="w-4 h-4 mr-1">₹</span>
-                {processingTicketId === selectedTicket.id ? 'Processing...' : `Pay ₹${selectedTicket.totalAmount?.toFixed(2)} (${selectedTicket.totalHours}h)`}
+                {processingTicketId === selectedTicket.id ? 'Processing...' : `Pay ₹${selectedTicket.calculatedAmount?.toFixed(2)} (${selectedTicket.hoursWorked}h)`}
               </Button>
             )}
             
@@ -1152,7 +1192,7 @@ const Tickets = () => {
       </Dialog>
 
       {/* Status Change Comment Dialog */}
-      <Dialog open={statusChangeDialog.open} onOpenChange={(open) => !open && setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}>
+      <Dialog open={statusChangeDialog.open} onOpenChange={(open) => !open && setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '', consultantHourlyRate: null })}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Update Ticket Status</DialogTitle>
@@ -1163,6 +1203,40 @@ const Tickets = () => {
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* Hours Worked Input for Completion Status */}
+            {(() => {
+              const { newStatus, oldStatus, consultantHourlyRate } = statusChangeDialog;
+              const isCompletionStatus = newStatus === 'Completed' || newStatus === 'Closed' || newStatus === 'TopicClosed';
+              const isTransitioningToCompletion = isCompletionStatus && oldStatus !== newStatus && userRole === 'consultant';
+              
+              if (!isTransitioningToCompletion) return null;
+              
+              return (
+                <div className="space-y-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center space-x-2 text-blue-800 dark:text-blue-200">
+                    <Clock className="w-4 h-4" />
+                    <Label className="text-sm font-medium">Hours Worked *</Label>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      max="24"
+                      placeholder="Enter hours worked"
+                      value={dialogHoursWorked}
+                      onChange={(e) => setDialogHoursWorked(e.target.value)}
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-blue-600">
+                      Enter the total hours spent working on this ticket
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div>
               <Label htmlFor="status-comment">Add a comment (optional)</Label>
               <div className="text-xs text-muted-foreground mb-2 flex items-start space-x-1">
@@ -1209,13 +1283,22 @@ const Tickets = () => {
             <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
               <Button 
                 variant="outline" 
-                onClick={() => setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '' })}
+                onClick={() => {
+                  setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '', consultantHourlyRate: null });
+                  setDialogHoursWorked('');
+                }}
                 className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
               <Button 
                 onClick={confirmStatusChange}
+                disabled={(() => {
+                  const { newStatus, oldStatus } = statusChangeDialog;
+                  const isCompletionStatus = newStatus === 'Completed' || newStatus === 'Closed' || newStatus === 'TopicClosed';
+                  const isTransitioningToCompletion = isCompletionStatus && oldStatus !== newStatus && userRole === 'consultant';
+                  return isTransitioningToCompletion && (!dialogHoursWorked || parseFloat(dialogHoursWorked) <= 0);
+                })()}
                 className="w-full sm:w-auto"
               >
                 Update Status
