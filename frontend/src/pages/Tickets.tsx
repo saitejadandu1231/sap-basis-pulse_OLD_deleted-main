@@ -228,13 +228,28 @@ const Tickets = () => {
         return [];
       }
       
-      // For open tickets, consultants cannot set New, TopicClosed, Paid, or ReOpened
-      return statusOptions.filter(option => 
-        option.value !== 'New' &&
-        option.value !== 'TopicClosed' && 
-        option.value !== 'Paid' && 
-        option.value !== 'ReOpened'
-      );
+      // For consultants: allow moving FROM "New" but not TO "New" (except if already New)
+      // Also cannot set TopicClosed, Paid, or ReOpened
+      return statusOptions.filter(option => {
+        // Allow keeping current status
+        if (option.value === currentTicketStatus) {
+          return true;
+        }
+        
+        // Block these statuses completely for consultants
+        if (option.value === 'TopicClosed' || 
+            option.value === 'Paid' || 
+            option.value === 'ReOpened') {
+          return false;
+        }
+        
+        // Block "New" status unless ticket is currently "New"
+        if (option.value === 'New' && currentTicketStatus !== 'New') {
+          return false;
+        }
+        
+        return true;
+      });
     } else if (userRole === 'customer') {
       // Customers can only reopen closed tickets
       const isTicketClosed = currentTicketStatus === 'Closed' || currentTicketStatus === 'TopicClosed';
