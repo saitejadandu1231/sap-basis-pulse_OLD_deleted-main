@@ -29,7 +29,8 @@ import {
   ExternalLink,
   FileText,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
@@ -45,6 +46,7 @@ import {
 } from '@/hooks/useAdmin';
 import { toast } from 'sonner';
 import PageLayout from '@/components/layout/PageLayout';
+import DomainRestrictions from '@/pages/admin/DomainRestrictions';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -423,7 +425,7 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 md:w-fit md:grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4 md:w-fit md:grid-cols-4">
             <TabsTrigger value="users" className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 text-xs sm:text-sm min-h-[40px] sm:min-h-[44px]">
               <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               <span className="truncate">Users</span>
@@ -435,6 +437,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="settings" className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 text-xs sm:text-sm min-h-[40px] sm:min-h-[44px]">
               <Settings className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               <span className="truncate">Settings</span>
+            </TabsTrigger>
+            <TabsTrigger value="domains" className="flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 text-xs sm:text-sm min-h-[40px] sm:min-h-[44px]">
+              <Shield className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Domains</span>
             </TabsTrigger>
           </TabsList>
 
@@ -870,6 +876,11 @@ const AdminDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Domain Restrictions Tab */}
+          <TabsContent value="domains" className="space-y-4 sm:space-y-6">
+            <DomainRestrictions />
           </TabsContent>
         </Tabs>
 

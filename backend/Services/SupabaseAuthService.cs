@@ -25,9 +25,10 @@ namespace SapBasisPulse.Api.Services
         private readonly IEmailSettingsService _emailSettingsService;
         private readonly IEmailSender _emailSender;
         private readonly IConfiguration _configuration;
+        private readonly IDomainRestrictionService _domainRestrictionService;
         private static readonly ConcurrentDictionary<string, PendingUser> _pendingUsers = new();
 
-        public SupabaseAuthService(AppDbContext context, IAuthService authService, IConfiguration config, HttpClient httpClient, IEmailSettingsService emailSettingsService, IEmailSender emailSender)
+        public SupabaseAuthService(AppDbContext context, IAuthService authService, IConfiguration config, HttpClient httpClient, IEmailSettingsService emailSettingsService, IEmailSender emailSender, IDomainRestrictionService domainRestrictionService)
         {
             _context = context;
             _authService = authService;
@@ -36,6 +37,7 @@ namespace SapBasisPulse.Api.Services
             _emailSettingsService = emailSettingsService;
             _emailSender = emailSender;
             _configuration = config; // Using same config for both _config and _configuration
+            _domainRestrictionService = domainRestrictionService;
         }
 
         public async Task<(bool Success, string? Error, AuthResponseDto? Response, bool RequiresAdditionalInfo, string? SupabaseUserId, string? FirstName, string? LastName)> HandleSupabaseAuthAsync(string supabaseAccessToken, string provider)
@@ -95,6 +97,13 @@ namespace SapBasisPulse.Api.Services
                 }
                 else
                 {
+                    // Check if the domain is restricted for new users
+                    bool isDomainRestricted = await _domainRestrictionService.IsDomainRestrictedAsync(supabaseUser.Email);
+                    if (isDomainRestricted)
+                    {
+                        return (false, "Registration from this email domain is not allowed. Please contact support for assistance.", null, false, null, null, null);
+                    }
+
                     // New user - requires additional info
                     // Store pending user info
                     StorePendingUserInfo(supabaseUser.Id, supabaseUser.Email, provider, supabaseUser.FirstName, supabaseUser.LastName);
@@ -115,6 +124,13 @@ namespace SapBasisPulse.Api.Services
                 var pendingUser = GetPendingUserInfo(supabaseUserId);
                 if (pendingUser == null)
                     return (false, "Pending user info not found", null);
+
+                // Check if the domain is restricted
+                bool isDomainRestricted = await _domainRestrictionService.IsDomainRestrictedAsync(pendingUser.Email);
+                if (isDomainRestricted)
+                {
+                    return (false, "Registration from this email domain is not allowed. Please contact support for assistance.", null);
+                }
 
                 // Validate role
                 if (!Enum.TryParse<UserRole>(role, out var userRole))
