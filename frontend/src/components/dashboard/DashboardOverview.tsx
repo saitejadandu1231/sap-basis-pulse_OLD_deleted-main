@@ -12,7 +12,8 @@ import {
   AlertCircle,
   CheckCircle,
   Users,
-  Calendar
+  Calendar,
+  DollarSign
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -68,13 +69,18 @@ const DashboardOverview = () => {
   const todayStats = getTodaySlotsStats();
 
   const getTicketStats = () => {
-    if (!tickets) return { total: 0, open: 0, inProgress: 0, closed: 0 };
+    if (!tickets) return { total: 0, open: 0, inProgress: 0, closed: 0, totalEarnings: 0, completedTicketsWithEarnings: 0 };
+    
+    const completedTickets = tickets.filter(t => (t.status === 'Closed' || t.status === 'TopicClosed') && t.calculatedAmount);
+    const totalEarnings = completedTickets.reduce((sum, ticket) => sum + (ticket.calculatedAmount || 0), 0);
     
     return {
       total: tickets.length,
       open: tickets.filter(t => t.status === 'New').length,
       inProgress: tickets.filter(t => t.status === 'In Progress').length,
-      closed: tickets.filter(t => t.status === 'Closed').length
+      closed: tickets.filter(t => t.status === 'Closed').length,
+      totalEarnings,
+      completedTicketsWithEarnings: completedTickets.length
     };
   };
 
@@ -129,7 +135,7 @@ const DashboardOverview = () => {
         </Card>
 
         {/* Role-specific metric */}
-        {userRole === 'consultant' && (
+        {userRole === 'consultant' ? (
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/consultant/availability')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Today's Slots</CardTitle>
@@ -142,8 +148,119 @@ const DashboardOverview = () => {
               </p>
             </CardContent>
           </Card>
-        )}
+        ) : userRole === 'customer' ? (
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/tickets')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed Work</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.closed}</div>
+              <p className="text-xs text-muted-foreground">
+                tickets resolved
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
+
+      {/* Consultant Earnings Summary */}
+      {/* {userRole === 'consultant' && stats.totalEarnings > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <span>Earnings Summary</span>
+            </CardTitle>
+            <CardDescription>
+              Your earnings from completed work
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center space-x-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <span className="font-medium text-green-800 dark:text-green-200">Total Earnings</span>
+                </div>
+                <p className="text-2xl font-bold text-green-600">₹{stats.totalEarnings.toFixed(2)}</p>
+                <p className="text-xs text-green-600 mt-1">
+                  From {stats.completedTicketsWithEarnings} completed tickets
+                </p>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-blue-800 dark:text-blue-200">Avg per Ticket</span>
+                </div>
+                <p className="text-2xl font-bold text-blue-600">
+                  ₹{stats.completedTicketsWithEarnings > 0 ? (stats.totalEarnings / stats.completedTicketsWithEarnings).toFixed(2) : '0.00'}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">Average earnings</p>
+              </div>
+
+              <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center space-x-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-purple-600" />
+                  <span className="font-medium text-purple-800 dark:text-purple-200">Work Rate</span>
+                </div>
+                <p className="text-2xl font-bold text-purple-600">
+                  {stats.total > 0 ? Math.round((stats.completedTicketsWithEarnings / stats.total) * 100) : 0}%
+                </p>
+                <p className="text-xs text-purple-600 mt-1">Completion rate</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )} */}
+
+      {/* Customer Invoicing Summary */}
+      {/* {userRole === 'customer' && stats.totalEarnings > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <DollarSign className="w-5 h-5 text-blue-600" />
+              <span>Billing Summary</span>
+            </CardTitle>
+            <CardDescription>
+              Your invoicing for completed consultations
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center space-x-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-blue-600" />
+                  <span className="font-medium text-blue-800 dark:text-blue-200">Total Invoiced</span>
+                </div>
+                <p className="text-2xl font-bold text-blue-600">₹{stats.totalEarnings.toFixed(2)}</p>
+                <p className="text-xs text-blue-600 mt-1">
+                  For {stats.completedTicketsWithEarnings} completed consultations
+                </p>
+              </div>
+              
+              <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center space-x-2 mb-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span className="font-medium text-green-800 dark:text-green-200">Avg per Session</span>
+                </div>
+                <p className="text-2xl font-bold text-green-600">
+                  ₹{stats.completedTicketsWithEarnings > 0 ? (stats.totalEarnings / stats.completedTicketsWithEarnings).toFixed(2) : '0.00'}
+                </p>
+                <p className="text-xs text-green-600 mt-1">Average consultation cost</p>
+              </div>
+            </div>
+            
+            <div className="mt-4 bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                💡 <strong>Billing Information:</strong> All amounts are calculated based on actual work hours 
+                and current consultant rates. Detailed invoices are available in individual ticket details.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )} */}
 
       {/* Content Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -198,11 +315,23 @@ const DashboardOverview = () => {
                       <p className="text-sm text-muted-foreground truncate">
                         {ticket.supportTypeName}
                       </p>
+                      {/* Show work completion info for closed tickets */}
+                      {/* {(ticket.status === 'Closed' || ticket.status === 'TopicClosed') && ticket.calculatedAmount && (
+                        <p className="text-xs text-green-600 font-medium">
+                          {ticket.hoursWorked?.toFixed(1)}h × ₹{ticket.hourlyRateAtCompletion?.toFixed(2)} = ₹{ticket.calculatedAmount.toFixed(2)}
+                        </p>
+                      )} */}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge variant={ticket.status === 'Closed' ? 'default' : 'secondary'}>
                         {ticket.status}
                       </Badge>
+                      {/* Show earnings indicator for completed tickets */}
+                      {/* {(ticket.status === 'Closed' || ticket.status === 'TopicClosed') && ticket.calculatedAmount && (
+                        <div className="flex items-center text-green-600">
+                          <DollarSign className="w-3 h-3" />
+                        </div>
+                      )} */}
                     </div>
                   </div>
                 ))}

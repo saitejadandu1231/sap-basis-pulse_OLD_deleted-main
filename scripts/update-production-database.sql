@@ -1,5 +1,7 @@
--- Production Database Update Script for SSO Configuration
--- Run this script on your existing production database to add SSO support
+-- Production Database Update Script for SSO Configuration and Work Hours Tracking
+-- Run this script on your existing production database to add:
+-- 1. SSO Configuration support
+-- 2. Work Hours Tracking (HoursWorked, HourlyRate, CalculatedAmount columns in Orders table)
 
 -- Step 1: Create SSOConfigurations table if it doesn't exist
 CREATE TABLE IF NOT EXISTS "SSOConfigurations" (
@@ -67,3 +69,55 @@ SELECT
 FROM "SSOConfigurations" 
 ORDER BY "CreatedAt" DESC 
 LIMIT 1;
+
+-- Step 7: Add HoursWorked, HourlyRate, and CalculatedAmount columns to Orders table
+-- This corresponds to the AddHoursWorkedAndCalculatedAmount migration
+DO $$ 
+BEGIN
+    -- Add HoursWorked column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'Orders' AND column_name = 'HoursWorked') THEN
+        ALTER TABLE "Orders" ADD COLUMN "HoursWorked" numeric;
+    END IF;
+
+    -- Add HourlyRate column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'Orders' AND column_name = 'HourlyRate') THEN
+        ALTER TABLE "Orders" ADD COLUMN "HourlyRate" numeric;
+    END IF;
+
+    -- Add CalculatedAmount column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'Orders' AND column_name = 'CalculatedAmount') THEN
+        ALTER TABLE "Orders" ADD COLUMN "CalculatedAmount" numeric;
+    END IF;
+END $$;
+
+-- Step 8: Create indexes for the new columns for better query performance
+CREATE INDEX IF NOT EXISTS "IX_Orders_HoursWorked" ON "Orders" ("HoursWorked");
+CREATE INDEX IF NOT EXISTS "IX_Orders_HourlyRate" ON "Orders" ("HourlyRate");
+CREATE INDEX IF NOT EXISTS "IX_Orders_CalculatedAmount" ON "Orders" ("CalculatedAmount");
+
+-- Step 9: Verify all updates
+SELECT 'Database Updates Complete' as status;
+
+-- Verify Orders table structure
+SELECT 
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM information_schema.columns 
+                     WHERE table_name = 'Orders' AND column_name = 'HoursWorked') 
+        THEN 'HoursWorked column exists'
+        ELSE 'HoursWorked column missing'
+    END as hours_worked_status,
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM information_schema.columns 
+                     WHERE table_name = 'Orders' AND column_name = 'HourlyRate') 
+        THEN 'HourlyRate column exists'
+        ELSE 'HourlyRate column missing'
+    END as hourly_rate_status,
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM information_schema.columns 
+                     WHERE table_name = 'Orders' AND column_name = 'CalculatedAmount') 
+        THEN 'CalculatedAmount column exists'
+        ELSE 'CalculatedAmount column missing'
+    END as calculated_amount_status;

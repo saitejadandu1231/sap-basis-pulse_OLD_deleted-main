@@ -32,8 +32,9 @@ const RecentTickets = () => {
   // Filter status options based on user role and business rules
   const getFilteredStatusOptions = (currentTicketStatus?: string) => {
     if (userRole === 'consultant') {
-      // Consultants cannot set TopicClosed, Paid, or ReOpened
+      // Consultants cannot set New, TopicClosed, Paid, or ReOpened
       return statusOptions.filter(option => 
+        option.value !== 'New' &&
         option.value !== 'TopicClosed' && 
         option.value !== 'Paid' && 
         option.value !== 'ReOpened'
@@ -281,6 +282,7 @@ const RecentTickets = () => {
                         currentStatus={ticket.status}
                         allowedStatusOptions={filteredOptions}
                         userRole={userRole}
+                        consultantHourlyRate={ticket.consultantHourlyRate}
                         onStatusUpdate={(newStatus) => {
                           // Optionally close the expanded view after update
                           setExpandedTickets(prev => {

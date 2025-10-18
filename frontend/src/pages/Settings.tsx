@@ -179,6 +179,7 @@ const Settings = () => {
                   id="firstName" 
                   value={formFirstName} 
                   onChange={(e) => setFormFirstName(e.target.value)}
+                  disabled
                 />
               </div>
               <div>
@@ -187,8 +188,14 @@ const Settings = () => {
                   id="lastName" 
                   value={formLastName} 
                   onChange={(e) => setFormLastName(e.target.value)}
+                  disabled
                 />
               </div>
+            </div>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/30 dark:border-blue-800">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Note:</strong> Name changes are currently disabled. Contact support if you need to update your name.
+              </p>
             </div>
             <div>
               <Label htmlFor="email">Email Address</Label>
@@ -203,9 +210,9 @@ const Settings = () => {
             </div>
             <Button 
               onClick={handleSaveProfile} 
-              disabled={isUpdating}
+              disabled={true}
             >
-              {isUpdating ? 'Saving...' : 'Save Changes'}
+              Save Changes
             </Button>
           </CardContent>
         </Card>

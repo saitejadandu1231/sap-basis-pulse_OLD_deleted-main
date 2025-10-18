@@ -2,12 +2,13 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useUpdateTicketStatus } from '@/hooks/useSupport';
 import { useStatusOptions } from '@/hooks/useStatus';
 import { toast } from 'sonner';
-import { ArrowRight, MessageSquare, CheckCircle } from 'lucide-react';
+import { ArrowRight, MessageSquare, CheckCircle, Clock, DollarSign } from 'lucide-react';
 
 interface TicketStatusUpdaterProps {
   orderId: string;
@@ -15,6 +16,7 @@ interface TicketStatusUpdaterProps {
   onStatusUpdate?: (newStatus: string) => void;
   allowedStatusOptions?: Array<{value: string; label: string; color: string; textColor: string; bgColor: string; description: string}>;
   userRole?: string;
+  consultantHourlyRate?: number | null;
 }
 
 const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
@@ -22,10 +24,12 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   currentStatus,
   onStatusUpdate,
   allowedStatusOptions,
-  userRole
+  userRole,
+  consultantHourlyRate
 }) => {
   const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
   const [comment, setComment] = React.useState('');
+  const [hoursWorked, setHoursWorked] = React.useState<string>('');
   const [isUpdating, setIsUpdating] = React.useState(false);
   const updateStatus = useUpdateTicketStatus();
   const { data: statusOptionsData, isLoading: statusLoading } = useStatusOptions();
@@ -42,6 +46,13 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
 
   // Use provided filtered status options for dropdown or fallback to all options
   const statusOptions = allowedStatusOptions || allStatusOptions;
+
+  // Check if hours worked is required for the selected status
+  const isCompletionStatus = selectedStatus === 'Completed' || selectedStatus === 'Closed' || selectedStatus === 'TopicClosed';
+  const isHoursRequired = isCompletionStatus && userRole === 'consultant';
+  
+  // Parse hours value for validation
+  const hoursValue = parseFloat(hoursWorked) || 0;
 
   // Show loading state while fetching status options
   if (statusLoading) {
@@ -80,19 +91,40 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
       return;
     }
 
+    // Validate hours worked if required
+    if (isHoursRequired) {
+      if (!hoursWorked.trim()) {
+        toast.error('Hours worked is required when closing a ticket');
+        return;
+      }
+      
+      const hours = parseFloat(hoursWorked);
+      if (isNaN(hours) || hours <= 0) {
+        toast.error('Please enter a valid number of hours worked (greater than 0)');
+        return;
+      }
+      
+      if (hours > 100) {
+        toast.error('Hours worked cannot exceed 100 hours per ticket');
+        return;
+      }
+    }
+
     try {
       await updateStatus.mutateAsync({
         orderId,
         status: selectedStatus as any,
-        comment: comment.trim() || undefined
+        comment: comment.trim() || undefined,
+        hoursWorked: isHoursRequired ? parseFloat(hoursWorked) : undefined
       });
 
       toast.success('Ticket status updated successfully');
       setComment(''); // Clear comment after successful update
+      setHoursWorked(''); // Clear hours after successful update
       onStatusUpdate?.(selectedStatus);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating status:', error);
-      toast.error('Failed to update ticket status');
+      toast.error(error.message || 'Failed to update ticket status');
     }
   };
 
@@ -108,7 +140,8 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
 
   const isStatusChanged = selectedStatus !== currentStatus;
   const hasComment = comment.trim().length > 0;
-  const canUpdate = isStatusChanged || hasComment;
+  const hasValidHours = !isHoursRequired || (hoursWorked.trim() && parseFloat(hoursWorked) > 0);
+  const canUpdate = (isStatusChanged || hasComment) && hasValidHours;
 
   return (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-4">
@@ -167,6 +200,54 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
           </Select>
         </div>
       </div>
+
+      {/* Hours Worked Section - Only show for consultants when closing tickets */}
+      {isHoursRequired && (
+        <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-blue-600" />
+            <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">Hours Worked</Label>
+            <span className="text-xs text-red-500">*Required</span>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  max="100"
+                  placeholder="e.g., 2.5"
+                  value={hoursWorked}
+                  onChange={(e) => setHoursWorked(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div className="flex items-center text-sm text-muted-foreground">
+                hours
+              </div>
+            </div>
+            
+            {consultantHourlyRate && hoursValue > 0 && (
+              <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Hourly Rate:</span>
+                  <span className="font-medium">₹{consultantHourlyRate.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm mt-1">
+                  <span className="text-muted-foreground">Hours:</span>
+                  <span className="font-medium">{hoursValue.toFixed(1)}</span>
+                </div>
+              </div>
+            )}
+            
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              Enter the actual number of hours you worked on this ticket. This will be used to calculate the final amount for the customer.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Comment Section */}
       <div className="space-y-4">

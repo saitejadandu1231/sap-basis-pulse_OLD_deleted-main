@@ -80,6 +80,9 @@ namespace SapBasisPulse.Api.Services
 
         public async Task<ConsultantAvailabilitySlotsResponse> CreateSlotAsync(CreateConsultantAvailabilitySlotDto dto)
         {
+            // Validate DTO first
+            dto.Validate();
+
             // Validate that the consultant exists and has an hourly rate set
             var consultant = await _context.Users.FindAsync(dto.ConsultantId);
             if (consultant == null || consultant.Role != UserRole.Consultant)
@@ -96,12 +99,6 @@ namespace SapBasisPulse.Api.Services
             if (!consultantSkills.Any())
                 throw new ArgumentException("Consultant must select at least one skill before creating availability slots");
 
-            // Validate input times first
-            if (dto.SlotEndTime <= dto.SlotStartTime)
-            {
-                throw new ArgumentException($"End time ({dto.SlotEndTime:yyyy-MM-dd HH:mm:ss}) must be after start time ({dto.SlotStartTime:yyyy-MM-dd HH:mm:ss}).");
-            }
-
             // Ensure the dates are in UTC format for PostgreSQL
             var startTimeUtc = dto.SlotStartTime.Kind != DateTimeKind.Utc 
                 ? DateTime.SpecifyKind(dto.SlotStartTime, DateTimeKind.Utc)
@@ -110,6 +107,31 @@ namespace SapBasisPulse.Api.Services
             var endTimeUtc = dto.SlotEndTime.Kind != DateTimeKind.Utc
                 ? DateTime.SpecifyKind(dto.SlotEndTime, DateTimeKind.Utc)
                 : dto.SlotEndTime;
+
+            // VALIDATION 1: Prevent creating slots for past dates/times only
+            // Allow a 1-minute buffer to account for timing differences between client and server
+            var currentTimeUtc = DateTime.UtcNow;
+            var bufferTime = currentTimeUtc.AddMinutes(-1); // 1-minute buffer for current time selection
+            
+            if (startTimeUtc < bufferTime)
+            {
+                throw new ArgumentException($"Cannot create availability slots for past dates or times. Start time ({startTimeUtc:yyyy-MM-dd HH:mm:ss} UTC) must be current time or in the future (current time: {currentTimeUtc:yyyy-MM-dd HH:mm:ss} UTC).");
+            }
+
+            // VALIDATION 2: Check for duplicate/overlapping slots
+            var existingSlots = await _context.ConsultantAvailabilitySlots
+                .Where(s => s.ConsultantId == dto.ConsultantId && 
+                           ((s.SlotStartTime < endTimeUtc && s.SlotEndTime > startTimeUtc))) // Check for any time overlap
+                .ToListAsync();
+
+            if (existingSlots.Any())
+            {
+                var conflictingSlots = existingSlots.Select(s => 
+                    $"({s.SlotStartTime:yyyy-MM-dd HH:mm:ss} - {s.SlotEndTime:yyyy-MM-dd HH:mm:ss} UTC)")
+                    .ToList();
+                
+                throw new ArgumentException($"Cannot create slots that overlap with existing availability slots. Conflicting slots: {string.Join(", ", conflictingSlots)}. Please choose a different time range or delete the conflicting slots first.");
+            }
 
             var createdSlots = new List<ConsultantAvailabilitySlot>();
             var currentTime = startTimeUtc;

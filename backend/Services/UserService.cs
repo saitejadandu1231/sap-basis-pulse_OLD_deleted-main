@@ -23,6 +23,26 @@ namespace SapBasisPulse.Api.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<(bool Success, string? Error)> UpdateUserStatusAsync(Guid userId, string status)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null) return (false, "User not found");
+                
+                if (!Enum.TryParse<UserStatus>(status, true, out var newStatus))
+                    return (false, "Invalid status value");
+                
+                user.Status = newStatus;
+                await _context.SaveChangesAsync();
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
         private readonly IPasswordHasher<User> _passwordHasher;
 
         public UserService(AppDbContext context, IPasswordHasher<User> passwordHasher)

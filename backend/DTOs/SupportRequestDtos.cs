@@ -42,6 +42,11 @@ namespace SapBasisPulse.Api.DTOs
         public string PaymentStatus { get; set; }
         public decimal? ConsultantHourlyRate { get; set; }
         public int TotalHours { get; set; }
+        
+        // Work completion information
+        public decimal? HoursWorked { get; set; }
+        public decimal? HourlyRateAtCompletion { get; set; }
+        public decimal? CalculatedAmount { get; set; }
     }
 
     public class TimeSlotInfo
@@ -56,5 +61,6 @@ namespace SapBasisPulse.Api.DTOs
     {
         public string Status { get; set; }
         public string? Comment { get; set; }
+        public decimal? HoursWorked { get; set; } // Hours worked by consultant (required when closing ticket)
     }
 }

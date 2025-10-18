@@ -187,6 +187,58 @@ const ConsultantAvailability = () => {
       return;
     }
 
+    // CLIENT-SIDE VALIDATION 1: Check for past dates/times only
+    // Allow a 1-minute buffer to account for timing differences
+    const now = new Date();
+    const bufferTime = new Date(now.getTime() - 60 * 1000); // 1-minute buffer
+    const selectedDateTime = new Date(`${startDate}T${startTime}:00`);
+    
+    if (selectedDateTime < bufferTime) {
+      toast({
+        title: "Invalid Date/Time",
+        description: "Cannot create availability slots for past dates or times. Please select current time or a future date and time.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // CLIENT-SIDE VALIDATION 2: Check for reasonable duration limits
+    if (numberOfHours > 8) {
+      toast({
+        title: "Duration Too Long",
+        description: "Availability blocks cannot be longer than 8 hours. Please choose a shorter duration or create multiple blocks.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // CLIENT-SIDE VALIDATION 3: Check for overlapping slots
+    const endDateTime = new Date(selectedDateTime.getTime() + (numberOfHours * 60 * 60 * 1000));
+    const overlappingSlots = slots.filter(slot => {
+      const slotStart = new Date(slot.slot_start_time);
+      const slotEnd = new Date(slot.slot_end_time);
+      return (selectedDateTime < slotEnd && endDateTime > slotStart);
+    });
+
+    if (overlappingSlots.length > 0) {
+      const conflictDetails = overlappingSlots.map(slot => {
+        const start = new Date(slot.slot_start_time).toLocaleString([], {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const end = new Date(slot.slot_end_time).toLocaleString([], {
+          hour: '2-digit', minute: '2-digit'
+        });
+        return `${start} - ${end}`;
+      }).join(', ');
+
+      toast({
+        title: "Overlapping Slots Detected",
+        description: `This time range conflicts with existing slots: ${conflictDetails}. Please choose a different time or delete the conflicting slots first.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -326,10 +378,12 @@ const ConsultantAvailability = () => {
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]} // Prevent selecting past dates
                         className="bg-background/50 border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20 pl-10 h-11"
                         required
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">Must be today or a future date</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="start-time" className="text-sm font-medium">
@@ -346,6 +400,7 @@ const ConsultantAvailability = () => {
                         required
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">Can be current time or future time</p>
                   </div>
                 </div>
                 
@@ -361,12 +416,13 @@ const ConsultantAvailability = () => {
                     className="w-full bg-background/50 border border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20 rounded-md px-3 py-2 h-11"
                     required
                   >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(hour => (
+                    {Array.from({ length: 8 }, (_, i) => i + 1).map(hour => (
                       <option key={hour} value={hour}>
                         {hour} hour{hour > 1 ? 's' : ''}
                       </option>
                     ))}
                   </select>
+                  <p className="text-xs text-muted-foreground">Maximum 8 hours per block. Will be split into 1-hour bookable slots.</p>
                 </div>
                 
                 {/* Calculated End Date and Time Row (Read-only display) */}

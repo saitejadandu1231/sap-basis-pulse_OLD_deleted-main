@@ -70,6 +70,17 @@ namespace SapBasisPulse.Api.Controllers
             return NoContent();
         }
 
+        [HttpPut("{id}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateUserStatusDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var (success, error) = await _userService.UpdateUserStatusAsync(id, dto.Status);
+            if (!success) return BadRequest(new { error });
+            return Ok(new { message = "User status updated successfully" });
+        }
+
         [HttpPut("{id}/hourly-rate")]
         [Authorize(Roles = "Consultant")]
         public async Task<IActionResult> UpdateHourlyRate(Guid id, [FromBody] UpdateHourlyRateDto dto)
@@ -103,5 +114,10 @@ namespace SapBasisPulse.Api.Controllers
     public class UpdateHourlyRateDto
     {
         public decimal HourlyRate { get; set; }
+    }
+
+    public class UpdateUserStatusDto
+    {
+        public string Status { get; set; } = string.Empty;
     }
 }

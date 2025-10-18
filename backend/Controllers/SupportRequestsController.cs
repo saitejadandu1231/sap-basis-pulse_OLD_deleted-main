@@ -104,7 +104,7 @@ namespace SapBasisPulse.Api.Controllers
                 return Forbid("Cannot modify closed tickets. Only customers can reopen closed tickets.");
             }
 
-            var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment);
+            var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment, dto.HoursWorked);
 
             if (!result)
             {

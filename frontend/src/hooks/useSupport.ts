@@ -96,6 +96,10 @@ interface SupportRequest {
   conversationId?: string | null;
   hasConversation: boolean;
   unreadMessageCount: number;
+  // Work completion information
+  hoursWorked?: number | null;
+  hourlyRateAtCompletion?: number | null;
+  calculatedAmount?: number | null;
 }
 // Fetch Support Taxonomy
 export const useSupportTypes = () => {
@@ -321,8 +325,9 @@ export const useUpdateTicketStatus = () => {
   return useMutation({
     mutationFn: async (data: {
       orderId: string;
-      status: 'New' | 'InProgress' | 'PendingCustomerAction' | 'TopicClosed' | 'Closed' | 'ReOpened';
+      status: 'New' | 'InProgress' | 'PendingCustomerAction' | 'TopicClosed' | 'Closed' | 'ReOpened' | 'Completed';
       comment?: string;
+      hoursWorked?: number;
     }) => {
       const response = await apiFetch(`SupportRequests/${data.orderId}/status`, {
         method: 'PUT',
@@ -331,7 +336,8 @@ export const useUpdateTicketStatus = () => {
         },
         body: JSON.stringify({ 
           status: data.status,
-          comment: data.comment 
+          comment: data.comment,
+          hoursWorked: data.hoursWorked
         }),
       });
       
