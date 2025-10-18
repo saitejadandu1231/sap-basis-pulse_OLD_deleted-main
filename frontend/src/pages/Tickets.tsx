@@ -967,7 +967,7 @@ const Tickets = () => {
 
       {/* Ticket Management Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-6">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl lg:max-w-5xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto p-3 sm:p-6 z-[9999]">
           <DialogHeader>
         <DialogTitle className="flex items-center space-x-2">
           <Settings className="w-5 h-5" />
@@ -1208,7 +1208,7 @@ const Tickets = () => {
 
       {/* Status Change Comment Dialog */}
       <Dialog open={statusChangeDialog.open} onOpenChange={(open) => !open && setStatusChangeDialog({ open: false, ticketId: '', newStatus: '', oldStatus: '', consultantHourlyRate: null })}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px] z-[9999]">
           <DialogHeader>
             <DialogTitle>Update Ticket Status</DialogTitle>
             <DialogDescription>
