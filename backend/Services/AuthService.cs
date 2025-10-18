@@ -22,8 +22,9 @@ namespace SapBasisPulse.Api.Services
         private readonly ISupportTaxonomyService _supportTaxonomyService;
         private readonly IEmailSettingsService _emailSettingsService;
         private readonly ISystemSettingsService _systemSettingsService;
+        private readonly IDomainRestrictionService _domainRestrictionService;
 
-        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager, ISupportTaxonomyService supportTaxonomyService, IEmailSettingsService emailSettingsService, ISystemSettingsService systemSettingsService)
+        public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, IConfiguration config, IEmailSender emailSender, Microsoft.AspNetCore.Identity.UserManager<User> userManager, ISupportTaxonomyService supportTaxonomyService, IEmailSettingsService emailSettingsService, ISystemSettingsService systemSettingsService, IDomainRestrictionService domainRestrictionService)
         {
             _context = context;
             _passwordHasher = passwordHasher;
@@ -33,6 +34,7 @@ namespace SapBasisPulse.Api.Services
             _supportTaxonomyService = supportTaxonomyService;
             _emailSettingsService = emailSettingsService;
             _systemSettingsService = systemSettingsService;
+            _domainRestrictionService = domainRestrictionService;
         }
 
         public async Task<(bool Success, string? Error, AuthResponseDto? Response)> RegisterAsync(RegisterDto dto)
@@ -41,6 +43,13 @@ namespace SapBasisPulse.Api.Services
             {
                 var existing = await _userManager.FindByEmailAsync(dto.Email);
                 if (existing != null) return (false, "Email already exists", null);
+
+                // Check if the domain is restricted
+                bool isDomainRestricted = await _domainRestrictionService.IsDomainRestrictedAsync(dto.Email);
+                if (isDomainRestricted)
+                {
+                    return (false, "Registration from this email domain is not allowed. Please contact support for assistance.", null);
+                }
 
                 // Check if consultant registration is enabled when role is Consultant
                 if (dto.Role?.Equals("Consultant", StringComparison.OrdinalIgnoreCase) == true)

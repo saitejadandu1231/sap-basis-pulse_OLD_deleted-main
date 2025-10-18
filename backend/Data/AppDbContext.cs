@@ -28,6 +28,7 @@ namespace SapBasisPulse.Api.Data
         public DbSet<SSOConfiguration> SSOConfigurations { get; set; }
         public DbSet<ConsultantSkill> ConsultantSkills { get; set; }
         public DbSet<TicketNumberTemplate> TicketNumberTemplates { get; set; }
+        public DbSet<DomainRestriction> DomainRestrictions { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -326,6 +327,38 @@ namespace SapBasisPulse.Api.Data
             // Index for performance
             entity.HasIndex(t => new { t.SupportTypeId, t.SupportCategoryId, t.SupportSubOptionId, t.Priority, t.IsActive });
             entity.HasIndex(t => t.IsDefault);
+        });
+
+        // Configure DomainRestriction
+        modelBuilder.Entity<DomainRestriction>(entity =>
+        {
+            entity.HasKey(d => d.Id);
+
+            entity.Property(d => d.Domain)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(d => d.Reason)
+                .HasMaxLength(500);
+
+            entity.Property(d => d.CreatedAt)
+                .HasDefaultValueSql("NOW()");
+
+            // Relationships
+            entity.HasOne(d => d.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Index for performance - domain lookup should be fast
+            entity.HasIndex(d => d.Domain)
+                .IsUnique();
+            entity.HasIndex(d => new { d.Domain, d.IsActive });
         });
 
         base.OnModelCreating(modelBuilder);
