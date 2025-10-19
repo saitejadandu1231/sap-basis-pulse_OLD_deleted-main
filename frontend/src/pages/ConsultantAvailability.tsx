@@ -42,20 +42,19 @@ const ConsultantAvailability = () => {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [showPastDays, setShowPastDays] = useState(false);
 
-  // Helper function to group slots by date (using UTC to avoid timezone issues)
+  // Helper function to group slots by date (using local date to match display)
   const groupSlotsByDate = (slots: AvailabilitySlot[]) => {
     const grouped: { [key: string]: AvailabilitySlot[] } = {};
     
     slots.forEach(slot => {
-      // Fix: Use UTC date components to avoid timezone shifting issues
-      // This ensures that a slot stored as "2025-10-19 18:30:00+00" in the database
-      // is grouped under "October 19" regardless of the user's local timezone
+      // Fix: Use local date for grouping to match how times are displayed to users
+      // This ensures slots are grouped by the date users see in their timezone
       const date = new Date(slot.slot_start_time);
-      const utcDateKey = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).toDateString();
-      if (!grouped[utcDateKey]) {
-        grouped[utcDateKey] = [];
+      const localDateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toDateString();
+      if (!grouped[localDateKey]) {
+        grouped[localDateKey] = [];
       }
-      grouped[utcDateKey].push(slot);
+      grouped[localDateKey].push(slot);
     });
     
     return grouped;
@@ -76,16 +75,16 @@ const ConsultantAvailability = () => {
   const getDayInfo = (dateKey: string, daySlots: AvailabilitySlot[]) => {
     const date = new Date(dateKey);
     
-    // Use UTC dates for consistent comparison across timezones
+    // Use local dates for consistent comparison with display
     const now = new Date();
-    const todayUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    const tomorrowUTC = new Date(todayUTC);
-    tomorrowUTC.setUTCDate(todayUTC.getUTCDate() + 1);
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrowLocal = new Date(todayLocal);
+    tomorrowLocal.setDate(todayLocal.getDate() + 1);
     
     let displayDate: string;
-    if (date.toDateString() === todayUTC.toDateString()) {
+    if (date.toDateString() === todayLocal.toDateString()) {
       displayDate = 'Today';
-    } else if (date.toDateString() === tomorrowUTC.toDateString()) {
+    } else if (date.toDateString() === tomorrowLocal.toDateString()) {
       displayDate = 'Tomorrow';
     } else {
       displayDate = date.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
@@ -711,9 +710,9 @@ const ConsultantAvailability = () => {
                     {(() => {
                       const groupedSlots = groupSlotsByDate(slots);
                       
-                      // Use UTC date for consistent filtering across timezones
+                      // Use local date for consistent filtering with display
                       const now = new Date();
-                      const todayUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+                      const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                       
                       // Filter out past days unless showPastDays is true
                       const filteredGroupedSlots = showPastDays 
@@ -721,7 +720,7 @@ const ConsultantAvailability = () => {
                         : Object.fromEntries(
                             Object.entries(groupedSlots).filter(([dateKey]) => {
                               const slotDate = new Date(dateKey);
-                              return slotDate >= todayUTC;
+                              return slotDate >= todayLocal;
                             })
                           );
                       
