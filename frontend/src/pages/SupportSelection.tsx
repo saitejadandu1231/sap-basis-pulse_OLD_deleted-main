@@ -1170,15 +1170,15 @@ const SupportSelection = () => {
                         const endTime = new Date(slot.slotEndTime);
                         const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
                         
-                        // Fix: Use UTC date components for consistent date comparison across timezones
+                        // Fix: Use local date components for consistent date comparison with display
                         const now = new Date();
-                        const todayUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-                        const tomorrowUTC = new Date(todayUTC);
-                        tomorrowUTC.setUTCDate(todayUTC.getUTCDate() + 1);
+                        const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        const tomorrowLocal = new Date(todayLocal);
+                        tomorrowLocal.setDate(todayLocal.getDate() + 1);
                         
-                        const slotUTCDate = new Date(startTime.getUTCFullYear(), startTime.getUTCMonth(), startTime.getUTCDate());
-                        const isToday = slotUTCDate.toDateString() === todayUTC.toDateString();
-                        const isTomorrow = slotUTCDate.toDateString() === tomorrowUTC.toDateString();
+                        const slotLocalDate = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate());
+                        const isToday = slotLocalDate.toDateString() === todayLocal.toDateString();
+                        const isTomorrow = slotLocalDate.toDateString() === tomorrowLocal.toDateString();
                         
                         let dateLabel = startTime.toLocaleDateString('en-US', { 
                           month: 'short', 
