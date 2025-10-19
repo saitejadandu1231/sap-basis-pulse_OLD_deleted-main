@@ -61,6 +61,7 @@ builder.Services.AddScoped<ISupportTaxonomyService, SupportTaxonomyService>();
 builder.Services.AddScoped<IConsultantAvailabilityService, ConsultantAvailabilityService>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddScoped<ICloudinaryTicketFileService, CloudinaryTicketFileService>();
 builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValidationService>();
 builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
 builder.Services.AddScoped<IPaymentService, RazorpayPaymentService>();

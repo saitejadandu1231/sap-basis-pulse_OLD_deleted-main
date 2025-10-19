@@ -76,6 +76,126 @@ const ConsultantRegistrationCard = () => {
   );
 };
 
+const FileUploadSettingsCard = () => {
+  const { data: fileUploadEnabled, isLoading: uploadLoading } = useSystemSetting('EnableFileUploads');
+  const { data: maxFileSize, isLoading: sizeLoading } = useSystemSetting('MaxFileUploadSizeBytes');
+  const { data: maxFiles, isLoading: filesLoading } = useSystemSetting('MaxFilesPerTicket');
+  const updateSystemSetting = useUpdateSystemSetting();
+
+  const handleToggleFileUpload = async () => {
+    const newValue = fileUploadEnabled?.value !== 'true';
+    await updateSystemSetting.mutateAsync({
+      key: 'EnableFileUploads',
+      value: newValue.toString()
+    });
+  };
+
+  const handleUpdateMaxFileSize = async (size: string) => {
+    const sizeInBytes = parseInt(size) * 1024 * 1024; // Convert MB to bytes
+    await updateSystemSetting.mutateAsync({
+      key: 'MaxFileUploadSizeBytes',
+      value: sizeInBytes.toString()
+    });
+  };
+
+  const handleUpdateMaxFiles = async (count: string) => {
+    await updateSystemSetting.mutateAsync({
+      key: 'MaxFilesPerTicket',
+      value: count
+    });
+  };
+
+  const currentMaxSizeMB = maxFileSize?.value ? Math.round(parseInt(maxFileSize.value) / (1024 * 1024)) : 10;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Database className="w-5 h-5 mr-2" />
+          File Upload Settings
+        </CardTitle>
+        <CardDescription>
+          Configure file upload capabilities for support tickets
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3 mb-2">
+              <Label htmlFor="fileUploadEnabled">File Upload Feature</Label>
+              <Badge 
+                variant={fileUploadEnabled?.value === 'true' ? 'default' : 'secondary'}
+                className="text-xs"
+              >
+                {uploadLoading ? 'Loading...' : (fileUploadEnabled?.value === 'true' ? 'Enabled' : 'Disabled')}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Allow customers and consultants to upload files to support tickets
+            </p>
+          </div>
+          <Switch 
+            id="fileUploadEnabled"
+            checked={fileUploadEnabled?.value === 'true'}
+            onCheckedChange={handleToggleFileUpload}
+            disabled={uploadLoading || updateSystemSetting.isPending}
+          />
+        </div>
+
+        {fileUploadEnabled?.value === 'true' && (
+          <>
+            <Separator />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="maxFileSize">Maximum File Size (MB)</Label>
+                <Input
+                  id="maxFileSize"
+                  type="number"
+                  min="1"
+                  max="100"
+                  defaultValue={currentMaxSizeMB}
+                  onBlur={(e) => handleUpdateMaxFileSize(e.target.value)}
+                  disabled={sizeLoading || updateSystemSetting.isPending}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Current: {currentMaxSizeMB}MB (Cloudinary supports up to 100MB for free tier)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maxFiles">Maximum Files per Ticket</Label>
+                <Input
+                  id="maxFiles"
+                  type="number"
+                  min="1"
+                  max="20"
+                  defaultValue={maxFiles?.value || '5'}
+                  onBlur={(e) => handleUpdateMaxFiles(e.target.value)}
+                  disabled={filesLoading || updateSystemSetting.isPending}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Current: {maxFiles?.value || '5'} files per ticket
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Supported File Types</h4>
+              <div className="text-xs text-blue-600 dark:text-blue-300 space-y-1">
+                <div><strong>Images:</strong> JPEG, PNG, GIF, WebP, BMP, TIFF</div>
+                <div><strong>Documents:</strong> PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX</div>
+                <div><strong>Text:</strong> TXT, CSV</div>
+                <div><strong>Archives:</strong> ZIP, RAR, 7Z</div>
+                <div><strong>Other:</strong> JSON, XML</div>
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 const AdminSettings = () => {
   const { data: featureFlags } = useFeatureFlags();
   const navigate = useNavigate();
@@ -98,6 +218,12 @@ const AdminSettings = () => {
       }
     >
       <div className="space-y-6">
+        {/* Registration Settings */}
+        <ConsultantRegistrationCard />
+
+        {/* File Upload Settings */}
+        <FileUploadSettingsCard />
+
         {/* Feature Flags */}
         <Card>
           <CardHeader>
@@ -166,9 +292,6 @@ const AdminSettings = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Registration Settings */}
-        <ConsultantRegistrationCard />
 
         {/* SSO Configuration */}
         <Card>

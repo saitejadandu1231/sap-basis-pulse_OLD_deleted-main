@@ -8,6 +8,9 @@ import TicketStatusUpdater from '@/components/TicketStatusUpdater';
 import TicketRatingContainer from '@/components/TicketRatingContainer';
 import StatusHistory from '@/components/StatusHistory';
 import WorkSummary from '@/components/WorkSummary';
+import { FileViewer } from '@/components/FileViewer';
+import FileUpload from '@/components/FileUpload';
+import { useFileUploadSettings } from '@/hooks/useFileUpload';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -75,6 +78,7 @@ const Tickets = () => {
   const [dialogHoursWorked, setDialogHoursWorked] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [processingTicketId, setProcessingTicketId] = useState<string | null>(null);
+  const [showFileUpload, setShowFileUpload] = useState(false);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -88,6 +92,7 @@ const Tickets = () => {
   const [showFilters, setShowFilters] = useState(false);
   const updateTicketStatus = useUpdateTicketStatus();
   const { data: statusOptionsData } = useStatusOptions();
+  const { data: fileUploadSettings } = useFileUploadSettings();
   const createPaymentOrder = useCreatePaymentOrder();
   const verifyPaymentMutation = useVerifyPayment();
 
@@ -1086,6 +1091,13 @@ const Tickets = () => {
           </CardContent>
             </Card>
 
+            {/* File Attachments */}
+            <FileViewer 
+              orderId={selectedTicket.id}
+              showUploadArea={fileUploadSettings?.isEnabled}
+              onUploadClick={() => setShowFileUpload(true)}
+            />
+
             {/* Work Summary - Show for completed tickets */}
             {/* <WorkSummary 
               ticket={{
@@ -1203,6 +1215,28 @@ const Tickets = () => {
           </div>
         </Tabs>
         )}
+        </DialogContent>
+      </Dialog>
+
+      {/* File Upload Modal - moved outside main dialog to avoid nesting issues */}
+      <Dialog open={showFileUpload} onOpenChange={setShowFileUpload}>
+        <DialogContent className="max-w-2xl z-[10000]">
+          <DialogHeader>
+            <DialogTitle>Upload Files</DialogTitle>
+            <DialogDescription>
+              Add supporting documents, screenshots, or other files to this ticket
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTicket && (
+            <FileUpload 
+              orderId={selectedTicket.id}
+              onFileUploaded={() => {
+                // Close modal and refresh file list
+                setShowFileUpload(false);
+                toast.success('File uploaded successfully!');
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

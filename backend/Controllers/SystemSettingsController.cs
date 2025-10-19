@@ -33,10 +33,44 @@ public class SystemSettingsController : ControllerBase
         
         if (setting == null)
         {
-            return NotFound($"System setting with key '{key}' not found");
+            // Return default setting if it doesn't exist
+            var defaultSetting = GetDefaultSetting(key);
+            if (defaultSetting == null)
+            {
+                return NotFound($"System setting with key '{key}' not found");
+            }
+            return Ok(defaultSetting);
         }
 
         return Ok(setting);
+    }
+
+    [HttpPost("initialize")]
+    public async Task<IActionResult> InitializeDefaultSettings()
+    {
+        var defaultSettings = GetDefaultSettings();
+        var createdSettings = new List<SystemSetting>();
+
+        foreach (var defaultSetting in defaultSettings)
+        {
+            var existingSetting = await _context.SystemSettings.FindAsync(defaultSetting.Key);
+            if (existingSetting == null)
+            {
+                defaultSetting.CreatedAt = DateTime.UtcNow;
+                defaultSetting.UpdatedAt = DateTime.UtcNow;
+                defaultSetting.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                _context.SystemSettings.Add(defaultSetting);
+                createdSettings.Add(defaultSetting);
+            }
+        }
+
+        if (createdSettings.Any())
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new { message = $"Initialized {createdSettings.Count} default settings", settings = createdSettings });
     }
 
     [HttpPut("{key}")]
@@ -46,18 +80,34 @@ public class SystemSettingsController : ControllerBase
         
         if (setting == null)
         {
-            return NotFound($"System setting with key '{key}' not found");
+            // Create the setting if it doesn't exist
+            var dataType = DetermineDataType(request.Value);
+            
+            setting = new SystemSetting
+            {
+                Key = key,
+                Value = request.Value,
+                Description = GetDefaultDescription(key),
+                DataType = dataType,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            };
+            
+            _context.SystemSettings.Add(setting);
         }
-
-        // Validate data type
-        if (!IsValidValue(request.Value, setting.DataType))
+        else
         {
-            return BadRequest($"Invalid value for data type '{setting.DataType}'");
-        }
+            // Validate data type for existing setting
+            if (!IsValidValue(request.Value, setting.DataType))
+            {
+                return BadRequest($"Invalid value for data type '{setting.DataType}'");
+            }
 
-        setting.Value = request.Value;
-        setting.UpdatedAt = DateTime.UtcNow;
-        setting.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            setting.Value = request.Value;
+            setting.UpdatedAt = DateTime.UtcNow;
+            setting.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
 
         try
         {
@@ -126,6 +176,85 @@ public class SystemSettingsController : ControllerBase
             "number" => double.TryParse(value, out _),
             "integer" => int.TryParse(value, out _),
             _ => false
+        };
+    }
+
+    private static string DetermineDataType(string value)
+    {
+        if (bool.TryParse(value, out _))
+            return "boolean";
+        if (int.TryParse(value, out _))
+            return "integer";
+        if (double.TryParse(value, out _))
+            return "number";
+        return "string";
+    }
+
+    private static string GetDefaultDescription(string key)
+    {
+        return key switch
+        {
+            "EnableFileUploads" => "Enable or disable file upload feature for tickets",
+            "MaxFileUploadSizeBytes" => "Maximum file size allowed for uploads (in bytes)",
+            "MaxFilesPerTicket" => "Maximum number of files allowed per ticket",
+            _ => $"System setting: {key}"
+        };
+    }
+
+    private static SystemSetting? GetDefaultSetting(string key)
+    {
+        return key switch
+        {
+            "EnableFileUploads" => new SystemSetting
+            {
+                Key = "EnableFileUploads",
+                Value = "false",
+                Description = "Enable or disable file upload feature for tickets",
+                DataType = "boolean"
+            },
+            "MaxFileUploadSizeBytes" => new SystemSetting
+            {
+                Key = "MaxFileUploadSizeBytes",
+                Value = "10485760", // 10MB in bytes
+                Description = "Maximum file size allowed for uploads (in bytes)",
+                DataType = "integer"
+            },
+            "MaxFilesPerTicket" => new SystemSetting
+            {
+                Key = "MaxFilesPerTicket",
+                Value = "5",
+                Description = "Maximum number of files allowed per ticket",
+                DataType = "integer"
+            },
+            _ => null
+        };
+    }
+
+    private static List<SystemSetting> GetDefaultSettings()
+    {
+        return new List<SystemSetting>
+        {
+            new SystemSetting
+            {
+                Key = "EnableFileUploads",
+                Value = "false",
+                Description = "Enable or disable file upload feature for tickets",
+                DataType = "boolean"
+            },
+            new SystemSetting
+            {
+                Key = "MaxFileUploadSizeBytes",
+                Value = "10485760", // 10MB in bytes
+                Description = "Maximum file size allowed for uploads (in bytes)",
+                DataType = "integer"
+            },
+            new SystemSetting
+            {
+                Key = "MaxFilesPerTicket",
+                Value = "5",
+                Description = "Maximum number of files allowed per ticket",
+                DataType = "integer"
+            }
         };
     }
 }

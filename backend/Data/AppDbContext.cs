@@ -30,6 +30,7 @@ namespace SapBasisPulse.Api.Data
         public DbSet<TicketNumberTemplate> TicketNumberTemplates { get; set; }
         public DbSet<DomainRestriction> DomainRestrictions { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<TicketAttachment> TicketAttachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -359,6 +360,24 @@ namespace SapBasisPulse.Api.Data
             entity.HasIndex(d => d.Domain)
                 .IsUnique();
             entity.HasIndex(d => new { d.Domain, d.IsActive });
+        });
+
+        // Configure TicketAttachment entity
+        modelBuilder.Entity<TicketAttachment>(entity =>
+        {
+            entity.HasOne(ta => ta.Order)
+                .WithMany()
+                .HasForeignKey(ta => ta.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ta => ta.UploadedBy)
+                .WithMany()
+                .HasForeignKey(ta => ta.UploadedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(ta => ta.OrderId);
+            entity.HasIndex(ta => ta.UploadedById);
+            entity.HasIndex(ta => ta.CreatedAt);
         });
 
         base.OnModelCreating(modelBuilder);

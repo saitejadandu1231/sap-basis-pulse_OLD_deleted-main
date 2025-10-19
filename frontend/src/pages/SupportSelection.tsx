@@ -21,7 +21,9 @@ import {
     FileText,
     Settings,
     Star,
-    Calendar
+    Calendar,
+    Upload,
+    X
 } from 'lucide-react';
 import { 
     useSupportTypes, 
@@ -33,6 +35,7 @@ import {
     useConsultantReviews,
     useConsultantsBySkills
 } from '@/hooks/useSupport';
+import { useFileUploadSettings, useUploadFile } from '@/hooks/useFileUpload';
 import SrIdentifierAutocomplete from '@/components/SrIdentifierAutocomplete';
 
 const priorityOptions = [
@@ -68,6 +71,7 @@ const SupportSelection = () => {
   const [selectedConsultant, setSelectedConsultant] = useState('');
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [consultantShowingReviews, setConsultantShowingReviews] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   // SR validation is now handled by the SrIdentifierAutocomplete component
   
   // SR Identifier validation is now handled by the autocomplete component
@@ -82,6 +86,8 @@ const SupportSelection = () => {
   const { data: supportTypes, isLoading: loadingTypes } = useSupportTypes();
   const { data: supportCategories, isLoading: loadingCategories } = useSupportCategories(selectedSupport);
   const { data: consultants, isLoading: consultantsLoading } = useAvailableConsultants();
+  const { data: fileUploadSettings } = useFileUploadSettings();
+  const uploadFile = useUploadFile();
   
   // Use skill-based filtering when support criteria are selected
   const { data: consultantsBySkills, isLoading: consultantsBySkillsLoading } = useConsultantsBySkills(
@@ -113,6 +119,62 @@ const SupportSelection = () => {
   }, [consultantsBySkills, consultants, selectedSupport]);
   
   const isConsultantsLoading = consultantsLoading || (selectedSupport && consultantsBySkillsLoading);
+  
+  // File upload utilities
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const isValidFile = (file: File): { valid: boolean; error?: string } => {
+    if (!fileUploadSettings) return { valid: true };
+    
+    if (file.size > (fileUploadSettings.maxFileSizeBytes || 10 * 1024 * 1024)) {
+      const maxSizeMB = Math.round((fileUploadSettings.maxFileSizeBytes || 10 * 1024 * 1024) / (1024 * 1024));
+      return { 
+        valid: false, 
+        error: `File size exceeds ${maxSizeMB}MB limit` 
+      };
+    }
+    
+    if (pendingFiles.length >= (fileUploadSettings.maxFilesPerTicket || 5)) {
+      return { 
+        valid: false, 
+        error: `Maximum ${fileUploadSettings.maxFilesPerTicket || 5} files allowed` 
+      };
+    }
+    
+    return { valid: true };
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    
+    for (const file of files) {
+      const validation = isValidFile(file);
+      if (!validation.valid) {
+        toast.error(validation.error);
+        continue;
+      }
+      
+      if (pendingFiles.some(f => f.name === file.name && f.size === file.size)) {
+        toast.error(`File "${file.name}" already added`);
+        continue;
+      }
+      
+      setPendingFiles(prev => [...prev, file]);
+    }
+    
+    // Clear the input
+    event.target.value = '';
+  };
+
+  const removePendingFile = (fileToRemove: File) => {
+    setPendingFiles(prev => prev.filter(f => f !== fileToRemove));
+  };
   
   // Fetch reviews for the currently selected consultant (when reviews are being shown)
   const { data: consultantReviews, isLoading: reviewsLoading } = useConsultantReviews(consultantShowingReviews || '');
@@ -243,7 +305,7 @@ const SupportSelection = () => {
     }
 
     try {
-      await createRequest.mutateAsync({
+      const result = await createRequest.mutateAsync({
         supportTypeId: selectedSupport,
         supportCategoryId: selectedCategory,
         supportSubOptionId: selectedSubOption || undefined,
@@ -253,7 +315,29 @@ const SupportSelection = () => {
         consultantId: selectedConsultant,
         timeSlotIds: selectedTimeSlots
       });
-      toast.success('Support request created successfully!');
+      
+      // Upload files if any are selected
+      if (pendingFiles.length > 0 && fileUploadSettings?.isEnabled) {
+        try {
+          const orderId = result.id || result.orderId; // Handle different response formats
+          if (orderId) {
+            await Promise.all(
+              pendingFiles.map(file => 
+                uploadFile.mutateAsync({ orderId, file })
+              )
+            );
+            toast.success(`Support request created successfully with ${pendingFiles.length} file(s)!`);
+          } else {
+            toast.success('Support request created successfully! Files could not be uploaded.');
+          }
+        } catch (fileError) {
+          console.error('Error uploading files:', fileError);
+          toast.success('Support request created successfully, but some files failed to upload.');
+        }
+      } else {
+        toast.success('Support request created successfully!');
+      }
+      
       navigate(dashboardPath);
     } catch (error: any) {
       console.error('Error creating support request:', error);
@@ -742,7 +826,73 @@ const SupportSelection = () => {
                 />
               </div>
 
+              {/* File Upload Section */}
+              {fileUploadSettings?.isEnabled && (
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Supporting Files (Optional)</Label>
+                  
+                  {/* Upload Area */}
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-upload"
+                      accept={fileUploadSettings.allowedFileTypes?.join(',') || '*'}
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        Click to select files or drag & drop
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Max {Math.round((fileUploadSettings.maxFileSizeBytes || 10 * 1024 * 1024) / (1024 * 1024))}MB per file, 
+                        up to {fileUploadSettings.maxFilesPerTicket || 5} files total
+                      </p>
+                    </label>
+                  </div>
 
+                  {/* File List */}
+                  {pendingFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Selected Files ({pendingFiles.length}):</p>
+                      <div className="space-y-1">
+                        {pendingFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md"
+                          >
+                            <FileText className="w-4 h-4 text-gray-500" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.size)}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                              onClick={() => removePendingFile(file)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* File Upload Info */}
+                  <div className="text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                    <div className="font-medium mb-1">Supported formats:</div>
+                    <div>Images (JPG, PNG, GIF), Documents (PDF, DOC, XLS), Text files, Archives (ZIP)</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -1375,6 +1525,21 @@ const SupportSelection = () => {
                     <div className="flex justify-between py-2 border-b">
                       <span className="font-medium">SR Identifier:</span>
                       <span>{srIdentifier}</span>
+                    </div>
+                  )}
+                  {/* Files Section */}
+                  {fileUploadSettings?.isEnabled && pendingFiles.length > 0 && (
+                    <div className="py-2 border-b">
+                      <span className="font-medium">Attached Files ({pendingFiles.length}):</span>
+                      <div className="mt-2 space-y-1">
+                        {pendingFiles.map((file, index) => (
+                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <FileText className="w-4 h-4" />
+                            <span className="truncate">{file.name}</span>
+                            <span className="text-xs">({formatFileSize(file.size)})</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   <div className="py-2 border-b">

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,8 +11,8 @@ namespace SapBasisPulse.Api.Services
 {
     public interface IFileUploadService
     {
+        // Legacy methods for compatibility
         Task<(bool Success, string? FilePath, string? FileName, string? Error)> UploadFileAsync(IFormFile file, string uploadDirectory = "uploads");
-        Task<bool> DeleteFileAsync(string filePath);
         Task<(bool Success, Stream? FileStream, string? ContentType, string? Error)> GetFileAsync(string filePath);
         bool IsValidFileType(string fileName, string contentType);
         bool IsValidFileSize(long fileSize);
