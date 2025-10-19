@@ -137,20 +137,25 @@ const Tickets = () => {
       if (filters.dateRange !== 'all') {
         const ticketDate = new Date(ticket.createdAt);
         const now = new Date();
-        const daysDiff = Math.floor((now.getTime() - ticketDate.getTime()) / (1000 * 60 * 60 * 24));
 
         switch (filters.dateRange) {
           case 'today':
-            if (daysDiff > 0) return false;
+            // Fix: Use local date comparison instead of mathematical calculation
+            const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const ticketLocalDate = new Date(ticketDate.getFullYear(), ticketDate.getMonth(), ticketDate.getDate());
+            if (ticketLocalDate.toDateString() !== todayLocal.toDateString()) return false;
             break;
           case 'week':
-            if (daysDiff > 7) return false;
+            const daysDiffWeek = Math.floor((now.getTime() - ticketDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysDiffWeek > 7) return false;
             break;
           case 'month':
-            if (daysDiff > 30) return false;
+            const daysDiffMonth = Math.floor((now.getTime() - ticketDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysDiffMonth > 30) return false;
             break;
           case 'quarter':
-            if (daysDiff > 90) return false;
+            const daysDiffQuarter = Math.floor((now.getTime() - ticketDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysDiffQuarter > 90) return false;
             break;
         }
       }
