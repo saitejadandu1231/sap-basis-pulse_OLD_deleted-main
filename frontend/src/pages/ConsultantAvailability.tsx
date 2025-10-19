@@ -721,7 +721,21 @@ const ConsultantAvailability = () => {
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {daySlots.map((slot, slotIndex) => {
                                   const isBooked = slot.booked_by_customer_choice_id !== null;
-                                  const isExpired = new Date(slot.slot_end_time) <= new Date();
+                                  const slotEndTime = new Date(slot.slot_end_time);
+                                  const currentTime = new Date();
+                                  const isExpired = slotEndTime <= currentTime;
+                                  
+                                  // Debug logging for troubleshooting
+                                  if (process.env.NODE_ENV === 'development') {
+                                    console.log('Slot:', {
+                                      id: slot.id,
+                                      endTime: slot.slot_end_time,
+                                      parsedEndTime: slotEndTime,
+                                      currentTime: currentTime,
+                                      isExpired: isExpired,
+                                      displayTime: slotEndTime.toLocaleTimeString()
+                                    });
+                                  }
                                   
                                   return (
                                     <div
