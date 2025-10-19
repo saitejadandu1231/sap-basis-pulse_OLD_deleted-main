@@ -224,100 +224,25 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-2 sm:p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-4">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-4 lg:gap-8 items-center relative z-10">
-        
-        {/* Left side - Branding & Features */}
-        <div className="hidden lg:block">
-          <div className="space-y-8">
-            {/* Logo and heading */}
-            <div>
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-blue-600 rounded-xl flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-xl">Y</span>
-                </div>
-                <span className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  Yuktor
-                </span>
-              </div>
-              <h1 className="text-4xl lg:text-5xl font-bold mb-4 leading-tight">
-                Enterprise SAP BASIS
-                <span className="block text-primary">Support Platform</span>
-              </h1>
-              <p className="text-xl text-muted-foreground max-w-lg">
-                Join thousands of professionals who trust Yuktor for their SAP infrastructure needs.
-              </p>
+      <div className="w-full max-w-md mx-auto relative z-10">
+        {/* Simple logo */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-primary to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold">Y</span>
             </div>
-
-            {/* Features list */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                </div>
-                <span className="text-foreground">24/7 Expert SAP BASIS Support</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                  <Server className="w-5 h-5 text-blue-500" />
-                </div>
-                <span className="text-foreground">SAP RISE & Cloud Migration Services</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-purple-500" />
-                </div>
-                <span className="text-foreground">Enterprise Security & Compliance</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-orange-500" />
-                </div>
-                <span className="text-foreground">Performance Optimization</span>
-              </div>
-            </div>
-
-            {/* Trust indicators */}
-            <div className="border-t border-border/50 pt-6">
-              <p className="text-sm text-muted-foreground mb-4">Trusted by leading enterprises</p>
-              <div className="flex items-center space-x-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">500+</div>
-                  <div className="text-xs text-muted-foreground">Clients</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">99.9%</div>
-                  <div className="text-xs text-muted-foreground">Uptime</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">15+</div>
-                  <div className="text-xs text-muted-foreground">Years</div>
-                </div>
-              </div>
-            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+              Yuktor
+            </span>
           </div>
         </div>
-
-        {/* Right side - Auth Form */}
-        <div className="w-full max-w-md mx-auto">
-          {/* Mobile logo */}
-          <div className="text-center mb-8 lg:hidden">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">Y</span>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                Yuktor
-              </span>
-            </div>
-            <p className="text-muted-foreground">SAP BASIS Enterprise Support Platform</p>
-          </div>
 
           <Card className="glass-card border-border/50">
             <div className="p-3 sm:p-6">
@@ -348,7 +273,7 @@ const Login = () => {
                   </div>
                   <CardTitle className="text-2xl">Welcome Back</CardTitle>
                   <CardDescription className="text-base">
-                    Sign in to access your SAP support dashboard
+                    Sign in to access your dashboard
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -430,7 +355,7 @@ const Login = () => {
                   </div>
                   <CardTitle className="text-2xl">Join Yuktor</CardTitle>
                   <CardDescription className="text-base">
-                    Create your account for professional SAP support
+                    Create your account to get started
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -603,7 +528,7 @@ const Login = () => {
                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
                       <p className="text-sm text-blue-700 dark:text-blue-300 flex items-start">
                         <Mail className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-                        You'll receive an email verification link after registration. Some domains may be restricted for security.
+                        You'll receive an email verification link after registration.
                       </p>
                     </div>
                     
@@ -631,16 +556,15 @@ const Login = () => {
             </div>
           </Card>
 
-          <div className="text-center mt-6">
-            <Button variant="ghost" onClick={() => navigate('/')} className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="mr-2 w-4 h-4" />
-              Back to Home
-            </Button>
-          </div>
+        <div className="text-center mt-6">
+          <Button variant="ghost" onClick={() => navigate('/')} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="mr-2 w-4 h-4" />
+            Back to Home
+          </Button>
+        </div>
 
-          <div className="flex justify-center mt-4">
-            <ThemeToggle />
-          </div>
+        <div className="flex justify-center mt-4">
+          <ThemeToggle />
         </div>
       </div>
     </div>
