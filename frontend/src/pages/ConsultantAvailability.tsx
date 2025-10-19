@@ -92,10 +92,52 @@ const ConsultantAvailability = () => {
     }
     
     const totalSlots = daySlots.length;
-    const currentTime = new Date(); // Use current time for expiry check
-    const expiredSlots = daySlots.filter(slot => new Date(slot.slot_end_time) <= currentTime).length;
+    const currentTime = new Date();
+    const currentDate = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate());
+    
+    // Use the same expiry logic as individual slots
+    const expiredSlots = daySlots.filter(slot => {
+      const slotEndTime = new Date(slot.slot_end_time);
+      const slotDate = new Date(slotEndTime.getFullYear(), slotEndTime.getMonth(), slotEndTime.getDate());
+      
+      if (slotDate.getTime() < currentDate.getTime()) {
+        return true; // Past date
+      } else if (slotDate.getTime() === currentDate.getTime()) {
+        // Same date - check local time
+        const slotEndHours = slotEndTime.getHours();
+        const slotEndMinutes = slotEndTime.getMinutes();
+        const currentHours = currentTime.getHours();
+        const currentMinutes = currentTime.getMinutes();
+        
+        const slotEndTimeInMinutes = slotEndHours * 60 + slotEndMinutes;
+        const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+        
+        return slotEndTimeInMinutes <= currentTimeInMinutes;
+      }
+      return false;
+    }).length;
+    
     const activeSlots = totalSlots - expiredSlots;
-    const activeDaySlots = daySlots.filter(slot => new Date(slot.slot_end_time) > currentTime);
+    const activeDaySlots = daySlots.filter(slot => {
+      const slotEndTime = new Date(slot.slot_end_time);
+      const slotDate = new Date(slotEndTime.getFullYear(), slotEndTime.getMonth(), slotEndTime.getDate());
+      
+      if (slotDate.getTime() < currentDate.getTime()) {
+        return false; // Past date
+      } else if (slotDate.getTime() === currentDate.getTime()) {
+        // Same date - check local time
+        const slotEndHours = slotEndTime.getHours();
+        const slotEndMinutes = slotEndTime.getMinutes();
+        const currentHours = currentTime.getHours();
+        const currentMinutes = currentTime.getMinutes();
+        
+        const slotEndTimeInMinutes = slotEndHours * 60 + slotEndMinutes;
+        const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+        
+        return slotEndTimeInMinutes > currentTimeInMinutes;
+      }
+      return true; // Future date
+    });
     const bookedSlots = activeDaySlots.filter(slot => slot.booked_by_customer_choice_id !== null).length;
     const availableSlots = activeSlots - bookedSlots;
     
@@ -105,10 +147,52 @@ const ConsultantAvailability = () => {
   // Helper function to get overall slot statistics
   const getOverallSlotStats = (slots: AvailabilitySlot[]) => {
     const now = new Date();
+    const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const totalSlots = slots.length;
-    const expiredSlots = slots.filter(slot => new Date(slot.slot_end_time) <= now).length;
+    
+    // Use consistent expiry logic across all calculations
+    const expiredSlots = slots.filter(slot => {
+      const slotEndTime = new Date(slot.slot_end_time);
+      const slotDate = new Date(slotEndTime.getFullYear(), slotEndTime.getMonth(), slotEndTime.getDate());
+      
+      if (slotDate.getTime() < currentDate.getTime()) {
+        return true; // Past date
+      } else if (slotDate.getTime() === currentDate.getTime()) {
+        // Same date - check local time
+        const slotEndHours = slotEndTime.getHours();
+        const slotEndMinutes = slotEndTime.getMinutes();
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
+        
+        const slotEndTimeInMinutes = slotEndHours * 60 + slotEndMinutes;
+        const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+        
+        return slotEndTimeInMinutes <= currentTimeInMinutes;
+      }
+      return false;
+    }).length;
+    
     const activeSlots = totalSlots - expiredSlots;
-    const activeSlotList = slots.filter(slot => new Date(slot.slot_end_time) > now);
+    const activeSlotList = slots.filter(slot => {
+      const slotEndTime = new Date(slot.slot_end_time);
+      const slotDate = new Date(slotEndTime.getFullYear(), slotEndTime.getMonth(), slotEndTime.getDate());
+      
+      if (slotDate.getTime() < currentDate.getTime()) {
+        return false; // Past date
+      } else if (slotDate.getTime() === currentDate.getTime()) {
+        // Same date - check local time
+        const slotEndHours = slotEndTime.getHours();
+        const slotEndMinutes = slotEndTime.getMinutes();
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
+        
+        const slotEndTimeInMinutes = slotEndHours * 60 + slotEndMinutes;
+        const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+        
+        return slotEndTimeInMinutes > currentTimeInMinutes;
+      }
+      return true; // Future date
+    });
     const bookedSlots = activeSlotList.filter(slot => slot.booked_by_customer_choice_id !== null).length;
     const availableSlots = activeSlots - bookedSlots;
 
@@ -723,19 +807,30 @@ const ConsultantAvailability = () => {
                                   const isBooked = slot.booked_by_customer_choice_id !== null;
                                   const slotEndTime = new Date(slot.slot_end_time);
                                   const currentTime = new Date();
-                                  const isExpired = slotEndTime <= currentTime;
                                   
-                                  // Debug logging for troubleshooting
-                                  if (process.env.NODE_ENV === 'development') {
-                                    console.log('Slot:', {
-                                      id: slot.id,
-                                      endTime: slot.slot_end_time,
-                                      parsedEndTime: slotEndTime,
-                                      currentTime: currentTime,
-                                      isExpired: isExpired,
-                                      displayTime: slotEndTime.toLocaleTimeString()
-                                    });
+                                  // Fix: Compare times properly - if we're on the same calendar day
+                                  // and the end time (in local display) has passed, mark as expired
+                                  const now = new Date();
+                                  const slotDate = new Date(slotEndTime.getFullYear(), slotEndTime.getMonth(), slotEndTime.getDate());
+                                  const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                  
+                                  let isExpired = false;
+                                  if (slotDate.getTime() < currentDate.getTime()) {
+                                    // Slot is on a past date - definitely expired
+                                    isExpired = true;
+                                  } else if (slotDate.getTime() === currentDate.getTime()) {
+                                    // Same date - check if the local display time has passed
+                                    const slotEndHours = slotEndTime.getHours();
+                                    const slotEndMinutes = slotEndTime.getMinutes();
+                                    const currentHours = now.getHours();
+                                    const currentMinutes = now.getMinutes();
+                                    
+                                    const slotEndTimeInMinutes = slotEndHours * 60 + slotEndMinutes;
+                                    const currentTimeInMinutes = currentHours * 60 + currentMinutes;
+                                    
+                                    isExpired = slotEndTimeInMinutes <= currentTimeInMinutes;
                                   }
+
                                   
                                   return (
                                     <div
