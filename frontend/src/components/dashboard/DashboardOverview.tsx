@@ -50,9 +50,13 @@ const DashboardOverview = () => {
     if (!allSlots) return { total: 0, upcoming: 0 };
 
     const now = new Date();
+    // Fix: Use UTC date components for consistent comparison across timezones
+    const todayUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    
     const todaySlotsFiltered = allSlots.filter((slot: any) => {
-      const slotDate = new Date(slot.slotStartTime).toDateString();
-      return slotDate === today.toDateString();
+      const slotStartTime = new Date(slot.slotStartTime);
+      const slotUTCDate = new Date(slotStartTime.getUTCFullYear(), slotStartTime.getUTCMonth(), slotStartTime.getUTCDate());
+      return slotUTCDate.toDateString() === todayUTC.toDateString();
     });
 
     const upcoming = todaySlotsFiltered.filter((slot: any) => {

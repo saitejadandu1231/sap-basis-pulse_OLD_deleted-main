@@ -42,16 +42,20 @@ const ConsultantAvailability = () => {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [showPastDays, setShowPastDays] = useState(false);
 
-  // Helper function to group slots by date
+  // Helper function to group slots by date (using UTC to avoid timezone issues)
   const groupSlotsByDate = (slots: AvailabilitySlot[]) => {
     const grouped: { [key: string]: AvailabilitySlot[] } = {};
     
     slots.forEach(slot => {
-      const dateKey = new Date(slot.slot_start_time).toDateString();
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
+      // Fix: Use UTC date components to avoid timezone shifting issues
+      // This ensures that a slot stored as "2025-10-19 18:30:00+00" in the database
+      // is grouped under "October 19" regardless of the user's local timezone
+      const date = new Date(slot.slot_start_time);
+      const utcDateKey = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).toDateString();
+      if (!grouped[utcDateKey]) {
+        grouped[utcDateKey] = [];
       }
-      grouped[dateKey].push(slot);
+      grouped[utcDateKey].push(slot);
     });
     
     return grouped;
@@ -71,23 +75,27 @@ const ConsultantAvailability = () => {
   // Helper function to get day display info
   const getDayInfo = (dateKey: string, daySlots: AvailabilitySlot[]) => {
     const date = new Date(dateKey);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    
+    // Use UTC dates for consistent comparison across timezones
+    const now = new Date();
+    const todayUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const tomorrowUTC = new Date(todayUTC);
+    tomorrowUTC.setUTCDate(todayUTC.getUTCDate() + 1);
     
     let displayDate: string;
-    if (date.toDateString() === today.toDateString()) {
+    if (date.toDateString() === todayUTC.toDateString()) {
       displayDate = 'Today';
-    } else if (date.toDateString() === tomorrow.toDateString()) {
+    } else if (date.toDateString() === tomorrowUTC.toDateString()) {
       displayDate = 'Tomorrow';
     } else {
       displayDate = date.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
     }
     
     const totalSlots = daySlots.length;
-    const expiredSlots = daySlots.filter(slot => new Date(slot.slot_end_time) <= today).length;
+    const currentTime = new Date(); // Use current time for expiry check
+    const expiredSlots = daySlots.filter(slot => new Date(slot.slot_end_time) <= currentTime).length;
     const activeSlots = totalSlots - expiredSlots;
-    const activeDaySlots = daySlots.filter(slot => new Date(slot.slot_end_time) > today);
+    const activeDaySlots = daySlots.filter(slot => new Date(slot.slot_end_time) > currentTime);
     const bookedSlots = activeDaySlots.filter(slot => slot.booked_by_customer_choice_id !== null).length;
     const availableSlots = activeSlots - bookedSlots;
     
@@ -618,8 +626,10 @@ const ConsultantAvailability = () => {
                   <div className="space-y-4">
                     {(() => {
                       const groupedSlots = groupSlotsByDate(slots);
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0); // Set to start of today
+                      
+                      // Use UTC date for consistent filtering across timezones
+                      const now = new Date();
+                      const todayUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
                       
                       // Filter out past days unless showPastDays is true
                       const filteredGroupedSlots = showPastDays 
@@ -627,8 +637,7 @@ const ConsultantAvailability = () => {
                         : Object.fromEntries(
                             Object.entries(groupedSlots).filter(([dateKey]) => {
                               const slotDate = new Date(dateKey);
-                              slotDate.setHours(0, 0, 0, 0);
-                              return slotDate >= today;
+                              return slotDate >= todayUTC;
                             })
                           );
                       
