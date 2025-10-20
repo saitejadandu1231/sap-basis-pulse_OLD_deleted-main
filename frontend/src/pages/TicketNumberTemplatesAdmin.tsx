@@ -47,13 +47,13 @@ export function TicketNumberTemplatesAdmin() {
             </p>
           </AlertDescription>
         </Alert>
-
+{/* 
         <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
           <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">For Developers</h3>
           <p className="text-sm text-amber-800 dark:text-amber-200">
             To generate ticket numbers programmatically, use <code className="bg-black bg-opacity-10 px-1 py-0.5 rounded">ISimpleTicketNumberService.GenerateTicketNumberAsync()</code>
           </p>
-        </div>
+        </div> */}
       </div>
     </PageLayout>
   );
