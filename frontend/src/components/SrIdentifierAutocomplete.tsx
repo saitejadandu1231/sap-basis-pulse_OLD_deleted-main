@@ -212,21 +212,7 @@ const SrIdentifierAutocomplete: React.FC<SrIdentifierAutocompleteProps> = ({
               </p>
             </div>
           )}
-          
-          {/* Debug info - remove this after fixing the issue */}
-          {process.env.NODE_ENV === 'development' && (
-            <details className="text-xs text-muted-foreground">
-              <summary>Debug Info</summary>
-              <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-auto">
-                {JSON.stringify({
-                  searchedValue: value,
-                  validationResult,
-                  availableIdentifiers: allIdentifiers?.length || 0,
-                  suggestionsCount: suggestions.length
-                }, null, 2)}
-              </pre>
-            </details>
-          )}
+        
         </div>
       )}
     </div>

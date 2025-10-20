@@ -314,8 +314,11 @@ const DashboardOverview = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}
+                        {ticket.orderNumber}
                       </p>
+                      {ticket.srIdentifier && (
+                        <p className="text-xs text-muted-foreground truncate">SR Ref: {ticket.srIdentifier}</p>
+                      )}
                       <p className="text-sm text-muted-foreground truncate">
                         {ticket.supportTypeName}
                       </p>

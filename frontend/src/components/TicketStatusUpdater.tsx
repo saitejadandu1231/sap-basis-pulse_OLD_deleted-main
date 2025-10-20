@@ -39,8 +39,8 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
     value: option.statusCode,
     label: option.statusName,
     color: option.colorCode || 'bg-gray-500',
-    textColor: `text-${option.colorCode?.replace('bg-', '').replace('-500', '-700')}` || 'text-gray-700',
-    bgColor: `bg-${option.colorCode?.replace('bg-', '').replace('-500', '-50')}` || 'bg-gray-50',
+    textColor: 'text-white',
+    bgColor: option.colorCode || 'bg-gray-500',
     description: option.description || ''
   })) || [];
 
@@ -152,7 +152,6 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
           <div className="flex flex-col items-center space-y-2 min-w-0">
             <Label className="text-xs font-medium text-muted-foreground">Current Status</Label>
             <Badge 
-              variant="secondary" 
               className={`${getCurrentStatusInfo().bgColor} ${getCurrentStatusInfo().textColor} border-0 font-medium px-3 py-1 text-center w-full sm:w-auto`}
             >
               {getCurrentStatusInfo().label}
@@ -184,7 +183,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
             <SelectTrigger className="h-11">
               <SelectValue placeholder="Choose a status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[10000]">
               {statusOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value} className="py-3">
                   <div className="flex items-center gap-3 w-full">

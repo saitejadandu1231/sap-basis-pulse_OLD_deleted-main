@@ -24,7 +24,10 @@ export const useStatusOptions = () => {
   return useQuery({
     queryKey: ['status-options'],
     queryFn: async (): Promise<StatusOption[]> => {
-      const response = await apiFetch('api/status/options');
+      const response = await apiFetch('status/options');
+      if (!response.ok) {
+        throw new Error('Failed to fetch status options');
+      }
       return response.json();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes - status options don't change often
@@ -35,7 +38,10 @@ export const useStatusHistory = (orderId: string, enabled = true) => {
   return useQuery({
     queryKey: ['status-history', orderId],
     queryFn: async (): Promise<StatusHistoryItem[]> => {
-      const response = await apiFetch(`api/status/history/${orderId}`);
+      const response = await apiFetch(`status/history/${orderId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch status history');
+      }
       return response.json();
     },
     enabled: enabled && !!orderId,

@@ -27,9 +27,9 @@ namespace SapBasisPulse.Api.Data
         public DbSet<StatusChangeLog> StatusChangeLogs { get; set; }
         public DbSet<SSOConfiguration> SSOConfigurations { get; set; }
         public DbSet<ConsultantSkill> ConsultantSkills { get; set; }
-        public DbSet<TicketNumberTemplate> TicketNumberTemplates { get; set; }
         public DbSet<DomainRestriction> DomainRestrictions { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<TicketSequence> TicketSequences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -273,60 +273,6 @@ namespace SapBasisPulse.Api.Data
 
             entity.Property(cs => cs.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
-        });
-
-        modelBuilder.Entity<TicketNumberTemplate>(entity =>
-        {
-            entity.HasOne(t => t.SupportType)
-                .WithMany()
-                .HasForeignKey(t => t.SupportTypeId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasOne(t => t.SupportCategory)
-                .WithMany()
-                .HasForeignKey(t => t.SupportCategoryId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasOne(t => t.SupportSubOption)
-                .WithMany()
-                .HasForeignKey(t => t.SupportSubOptionId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasOne(t => t.CreatedByUser)
-                .WithMany()
-                .HasForeignKey(t => t.CreatedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(t => t.UpdatedByUser)
-                .WithMany()
-                .HasForeignKey(t => t.UpdatedByUserId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            entity.Property(t => t.Name)
-                .HasMaxLength(100)
-                .IsRequired();
-
-            entity.Property(t => t.Description)
-                .HasMaxLength(500);
-
-            entity.Property(t => t.Template)
-                .HasMaxLength(200)
-                .IsRequired();
-
-            entity.Property(t => t.DateFormat)
-                .HasMaxLength(50)
-                .HasDefaultValue("yyyy-MM-dd");
-
-            entity.Property(t => t.SequenceFormat)
-                .HasMaxLength(20)
-                .HasDefaultValue("0000");
-
-            entity.Property(t => t.CreatedAt)
-                .HasDefaultValueSql("NOW()");
-
-            // Index for performance
-            entity.HasIndex(t => new { t.SupportTypeId, t.SupportCategoryId, t.SupportSubOptionId, t.Priority, t.IsActive });
-            entity.HasIndex(t => t.IsDefault);
         });
 
         // Configure DomainRestriction

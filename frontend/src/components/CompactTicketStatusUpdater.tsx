@@ -34,7 +34,7 @@ const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
   const allStatusOptions = statusOptionsData?.map(option => ({
     value: option.statusCode,
     label: option.statusName,
-    color: `bg-${option.colorCode?.replace('bg-', '').replace('-500', '-100')} text-${option.colorCode?.replace('bg-', '').replace('-500', '-800')}` || 'bg-gray-100 text-gray-800'
+    color: `${option.colorCode || 'bg-gray-500'} text-white` || 'bg-gray-500 text-white'
   })) || [];
 
   // Use provided filtered status options for dropdown or fallback to all options
@@ -104,7 +104,7 @@ const CompactTicketStatusUpdater: React.FC<CompactTicketStatusUpdaterProps> = ({
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Select status" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[10000]">
             {statusOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 <div className="flex items-center gap-2">

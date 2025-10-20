@@ -38,12 +38,15 @@ const Login = () => {
   const { toast } = useToast();
   const { signIn, signUp, user } = useAuth();
   
-  // Get the redirect path from location state if available
-  const from = (location.state as { from?: string })?.from || getDashboardPath();
+  // Get URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const redirectParam = searchParams.get('redirect');
+  const mode = searchParams.get('mode');
+  
+  // Get the redirect path from URL parameter, location state, or default
+  const from = redirectParam || (location.state as { from?: string })?.from || getDashboardPath();
   
   // Check URL parameters to determine default tab
-  const searchParams = new URLSearchParams(location.search);
-  const mode = searchParams.get('mode');
   const defaultTab = mode === 'signup' ? 'signup' : 'signin';
   // domain validation removed; we call backend register API directly
   

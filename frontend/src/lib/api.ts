@@ -28,5 +28,21 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     headers
   });
   
+  // Handle 401 Unauthorized - session expired
+  if (res.status === 401) {
+    // Clear local auth data
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    
+    // Check if we're not already on the login page to avoid infinite redirects
+    if (!window.location.pathname.includes('/login')) {
+      // Show a brief notification (optional, as user will be redirected immediately)
+      console.log('Session expired. Redirecting to login...');
+      
+      // Redirect to login page with the current location for redirect after login
+      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+    }
+  }
+  
   return res;
 }

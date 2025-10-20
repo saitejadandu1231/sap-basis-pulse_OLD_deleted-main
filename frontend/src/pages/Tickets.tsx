@@ -372,7 +372,7 @@ const Tickets = () => {
         amount: paymentOrder.amount,
         currency: paymentOrder.currency,
         name: 'Yuktor',
-        description: `Payment for ${ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}`,
+        description: `Payment for ${ticket.orderNumber}`,
         order_id: paymentOrder.razorpayOrderId,
         handler: async function (response: any) {
           try {
@@ -572,7 +572,7 @@ const Tickets = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[10000]">
                       <SelectItem value="all">All Status</SelectItem>
                       {filterOptions.statuses.map(status => (
                         <SelectItem key={status} value={status}>
@@ -593,7 +593,7 @@ const Tickets = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="All Priority" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[10000]">
                       <SelectItem value="all">All Priority</SelectItem>
                       {filterOptions.priorities.map(priority => (
                         <SelectItem key={priority} value={priority}>
@@ -614,7 +614,7 @@ const Tickets = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[10000]">
                       <SelectItem value="all">All Types</SelectItem>
                       {filterOptions.supportTypes.map(type => (
                         <SelectItem key={type} value={type}>
@@ -636,7 +636,7 @@ const Tickets = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="All Consultants" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[10000]">
                         <SelectItem value="all">All Consultants</SelectItem>
                         {filterOptions.consultants.map(consultant => (
                           <SelectItem key={consultant} value={consultant}>
@@ -659,7 +659,7 @@ const Tickets = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="All Payment" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[10000]">
                         <SelectItem value="all">All Payment</SelectItem>
                         {filterOptions.paymentStatuses.map(status => (
                           <SelectItem key={status} value={status}>
@@ -747,7 +747,7 @@ const Tickets = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center space-x-2">
-                      <span>{ticket.srIdentifier || `SR-${ticket.id.substring(0, 8)}`}</span>
+                      <span>{ticket.orderNumber || ticket.srIdentifier || `Ticket #${ticket.id.substring(0, 8)}`}</span>
                     </CardTitle>
                     <div className="flex items-center space-x-2">
                       {getStatusIcon(ticket.status)}
@@ -766,7 +766,7 @@ const Tickets = () => {
                                 {(userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
                               </Badge>
                             </SelectTrigger>
-                            <SelectContent className="min-w-[200px]">
+                            <SelectContent className="min-w-[200px] z-[10000]">
                               {ticketFilteredOptions.map((option) => (
                                 <SelectItem key={option.value} value={option.value}>
                                   <div className="flex items-center space-x-2">
@@ -1034,7 +1034,12 @@ const Tickets = () => {
             <Card>
           <CardHeader className="p-3 sm:p-6">
             <CardTitle className="text-base sm:text-lg flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
-              <span className="break-all sm:break-normal">{selectedTicket.srIdentifier || `SR-${selectedTicket.id.substring(0, 8)}`}</span>
+              <div className="flex flex-col">
+                <span className="break-all sm:break-normal">{selectedTicket.orderNumber}</span>
+                {selectedTicket.srIdentifier && (
+                  <span className="text-sm text-muted-foreground font-normal">SR Ref: {selectedTicket.srIdentifier}</span>
+                )}
+              </div>
               <Badge variant={getStatusVariant(selectedTicket.status)} className="self-start sm:self-center">
                 {selectedTicket.status.replace(/([A-Z])/g, ' $1').trim()}
               </Badge>
@@ -1123,8 +1128,8 @@ const Tickets = () => {
                   onStatusUpdate={(newStatus) => handleStatusUpdate(selectedTicket.id, newStatus)}
                   allowedStatusOptions={filteredOptions.map(option => ({
                     ...option,
-                    textColor: `text-${option.color?.replace('bg-', '').replace('-500', '-700')}` || 'text-gray-700',
-                    bgColor: `bg-${option.color?.replace('bg-', '').replace('-500', '-50')}` || 'bg-gray-50',
+                    textColor: 'text-white',
+                    bgColor: option.color || 'bg-gray-500',
                   }))}
                   userRole={userRole}
                 />

@@ -115,8 +115,9 @@ const RecentTickets = () => {
 
   const handleStartConversation = async (ticket: any) => {
     try {
-      const subject = `Support: ${ticket.srIdentifier || 'SR-' + ticket.id.substring(0, 8)} - ${ticket.supportTypeName || 'Support Request'}`;
-      const initialMessage = `Hi, I need assistance with my support request:\n\nTicket ID: ${ticket.srIdentifier || 'SR-' + ticket.id.substring(0, 8)}\nType: ${ticket.supportTypeName || 'N/A'}\nStatus: ${ticket.status}\n\nDescription: ${ticket.description}\n\nPlease let me know how we can proceed. Thank you!`;
+  const displayId = ticket.orderNumber || ticket.srIdentifier || ('Ticket #' + ticket.id.substring(0, 8));
+  const subject = `Support: ${displayId} - ${ticket.supportTypeName || 'Support Request'}`;
+  const initialMessage = `Hi, I need assistance with my support request:\n\nTicket ID: ${displayId}\nType: ${ticket.supportTypeName || 'N/A'}\nStatus: ${ticket.status}\n\nDescription: ${ticket.description}\n\nPlease let me know how we can proceed. Thank you!`;
       
       const conversation = await createConversation.mutateAsync({
         orderId: ticket.id,
@@ -207,7 +208,7 @@ const RecentTickets = () => {
               <div key={ticket.id} className="border border-muted/20 rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">
-                    {ticket.srIdentifier || 'SR-' + ticket.id.substring(0, 8)}
+                    {ticket.orderNumber || ticket.srIdentifier || 'Ticket #' + ticket.id.substring(0, 8)}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={

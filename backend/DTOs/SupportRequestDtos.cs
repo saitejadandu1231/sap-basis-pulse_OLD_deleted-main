@@ -17,6 +17,7 @@ namespace SapBasisPulse.Api.DTOs
     public class SupportRequestDto
     {
         public Guid Id { get; set; }
+        public string OrderNumber { get; set; }
         public Guid SupportTypeId { get; set; }
         public string SupportTypeName { get; set; }
         public Guid SupportCategoryId { get; set; }
