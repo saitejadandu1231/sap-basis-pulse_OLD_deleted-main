@@ -11,14 +11,14 @@ namespace SapBasisPulse.Api.Services
         private readonly AppDbContext _context;
         private readonly IEmailSender _emailSender;
         private readonly IConfiguration _config;
-        private readonly ITicketNumberService _ticketNumberService;
+        private readonly ISimpleTicketNumberService _simpleTicketNumberService;
 
-        public SupportRequestService(AppDbContext context, IEmailSender emailSender, IConfiguration config, ITicketNumberService ticketNumberService)
+        public SupportRequestService(AppDbContext context, IEmailSender emailSender, IConfiguration config, ISimpleTicketNumberService simpleTicketNumberService)
         {
             _context = context;
             _emailSender = emailSender;
             _config = config;
-            _ticketNumberService = ticketNumberService;
+            _simpleTicketNumberService = simpleTicketNumberService;
         }
 
         public async Task<SupportRequestDto> CreateAsync(CreateSupportRequestDto dto, Guid createdByUserId)
@@ -31,11 +31,14 @@ namespace SapBasisPulse.Api.Services
             if (dto.TimeSlotIds == null || dto.TimeSlotIds.Count == 0)
                 throw new ArgumentException("At least one time slot must be selected");
 
-            // SR Identifier logic: required for certain suboptions (handled in UI, double-check here)
+            // SR Identifier validation: It's an OPTIONAL additional field for certain suboptions
+            // IMPORTANT: SR Identifier does NOT affect ticket number format.
+            // Ticket numbers are always generated in short-code format (e.g., SRBIL102500013)
+            // The SR Identifier is just an additional detail field that's independent of the ticket number.
             if (dto.SupportSubOptionId.HasValue)
             {
                 var subOption = await _context.SupportSubOptions.FindAsync(dto.SupportSubOptionId.Value);
-                if (subOption != null && subOption.Name.Contains("SR", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(dto.SrIdentifier))
+                if (subOption != null && subOption.RequiresSrIdentifier && string.IsNullOrWhiteSpace(dto.SrIdentifier))
                     throw new ArgumentException("SR Identifier is required for this request type");
             }
 
@@ -95,15 +98,19 @@ namespace SapBasisPulse.Api.Services
             var supportType = await _context.SupportTypes.FindAsync(dto.SupportTypeId);
             string supportTypeName = supportType?.Name ?? "Unknown";
             
-            // Generate ticket number using the new service
-            string orderNumber = await _ticketNumberService.GenerateTicketNumberAsync(
+            // Generate ticket number using the simple service
+            // Format: SRBIL102500013 (SupportType + Category + SubType + Priority + MonthYear + Sequence)
+            string orderNumber = await _simpleTicketNumberService.GenerateTicketNumberAsync(
                 dto.SupportTypeId, 
                 dto.SupportCategoryId, 
-                dto.SupportSubOptionId);
+                dto.SupportSubOptionId,
+                dto.Priority);
             
-            string srIdentifier = !string.IsNullOrWhiteSpace(dto.SrIdentifier) 
-                ? dto.SrIdentifier 
-                : orderNumber; // Use generated ticket number directly instead of AUTO prefix
+            // SR Identifier is a SEPARATE optional field provided by the user or from database
+            // It is NOT the same as the OrderNumber/ticket number
+            // If not provided and required, validation above will reject it
+            // If not required and not provided, we can leave it empty
+            string srIdentifier = dto.SrIdentifier ?? "";
                 
             var order = new Order
             {
@@ -311,6 +318,7 @@ namespace SapBasisPulse.Api.Services
             return new SupportRequestDto
             {
                 Id = o.Id,
+                OrderNumber = o.OrderNumber,
                 SupportTypeId = o.SupportTypeId,
                 SupportTypeName = o.SupportType?.Name ?? "Unknown",
                 SupportCategoryId = o.SupportCategoryId,
@@ -326,7 +334,7 @@ namespace SapBasisPulse.Api.Services
                 CreatedByUserId = o.CreatedByUserId,
                 CreatedByName = o.CreatedByUser != null ? o.CreatedByUser.FirstName + " " + o.CreatedByUser.LastName : "Unknown",
                 CreatedAt = o.CreatedAt,
-                Status = o.Status.StatusName,
+                Status = o.Status.StatusCode, // Use StatusCode to match with status options
                 ConversationId = conversation?.Id,
                 HasConversation = conversation != null,
                 UnreadMessageCount = unreadCount,

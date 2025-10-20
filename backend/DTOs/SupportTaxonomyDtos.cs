@@ -8,6 +8,7 @@ namespace SapBasisPulse.Api.DTOs
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
         public List<SupportCategoryDto> Categories { get; set; }
         public List<SupportSubOptionDto> SubOptions { get; set; }
     }
@@ -16,6 +17,7 @@ namespace SapBasisPulse.Api.DTOs
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
         public Guid SupportTypeId { get; set; }
     }
     public class SupportSubOptionDto
@@ -23,6 +25,7 @@ namespace SapBasisPulse.Api.DTOs
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
         public Guid SupportTypeId { get; set; }
         public bool RequiresSrIdentifier { get; set; }
     }
@@ -30,17 +33,20 @@ namespace SapBasisPulse.Api.DTOs
     {
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
     }
     public class CreateSupportCategoryDto
     {
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
         public Guid SupportTypeId { get; set; }
     }
     public class CreateSupportSubOptionDto
     {
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
         public Guid SupportTypeId { get; set; }
         public bool RequiresSrIdentifier { get; set; }
     }
@@ -48,17 +54,20 @@ namespace SapBasisPulse.Api.DTOs
     {
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
     }
     public class UpdateSupportCategoryDto
     {
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
         public Guid SupportTypeId { get; set; }
     }
     public class UpdateSupportSubOptionDto
     {
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; }
         public Guid SupportTypeId { get; set; }
         public bool RequiresSrIdentifier { get; set; }
     }

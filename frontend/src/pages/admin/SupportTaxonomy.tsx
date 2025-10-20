@@ -42,12 +42,14 @@ interface SupportType {
   id: string;
   name: string;
   description: string | null;
+  shortCode: string;
 }
 
 interface SupportCategory {
   id: string;
   name: string;
   description: string | null;
+  shortCode: string;
   supportTypeId: string;
 }
 
@@ -55,6 +57,7 @@ interface SupportSubOption {
   id: string;
   name: string;
   description: string | null;
+  shortCode: string;
   supportTypeId: string;
   requiresSrIdentifier: boolean;
 }
@@ -91,6 +94,7 @@ const SupportTaxonomyAdmin = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    shortCode: '',
     supportTypeId: '',
     requiresSrIdentifier: false
   });
@@ -98,17 +102,18 @@ const SupportTaxonomyAdmin = () => {
   const [editingItem, setEditingItem] = useState<any>(null);
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', supportTypeId: '', requiresSrIdentifier: false });
+    setFormData({ name: '', description: '', shortCode: '', supportTypeId: '', requiresSrIdentifier: false });
     setEditingItem(null);
   };
 
   const handleCreateType = async () => {
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim() || !formData.shortCode.trim()) return;
 
     try {
       await createTypeMutation.mutateAsync({
         name: formData.name,
-        description: formData.description
+        description: formData.description,
+        shortCode: formData.shortCode.toUpperCase()
       });
       setCreateTypeOpen(false);
       resetForm();
@@ -119,12 +124,13 @@ const SupportTaxonomyAdmin = () => {
   };
 
   const handleCreateCategory = async () => {
-    if (!formData.name.trim() || !formData.supportTypeId) return;
+    if (!formData.name.trim() || !formData.shortCode.trim() || !formData.supportTypeId) return;
 
     try {
       await createCategoryMutation.mutateAsync({
         name: formData.name,
         description: formData.description,
+        shortCode: formData.shortCode.toUpperCase(),
         supportTypeId: formData.supportTypeId
       });
       setCreateCategoryOpen(false);
@@ -136,12 +142,13 @@ const SupportTaxonomyAdmin = () => {
   };
 
   const handleCreateSubOption = async () => {
-    if (!formData.name.trim() || !formData.supportTypeId) return;
+    if (!formData.name.trim() || !formData.shortCode.trim() || !formData.supportTypeId) return;
 
     try {
       await createSubOptionMutation.mutateAsync({
         name: formData.name,
         description: formData.description,
+        shortCode: formData.shortCode.toUpperCase(),
         supportTypeId: formData.supportTypeId,
         requiresSrIdentifier: formData.requiresSrIdentifier
       });
@@ -154,13 +161,14 @@ const SupportTaxonomyAdmin = () => {
   };
 
   const handleEditType = async () => {
-    if (!editingItem || !formData.name.trim()) return;
+    if (!editingItem || !formData.name.trim() || !formData.shortCode.trim()) return;
 
     try {
       await updateTypeMutation.mutateAsync({
         id: editingItem.id,
         name: formData.name,
-        description: formData.description
+        description: formData.description,
+        shortCode: formData.shortCode.toUpperCase()
       });
       setEditTypeOpen(false);
       resetForm();
@@ -171,13 +179,14 @@ const SupportTaxonomyAdmin = () => {
   };
 
   const handleEditCategory = async () => {
-    if (!editingItem || !formData.name.trim() || !formData.supportTypeId) return;
+    if (!editingItem || !formData.name.trim() || !formData.shortCode.trim() || !formData.supportTypeId) return;
 
     try {
       await updateCategoryMutation.mutateAsync({
         id: editingItem.id,
         name: formData.name,
         description: formData.description,
+        shortCode: formData.shortCode.toUpperCase(),
         supportTypeId: formData.supportTypeId
       });
       setEditCategoryOpen(false);
@@ -189,13 +198,14 @@ const SupportTaxonomyAdmin = () => {
   };
 
   const handleEditSubOption = async () => {
-    if (!editingItem || !formData.name.trim() || !formData.supportTypeId) return;
+    if (!editingItem || !formData.name.trim() || !formData.shortCode.trim() || !formData.supportTypeId) return;
 
     try {
       await updateSubOptionMutation.mutateAsync({
         id: editingItem.id,
         name: formData.name,
         description: formData.description,
+        shortCode: formData.shortCode.toUpperCase(),
         supportTypeId: formData.supportTypeId,
         requiresSrIdentifier: formData.requiresSrIdentifier
       });
@@ -239,6 +249,7 @@ const SupportTaxonomyAdmin = () => {
     setFormData({
       name: type.name,
       description: type.description || '',
+      shortCode: type.shortCode || '',
       supportTypeId: '',
       requiresSrIdentifier: false
     });
@@ -250,6 +261,7 @@ const SupportTaxonomyAdmin = () => {
     setFormData({
       name: category.name,
       description: category.description || '',
+      shortCode: category.shortCode || '',
       supportTypeId: category.supportTypeId,
       requiresSrIdentifier: false
     });
@@ -261,6 +273,7 @@ const SupportTaxonomyAdmin = () => {
     setFormData({
       name: subOption.name,
       description: subOption.description || '',
+      shortCode: subOption.shortCode || '',
       supportTypeId: subOption.supportTypeId,
       requiresSrIdentifier: subOption.requiresSrIdentifier
     });
@@ -314,6 +327,19 @@ const SupportTaxonomyAdmin = () => {
                     placeholder="Brief description of the support type"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="typeShortCode">Short Code (Required)</Label>
+                  <Input
+                    id="typeShortCode"
+                    value={formData.shortCode}
+                    onChange={(e) => setFormData({ ...formData, shortCode: e.target.value.toUpperCase() })}
+                    placeholder="e.g., SR, DB, NW"
+                    maxLength={10}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Used for ticket numbering. Keep it short (2-5 characters).
+                  </p>
+                </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setCreateTypeOpen(false)}>
                     Cancel
@@ -364,7 +390,10 @@ const SupportTaxonomyAdmin = () => {
                   {supportTypes.map((type) => (
                     <div key={type.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <h4 className="font-medium">{type.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{type.name}</h4>
+                          <Badge variant="outline" className="text-xs">{type.shortCode}</Badge>
+                        </div>
                         {type.description && (
                           <p className="text-sm text-muted-foreground">{type.description}</p>
                         )}
@@ -452,6 +481,19 @@ const SupportTaxonomyAdmin = () => {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="categoryShortCode">Short Code (Required)</Label>
+                    <Input
+                      id="categoryShortCode"
+                      value={formData.shortCode}
+                      onChange={(e) => setFormData({ ...formData, shortCode: e.target.value.toUpperCase() })}
+                      placeholder="e.g., D, A, P, S"
+                      maxLength={10}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Used for ticket numbering. Keep it short (1-3 characters).
+                    </p>
+                  </div>
+                  <div>
                     <Label htmlFor="categoryType">Support Type</Label>
                     <Select
                       value={formData.supportTypeId}
@@ -510,7 +552,10 @@ const SupportTaxonomyAdmin = () => {
                       {typeCategories.map((category) => (
                         <div key={category.id} className="flex items-center justify-between p-3 border rounded">
                           <div>
-                            <span className="font-medium">{category.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{category.name}</span>
+                              <Badge variant="outline" className="text-xs">{category.shortCode}</Badge>
+                            </div>
                             {category.description && (
                               <p className="text-sm text-muted-foreground">{category.description}</p>
                             )}
@@ -597,6 +642,19 @@ const SupportTaxonomyAdmin = () => {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="subOptionShortCode">Short Code (Required)</Label>
+                    <Input
+                      id="subOptionShortCode"
+                      value={formData.shortCode}
+                      onChange={(e) => setFormData({ ...formData, shortCode: e.target.value.toUpperCase() })}
+                      placeholder="e.g., I, R, C, P"
+                      maxLength={10}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Used for ticket numbering. Keep it short (1-3 characters).
+                    </p>
+                  </div>
+                  <div>
                     <Label htmlFor="subOptionType">Support Type</Label>
                     <Select
                       value={formData.supportTypeId}
@@ -664,7 +722,10 @@ const SupportTaxonomyAdmin = () => {
                         <div key={subOption.id} className="flex items-center justify-between p-3 border rounded">
                           <div>
                             <div className="flex items-center space-x-3">
-                              <span className="font-medium">{subOption.name}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{subOption.name}</span>
+                                <Badge variant="outline" className="text-xs">{subOption.shortCode}</Badge>
+                              </div>
                               {subOption.requiresSrIdentifier && (
                                 <Badge variant="secondary">Requires SR ID</Badge>
                               )}
@@ -741,6 +802,19 @@ const SupportTaxonomyAdmin = () => {
                 placeholder="Brief description of the support type"
               />
             </div>
+            <div>
+              <Label htmlFor="editTypeShortCode">Short Code (Required)</Label>
+              <Input
+                id="editTypeShortCode"
+                value={formData.shortCode}
+                onChange={(e) => setFormData({ ...formData, shortCode: e.target.value.toUpperCase() })}
+                placeholder="e.g., SR, DB, NW"
+                maxLength={10}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Used for ticket numbering. Keep it short (2-5 characters).
+              </p>
+            </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setEditTypeOpen(false)}>
                 Cancel
@@ -786,6 +860,19 @@ const SupportTaxonomyAdmin = () => {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brief description of the category"
               />
+            </div>
+            <div>
+              <Label htmlFor="editCategoryShortCode">Short Code (Required)</Label>
+              <Input
+                id="editCategoryShortCode"
+                value={formData.shortCode}
+                onChange={(e) => setFormData({ ...formData, shortCode: e.target.value.toUpperCase() })}
+                placeholder="e.g., D, A, P, S"
+                maxLength={10}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Used for ticket numbering. Keep it short (1-3 characters).
+              </p>
             </div>
             <div>
               <Label htmlFor="editCategoryType">Support Type</Label>
@@ -850,6 +937,19 @@ const SupportTaxonomyAdmin = () => {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brief description of the sub-option"
               />
+            </div>
+            <div>
+              <Label htmlFor="editSubOptionShortCode">Short Code (Required)</Label>
+              <Input
+                id="editSubOptionShortCode"
+                value={formData.shortCode}
+                onChange={(e) => setFormData({ ...formData, shortCode: e.target.value.toUpperCase() })}
+                placeholder="e.g., I, R, C, P"
+                maxLength={10}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Used for ticket numbering. Keep it short (1-3 characters).
+              </p>
             </div>
             <div>
               <Label htmlFor="editSubOptionType">Support Type</Label>

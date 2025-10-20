@@ -1,4 +1,3 @@
-// Add needed namespaces
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
@@ -11,6 +10,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using SapBasisPulse.Api.Utilities;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Linq;
+using SapBasisPulse.Api.Middleware;
+using SapBasisPulse.Api.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +29,11 @@ if (builder.Environment.IsProduction())
 }
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Add global validation filter
+    options.Filters.Add<ValidationFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 // CORS configuration for development and production
@@ -65,7 +70,7 @@ builder.Services.AddScoped<IServiceRequestValidationService, ServiceRequestValid
 builder.Services.AddScoped<ISupabaseAuthService, SupabaseAuthService>();
 builder.Services.AddScoped<IPaymentService, RazorpayPaymentService>();
 builder.Services.AddScoped<IEmailSettingsService, EmailSettingsService>();
-builder.Services.AddScoped<ITicketNumberService, TicketNumberService>();
+builder.Services.AddScoped<ISimpleTicketNumberService, SimpleTicketNumberService>();
 builder.Services.AddScoped<ISystemSettingsService, SystemSettingsService>();
 builder.Services.AddScoped<IDomainRestrictionService, DomainRestrictionService>();
 
@@ -226,47 +231,8 @@ if (app.Environment.IsProduction())
     app.UseForwardedHeaders();
 }
 
-// TEMPORARY: Bypass custom error handling to show raw exceptions for debugging
-// Comment out custom error handler to get exact stack traces
-/*
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        context.Response.ContentType = "application/json";
-        var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        var ex = feature?.Error;
-        
-        object result;
-        
-        // In development or when debugging, provide detailed error information
-        if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableDetailedErrors", false))
-        {
-            result = new 
-            { 
-                error = "Unhandled Exception Occurred",
-                message = ex?.Message,
-                stackTrace = ex?.StackTrace,
-                innerException = ex?.InnerException?.Message,
-                type = ex?.GetType().Name,
-                timestamp = DateTime.UtcNow,
-                source = ex?.Source
-            };
-        }
-        else
-        {
-            result = new { error = "An unexpected error occurred. Please try again later." };
-        }
-        
-        var jsonResult = JsonSerializer.Serialize(result);
-        context.Response.StatusCode = 500;
-        await context.Response.WriteAsync(jsonResult);
-    });
-});
-*/
-
-// TEMPORARY: Enable developer exception page in production for debugging
-app.UseDeveloperExceptionPage();
+// Add global exception handling middleware (should be one of the first middlewares)
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

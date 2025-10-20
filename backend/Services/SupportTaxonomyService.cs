@@ -23,8 +23,9 @@ namespace SapBasisPulse.Api.Services
                     Id = t.Id,
                     Name = t.Name,
                     Description = t.Description,
-                    Categories = t.Categories.Select(c => new SupportCategoryDto { Id = c.Id, Name = c.Name, Description = c.Description, SupportTypeId = c.SupportTypeId }).ToList(),
-                    SubOptions = t.SubOptions.Select(s => new SupportSubOptionDto { Id = s.Id, Name = s.Name, Description = s.Description, SupportTypeId = s.SupportTypeId, RequiresSrIdentifier = s.RequiresSrIdentifier }).ToList()
+                    ShortCode = t.ShortCode,
+                    Categories = t.Categories.Select(c => new SupportCategoryDto { Id = c.Id, Name = c.Name, Description = c.Description, ShortCode = c.ShortCode, SupportTypeId = c.SupportTypeId }).ToList(),
+                    SubOptions = t.SubOptions.Select(s => new SupportSubOptionDto { Id = s.Id, Name = s.Name, Description = s.Description, ShortCode = s.ShortCode, SupportTypeId = s.SupportTypeId, RequiresSrIdentifier = s.RequiresSrIdentifier }).ToList()
                 })
                 .ToListAsync();
         }
@@ -41,17 +42,18 @@ namespace SapBasisPulse.Api.Services
                 Id = t.Id,
                 Name = t.Name,
                 Description = t.Description,
-                Categories = t.Categories.Select(c => new SupportCategoryDto { Id = c.Id, Name = c.Name, Description = c.Description, SupportTypeId = c.SupportTypeId }).ToList(),
-                SubOptions = t.SubOptions.Select(s => new SupportSubOptionDto { Id = s.Id, Name = s.Name, Description = s.Description, SupportTypeId = s.SupportTypeId, RequiresSrIdentifier = s.RequiresSrIdentifier }).ToList()
+                ShortCode = t.ShortCode,
+                Categories = t.Categories.Select(c => new SupportCategoryDto { Id = c.Id, Name = c.Name, Description = c.Description, ShortCode = c.ShortCode, SupportTypeId = c.SupportTypeId }).ToList(),
+                SubOptions = t.SubOptions.Select(s => new SupportSubOptionDto { Id = s.Id, Name = s.Name, Description = s.Description, ShortCode = s.ShortCode, SupportTypeId = s.SupportTypeId, RequiresSrIdentifier = s.RequiresSrIdentifier }).ToList()
             };
         }
 
         public async Task<SupportTypeDto> CreateSupportTypeAsync(CreateSupportTypeDto dto)
         {
-            var type = new SupportType { Id = Guid.NewGuid(), Name = dto.Name, Description = dto.Description };
+            var type = new SupportType { Id = Guid.NewGuid(), Name = dto.Name, Description = dto.Description, ShortCode = dto.ShortCode };
             _context.SupportTypes.Add(type);
             await _context.SaveChangesAsync();
-            return new SupportTypeDto { Id = type.Id, Name = type.Name, Description = type.Description, Categories = new(), SubOptions = new() };
+            return new SupportTypeDto { Id = type.Id, Name = type.Name, Description = type.Description, ShortCode = type.ShortCode, Categories = new(), SubOptions = new() };
         }
 
         public async Task<SupportTypeDto> UpdateSupportTypeAsync(Guid id, UpdateSupportTypeDto dto)
@@ -61,6 +63,7 @@ namespace SapBasisPulse.Api.Services
 
             type.Name = dto.Name;
             type.Description = dto.Description;
+            type.ShortCode = dto.ShortCode;
             await _context.SaveChangesAsync();
 
             return await GetSupportTypeByIdAsync(id) ?? throw new InvalidOperationException("Failed to retrieve updated support type");
@@ -78,10 +81,10 @@ namespace SapBasisPulse.Api.Services
 
         public async Task<SupportCategoryDto> CreateSupportCategoryAsync(CreateSupportCategoryDto dto)
         {
-            var cat = new SupportCategory { Id = Guid.NewGuid(), Name = dto.Name, Description = dto.Description, SupportTypeId = dto.SupportTypeId };
+            var cat = new SupportCategory { Id = Guid.NewGuid(), Name = dto.Name, Description = dto.Description, ShortCode = dto.ShortCode, SupportTypeId = dto.SupportTypeId };
             _context.SupportCategories.Add(cat);
             await _context.SaveChangesAsync();
-            return new SupportCategoryDto { Id = cat.Id, Name = cat.Name, Description = cat.Description, SupportTypeId = cat.SupportTypeId };
+            return new SupportCategoryDto { Id = cat.Id, Name = cat.Name, Description = cat.Description, ShortCode = cat.ShortCode, SupportTypeId = cat.SupportTypeId };
         }
 
         public async Task<SupportCategoryDto> UpdateSupportCategoryAsync(Guid id, UpdateSupportCategoryDto dto)
@@ -91,10 +94,11 @@ namespace SapBasisPulse.Api.Services
 
             category.Name = dto.Name;
             category.Description = dto.Description;
+            category.ShortCode = dto.ShortCode;
             category.SupportTypeId = dto.SupportTypeId;
             await _context.SaveChangesAsync();
 
-            return new SupportCategoryDto { Id = category.Id, Name = category.Name, Description = category.Description, SupportTypeId = category.SupportTypeId };
+            return new SupportCategoryDto { Id = category.Id, Name = category.Name, Description = category.Description, ShortCode = category.ShortCode, SupportTypeId = category.SupportTypeId };
         }
 
         public async Task<bool> DeleteSupportCategoryAsync(Guid id)
@@ -109,10 +113,10 @@ namespace SapBasisPulse.Api.Services
 
         public async Task<SupportSubOptionDto> CreateSupportSubOptionAsync(CreateSupportSubOptionDto dto)
         {
-            var sub = new SupportSubOption { Id = Guid.NewGuid(), Name = dto.Name, Description = dto.Description, SupportTypeId = dto.SupportTypeId, RequiresSrIdentifier = dto.RequiresSrIdentifier };
+            var sub = new SupportSubOption { Id = Guid.NewGuid(), Name = dto.Name, Description = dto.Description, ShortCode = dto.ShortCode, SupportTypeId = dto.SupportTypeId, RequiresSrIdentifier = dto.RequiresSrIdentifier };
             _context.SupportSubOptions.Add(sub);
             await _context.SaveChangesAsync();
-            return new SupportSubOptionDto { Id = sub.Id, Name = sub.Name, Description = sub.Description, SupportTypeId = sub.SupportTypeId, RequiresSrIdentifier = sub.RequiresSrIdentifier };
+            return new SupportSubOptionDto { Id = sub.Id, Name = sub.Name, Description = sub.Description, ShortCode = sub.ShortCode, SupportTypeId = sub.SupportTypeId, RequiresSrIdentifier = sub.RequiresSrIdentifier };
         }
 
         public async Task<SupportSubOptionDto> UpdateSupportSubOptionAsync(Guid id, UpdateSupportSubOptionDto dto)
@@ -122,11 +126,12 @@ namespace SapBasisPulse.Api.Services
 
             subOption.Name = dto.Name;
             subOption.Description = dto.Description;
+            subOption.ShortCode = dto.ShortCode;
             subOption.SupportTypeId = dto.SupportTypeId;
             subOption.RequiresSrIdentifier = dto.RequiresSrIdentifier;
             await _context.SaveChangesAsync();
 
-            return new SupportSubOptionDto { Id = subOption.Id, Name = subOption.Name, Description = subOption.Description, SupportTypeId = subOption.SupportTypeId, RequiresSrIdentifier = subOption.RequiresSrIdentifier };
+            return new SupportSubOptionDto { Id = subOption.Id, Name = subOption.Name, Description = subOption.Description, ShortCode = subOption.ShortCode, SupportTypeId = subOption.SupportTypeId, RequiresSrIdentifier = subOption.RequiresSrIdentifier };
         }
 
         public async Task<bool> DeleteSupportSubOptionAsync(Guid id)
@@ -143,7 +148,7 @@ namespace SapBasisPulse.Api.Services
         {
             return await _context.SupportCategories
                 .Where(c => c.SupportTypeId == typeId)
-                .Select(c => new SupportCategoryDto { Id = c.Id, Name = c.Name })
+                .Select(c => new SupportCategoryDto { Id = c.Id, Name = c.Name, ShortCode = c.ShortCode, SupportTypeId = c.SupportTypeId })
                 .ToListAsync();
         }
 
@@ -151,7 +156,7 @@ namespace SapBasisPulse.Api.Services
         {
             return await _context.SupportSubOptions
                 .Where(s => s.SupportTypeId == typeId)
-                .Select(s => new SupportSubOptionDto { Id = s.Id, Name = s.Name, RequiresSrIdentifier = s.RequiresSrIdentifier })
+                .Select(s => new SupportSubOptionDto { Id = s.Id, Name = s.Name, ShortCode = s.ShortCode, SupportTypeId = s.SupportTypeId, RequiresSrIdentifier = s.RequiresSrIdentifier })
                 .ToListAsync();
         }
 
@@ -164,6 +169,7 @@ namespace SapBasisPulse.Api.Services
                     Id = c.Id,
                     Name = c.Name,
                     Description = c.Description,
+                    ShortCode = c.ShortCode,
                     SupportTypeId = c.SupportTypeId
                 })
                 .ToListAsync();
@@ -178,6 +184,7 @@ namespace SapBasisPulse.Api.Services
                     Id = s.Id,
                     Name = s.Name,
                     Description = s.Description,
+                    ShortCode = s.ShortCode,
                     SupportTypeId = s.SupportTypeId,
                     RequiresSrIdentifier = s.RequiresSrIdentifier
                 })

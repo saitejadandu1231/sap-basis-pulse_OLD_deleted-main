@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardPath } from '@/hooks/useDashboardPath';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import PageLayout from '@/components/layout/PageLayout';
+import { apiFetch } from '@/lib/api';
 import { 
     ChevronRight, 
     ChevronLeft, 
@@ -21,7 +23,8 @@ import {
     FileText,
     Settings,
     Star,
-    Calendar
+    Calendar,
+    RefreshCw
 } from 'lucide-react';
 import { 
     useSupportTypes, 
@@ -54,6 +57,7 @@ const SupportSelection = () => {
   const navigate = useNavigate();
   const dashboardPath = useDashboardPath();
   const { user, userRole } = useAuth();
+  const queryClient = useQueryClient();
   
   // Step management
   const [currentStep, setCurrentStep] = useState(0);
@@ -68,6 +72,7 @@ const SupportSelection = () => {
   const [selectedConsultant, setSelectedConsultant] = useState('');
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [consultantShowingReviews, setConsultantShowingReviews] = useState<string | null>(null);
+  const [refreshingSlots, setRefreshingSlots] = useState(false);
   // SR validation is now handled by the SrIdentifierAutocomplete component
   
   // SR Identifier validation is now handled by the autocomplete component
@@ -141,13 +146,42 @@ const SupportSelection = () => {
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
+      
+      // Refresh time slots when moving to step 3 (time slot selection)
+      if (currentStep + 1 === 3 && selectedConsultant) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['consultantSlots', selectedConsultant, startDate, endDate] 
+        });
+      }
     }
   };
 
   const prevStep = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      
+      // Refresh time slots when moving back to step 3 (time slot selection)
+      if (currentStep - 1 === 3 && selectedConsultant) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['consultantSlots', selectedConsultant, startDate, endDate] 
+        });
+      }
     }
+  };
+
+  // Consultant selection with cache refresh
+  const handleConsultantSelect = (consultantId: string) => {
+    setSelectedConsultant(consultantId);
+    setSelectedTimeSlots([]);
+    setRefreshingSlots(true);
+    
+    // Immediately refresh availability slots for the new consultant
+    queryClient.invalidateQueries({ 
+      queryKey: ['consultantSlots', consultantId, startDate, endDate] 
+    });
+    
+    // Clear refreshing status after a short delay
+    setTimeout(() => setRefreshingSlots(false), 1500);
   };
 
   // Auto-advance logic
@@ -179,7 +213,7 @@ const SupportSelection = () => {
     
     // Check if this sub-option requires SR identifier
     const selectedSubOptionObj = supportSubOptions?.find(option => option.id === value);
-    const needsSrIdentifier = selectedSubOptionObj?.name === 'Service Request (SR)';
+    const needsSrIdentifier = selectedSubOptionObj?.requiresSrIdentifier || false;
     
     // Only auto-advance if SR identifier is NOT required
     if (!needsSrIdentifier) {
@@ -198,7 +232,7 @@ const SupportSelection = () => {
           if (!selectedSubOption) return false;
           // If SR Identifier is required for this sub-option, it must be provided and valid
           const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
-          const needsSrIdentifier = selectedSubOptionObj?.name === 'Service Request (SR)';
+          const needsSrIdentifier = selectedSubOptionObj?.requiresSrIdentifier || false;
           if (needsSrIdentifier) {
             if (!srIdentifier.trim()) return false;
             // Basic validation - detailed validation is handled by autocomplete component  
@@ -228,11 +262,7 @@ const SupportSelection = () => {
     const selectedSupportTypeObj = supportTypes?.find(type => type.id === selectedSupport);
     const selectedSubOptionObj = supportSubOptions?.find(option => option.id === selectedSubOption);
     
-    const needsSrIdentifier = 
-      (selectedSubOptionObj?.requiresSrIdentifier !== undefined ? 
-        selectedSubOptionObj?.requiresSrIdentifier : 
-        selectedSubOptionObj?.name === 'Service Request (SR)') && 
-      (selectedSupportTypeObj?.name === 'SAP RISE' || selectedSupportTypeObj?.name === 'SAP Grow');
+    const needsSrIdentifier = selectedSubOptionObj?.requiresSrIdentifier || false;
 
     if (needsSrIdentifier) {
       if (!srIdentifier.trim()) {
@@ -242,7 +272,28 @@ const SupportSelection = () => {
       // Validation is handled by the autocomplete component
     }
 
+    // Show loading state
+    toast.info('Validating time slots and creating your request...', { id: 'creating-request' });
+
     try {
+      // Pre-validate time slots availability before submission
+      const revalidateResponse = await apiFetch(`ConsultantAvailability?consultantId=${selectedConsultant}&startDate=${startDate}&endDate=${endDate}`);
+      if (revalidateResponse.ok) {
+        const currentAvailableSlots = await revalidateResponse.json();
+        const availableSlotIds = currentAvailableSlots.map((slot: any) => slot.id);
+        const unavailableSlots = selectedTimeSlots.filter(slotId => !availableSlotIds.includes(slotId));
+        
+        if (unavailableSlots.length > 0) {
+          toast.error(
+            `Some selected time slots are no longer available. Please refresh and select different time slots.`,
+            { id: 'creating-request' }
+          );
+          // Clear the unavailable slots from selection
+          setSelectedTimeSlots(prev => prev.filter(slotId => availableSlotIds.includes(slotId)));
+          return;
+        }
+      }
+
       await createRequest.mutateAsync({
         supportTypeId: selectedSupport,
         supportCategoryId: selectedCategory,
@@ -253,11 +304,20 @@ const SupportSelection = () => {
         consultantId: selectedConsultant,
         timeSlotIds: selectedTimeSlots
       });
-      toast.success('Support request created successfully!');
+      toast.success('Support request created successfully!', { id: 'creating-request' });
       navigate(dashboardPath);
     } catch (error: any) {
       console.error('Error creating support request:', error);
-      toast.error(error?.message || 'Failed to create support request');
+      if (error?.message?.includes('already booked')) {
+        toast.error(
+          'The selected time slots were just booked by another user. Please select different time slots.',
+          { id: 'creating-request' }
+        );
+        // Clear selected slots to force reselection
+        setSelectedTimeSlots([]);
+      } else {
+        toast.error(error?.message || 'Failed to create support request', { id: 'creating-request' });
+      }
     }
   };
 
@@ -586,7 +646,7 @@ const SupportSelection = () => {
             )}
             
             {/* SR Identifier if needed */}
-            {selectedSubOption && selectedSubOptionObj?.name === 'Service Request (SR)' && (
+            {selectedSubOption && selectedSubOptionObj?.requiresSrIdentifier && (
               <div className="mt-8">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Service Request Details</h3>
@@ -888,10 +948,27 @@ const SupportSelection = () => {
 
               {/* Consultant Selection - Enhanced */}
               <div className="space-y-4">
-                <Label className="text-base font-semibold flex items-center space-x-2">
-                  <User className="w-4 h-4" />
-                  <span>Choose a consultant for your support request *</span>
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold flex items-center space-x-2">
+                    <User className="w-4 h-4" />
+                    <span>Choose a consultant for your support request *</span>
+                  </Label>
+                  {selectedConsultant && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedConsultant('');
+                        setSelectedTimeSlots([]);
+                        setConsultantShowingReviews(null);
+                      }}
+                      className="text-xs h-8"
+                    >
+                      <User className="w-3 h-3 mr-1" />
+                      Change Consultant
+                    </Button>
+                  )}
+                </div>
                 
                 {isConsultantsLoading ? (
                   <div className="grid gap-3 md:grid-cols-2">
@@ -909,7 +986,11 @@ const SupportSelection = () => {
                   </div>
                 ) : availableConsultants && availableConsultants.length > 0 ? (
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {availableConsultants.map((consultant: any) => {
+                    {/* Show only selected consultant if one is selected, otherwise show all */}
+                    {(selectedConsultant 
+                      ? availableConsultants.filter((consultant: any) => consultant.id === selectedConsultant)
+                      : availableConsultants
+                    ).map((consultant: any) => {
                       const isSelected = selectedConsultant === consultant.id;
                       const showReviews = consultantShowingReviews === consultant.id;
                       
@@ -933,7 +1014,7 @@ const SupportSelection = () => {
                               {/* Header - Consultant Info */}
                               <div 
                                 className="flex items-start space-x-3 cursor-pointer"
-                                onClick={() => setSelectedConsultant(consultant.id)}
+                                onClick={() => handleConsultantSelect(consultant.id)}
                               >
                                 {/* Avatar */}
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-medium text-sm relative ${
@@ -942,7 +1023,7 @@ const SupportSelection = () => {
                                     : 'bg-gradient-to-r from-gray-500 to-gray-600'
                                 }`}>
                                   {consultant.firstName?.[0]}{consultant.lastName?.[0]}
-                                  {consultant.status === 'available' && (
+                                  {consultant.Status === 'Active' && (
                                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
                                   )}
                                 </div>
@@ -972,14 +1053,14 @@ const SupportSelection = () => {
                                   {/* Performance Indicators */}
                                   <div className="flex items-center space-x-3 mt-2">
                                     {/* Rating */}
-                                    {consultant.averageRating && consultant.averageRating > 0 ? (
+                                    {(consultant.averageRating || consultant.AverageRating) && (consultant.averageRating || consultant.AverageRating) > 0 ? (
                                       <div className="flex items-center space-x-1">
                                         <div className="flex">
                                           {[1, 2, 3, 4, 5].map((star) => (
                                             <Star
                                               key={star}
                                               className={`w-3 h-3 ${
-                                                star <= Math.round(consultant.averageRating) 
+                                                star <= Math.round(consultant.averageRating || consultant.AverageRating) 
                                                   ? 'fill-yellow-400 text-yellow-400' 
                                                   : 'text-gray-300'
                                               }`}
@@ -987,23 +1068,23 @@ const SupportSelection = () => {
                                           ))}
                                         </div>
                                         <span className="text-xs text-muted-foreground">
-                                          {consultant.averageRating.toFixed(1)}
+                                          {(consultant.averageRating || consultant.AverageRating).toFixed(1)}
                                         </span>
                                       </div>
                                     ) : (
                                       <span className="text-xs text-muted-foreground">New</span>
                                     )}
                                     
-                                    {/* Response Time */}
+                                    {/* Response Time - Show hourly rate instead */}
                                     <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                      <Clock className="w-3 h-3" />
-                                      <span>{consultant.avgResponseTime || '< 1h'}</span>
+                                      <span>₹</span>
+                                      <span>{consultant.hourlyRate || consultant.HourlyRate || 'Rate not set'}/hr</span>
                                     </div>
                                     
-                                    {/* Success Rate */}
+                                    {/* Total Ratings */}
                                     <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                       <Check className="w-3 h-3" />
-                                      <span>{consultant.successRate || '95'}%</span>
+                                      <span>{consultant.totalRatings || consultant.TotalRatings || 0} reviews</span>
                                     </div>
                                   </div>
                                 </div>
@@ -1012,22 +1093,17 @@ const SupportSelection = () => {
                               {/* Status and Actions Bar */}
                               <div className="flex items-center justify-between pt-2 border-t border-muted/30">
                                 <div className="flex items-center space-x-2">
-                                  <Badge 
-                                    variant={consultant.status === 'available' ? 'default' : 'secondary'} 
-                                    className="text-xs px-2 py-0.5"
-                                  >
-                                    {consultant.status === 'available' ? 'Available Now' : 'Busy'}
-                                  </Badge>
                                   
-                                  {consultant.totalRatings > 0 && (
+                                  
+                                  {(consultant.totalRatings || consultant.TotalRatings) > 0 && (
                                     <span className="text-xs text-muted-foreground">
-                                      {consultant.totalRatings} reviews
+                                      {consultant.totalRatings || consultant.TotalRatings} reviews
                                     </span>
                                   )}
                                 </div>
                                 
                                 {/* Review Toggle Button */}
-                                {consultant.totalRatings > 0 && (
+                                {(consultant.totalRatings || consultant.TotalRatings) > 0 && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1049,7 +1125,7 @@ const SupportSelection = () => {
                               </div>
                               
                               {/* Reviews Section - Expandable */}
-                              {showReviews && consultant.totalRatings > 0 && (
+                              {showReviews && (consultant.totalRatings || consultant.TotalRatings) > 0 && (
                                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                                   <div className="bg-muted/20 rounded-lg p-3 space-y-2">
                                     <h5 className="text-xs font-medium text-muted-foreground">Customer Reviews</h5>
@@ -1092,9 +1168,9 @@ const SupportSelection = () => {
                                     ) : (
                                       <div className="text-xs text-muted-foreground text-center py-2">No reviews available</div>
                                     )}
-                                    {consultant.totalRatings > 2 && (
+                                    {(consultant.totalRatings || consultant.TotalRatings) > 2 && (
                                       <p className="text-xs text-muted-foreground text-center pt-1">
-                                        +{consultant.totalRatings - 2} more reviews
+                                        +{(consultant.totalRatings || consultant.TotalRatings) - 2} more reviews
                                       </p>
                                     )}
                                   </div>
@@ -1143,15 +1219,35 @@ const SupportSelection = () => {
               {/* Time Slot Selection - Redesigned */}
               {selectedConsultant && (
                 <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full" />
-                    <Label className="text-base font-semibold flex items-center space-x-2">
-                      <Clock className="w-4 h-4" />
-                      <span>Available Time Slots</span>
-                    </Label>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full" />
+                      <Label className="text-base font-semibold flex items-center space-x-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Available Time Slots</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleConsultantSelect(selectedConsultant)}
+                        disabled={refreshingSlots}
+                        className="text-xs h-8"
+                      >
+                        <RefreshCw className={`w-3 h-3 mr-1 ${refreshingSlots ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                      {refreshingSlots && (
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                          <span>Refreshing...</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
-                  {loadingSlots ? (
+                  {(loadingSlots || refreshingSlots) ? (
                     <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                       {[1, 2, 3, 4, 5, 6].map(i => (
                         <div key={i} className="bg-muted/30 rounded-lg p-3 animate-pulse">

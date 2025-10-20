@@ -8,6 +8,7 @@ namespace SapBasisPulse.Api.Entities
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; } = string.Empty; // Short code for ticket numbering
         public ICollection<SupportCategory> Categories { get; set; }
         public ICollection<SupportSubOption> SubOptions { get; set; }
     }
@@ -17,6 +18,7 @@ namespace SapBasisPulse.Api.Entities
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; } = string.Empty; // Short code for ticket numbering
         public Guid SupportTypeId { get; set; }
         public SupportType SupportType { get; set; }
     }
@@ -26,6 +28,7 @@ namespace SapBasisPulse.Api.Entities
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string ShortCode { get; set; } = string.Empty; // Short code for ticket numbering
         public Guid SupportTypeId { get; set; }
         public SupportType SupportType { get; set; }
         public bool RequiresSrIdentifier { get; set; }

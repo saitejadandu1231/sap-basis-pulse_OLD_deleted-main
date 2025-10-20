@@ -7,18 +7,22 @@ interface SupportType {
   id: string;
   name: string;
   description: string | null;
+  shortCode: string;
 }
 
 interface SupportCategory {
   id: string;
   name: string;
   description: string | null;
+  shortCode: string;
+  supportTypeId: string;
 }
 
 interface SupportSubOption {
   id: string;
   name: string;
   description: string | null;
+  shortCode: string;
   supportTypeId: string | null;
   requiresSrIdentifier?: boolean;
 }
@@ -160,6 +164,10 @@ export const useConsultantAvailabilitySlots = (consultantId: string | null, star
       return await response.json();
     },
     enabled: !!consultantId && !!startDate && !!endDate,
+    // Shorter cache time for availability slots to reduce race conditions
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute to keep data fresh
+    refetchIntervalInBackground: false, // Only when tab is active
   });
 };
 
@@ -251,8 +259,19 @@ export const useCreateSupportRequest = () => {
       
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate tickets list
       queryClient.invalidateQueries({ queryKey: ['recentTickets'] });
+      
+      // Invalidate time slots for the selected consultant to reflect booked status
+      queryClient.invalidateQueries({ 
+        queryKey: ['consultantSlots', variables.consultantId]
+      });
+      
+      // Also invalidate any general consultant availability queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['consultants'] 
+      });
     },
   });
 };
@@ -389,7 +408,7 @@ export const useCreateSupportType = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
+    mutationFn: async (data: { name: string; description: string; shortCode: string }) => {
       const response = await apiFetch('SupportTaxonomy/admin/types', {
         method: 'POST',
         headers: {
@@ -416,13 +435,13 @@ export const useUpdateSupportType = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { id: string; name: string; description: string }) => {
+    mutationFn: async (data: { id: string; name: string; description: string; shortCode: string }) => {
       const response = await apiFetch(`SupportTaxonomy/admin/types/${data.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: data.name, description: data.description }),
+        body: JSON.stringify({ name: data.name, description: data.description, shortCode: data.shortCode }),
       });
 
       if (!response.ok) {
@@ -479,7 +498,7 @@ export const useCreateSupportCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { name: string; description: string; supportTypeId: string }) => {
+    mutationFn: async (data: { name: string; description: string; supportTypeId: string; shortCode: string }) => {
       const response = await apiFetch('SupportTaxonomy/admin/categories', {
         method: 'POST',
         headers: {
@@ -506,13 +525,13 @@ export const useUpdateSupportCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { id: string; name: string; description: string; supportTypeId: string }) => {
+    mutationFn: async (data: { id: string; name: string; description: string; supportTypeId: string; shortCode: string }) => {
       const response = await apiFetch(`SupportTaxonomy/admin/categories/${data.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: data.name, description: data.description, supportTypeId: data.supportTypeId }),
+        body: JSON.stringify({ name: data.name, description: data.description, supportTypeId: data.supportTypeId, shortCode: data.shortCode }),
       });
 
       if (!response.ok) {
@@ -569,7 +588,7 @@ export const useCreateSupportSubOption = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { name: string; description: string; supportTypeId: string; requiresSrIdentifier?: boolean }) => {
+    mutationFn: async (data: { name: string; description: string; supportTypeId: string; shortCode: string; requiresSrIdentifier?: boolean }) => {
       const response = await apiFetch('SupportTaxonomy/admin/suboptions', {
         method: 'POST',
         headers: {
@@ -596,13 +615,13 @@ export const useUpdateSupportSubOption = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { id: string; name: string; description: string; supportTypeId: string; requiresSrIdentifier?: boolean }) => {
+    mutationFn: async (data: { id: string; name: string; description: string; supportTypeId: string; shortCode: string; requiresSrIdentifier?: boolean }) => {
       const response = await apiFetch(`SupportTaxonomy/admin/suboptions/${data.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: data.name, description: data.description, supportTypeId: data.supportTypeId, requiresSrIdentifier: data.requiresSrIdentifier }),
+        body: JSON.stringify({ name: data.name, description: data.description, supportTypeId: data.supportTypeId, shortCode: data.shortCode, requiresSrIdentifier: data.requiresSrIdentifier }),
       });
 
       if (!response.ok) {
