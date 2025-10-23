@@ -97,14 +97,15 @@ ON "SupportSubOptions" ("ShortCode", "SupportTypeId");
 CREATE TABLE IF NOT EXISTS "TicketSequences" (
     "Id" SERIAL PRIMARY KEY,
     "Year" INTEGER NOT NULL,
-    "NextSequence" INTEGER NOT NULL DEFAULT 1,
-    "LastUpdated" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+    "LastSequenceNumber" INTEGER NOT NULL DEFAULT 1,
+    "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+    "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     CONSTRAINT "UK_TicketSequences_Year" UNIQUE ("Year")
 );
 
 -- Initialize with current year
-INSERT INTO "TicketSequences" ("Year", "NextSequence", "LastUpdated")
-VALUES (EXTRACT(YEAR FROM NOW()), 1, NOW() AT TIME ZONE 'utc')
+INSERT INTO "TicketSequences" ("Year", "LastSequenceNumber", "CreatedAt", "UpdatedAt")
+VALUES (EXTRACT(YEAR FROM NOW()), 1, NOW() AT TIME ZONE 'utc', NOW() AT TIME ZONE 'utc')
 ON CONFLICT ("Year") DO NOTHING;
 
 -- ========================================
@@ -158,4 +159,8 @@ SELECT 'SupportSubOptions' as table_name, "Id", "Name", "ShortCode", "SupportTyp
 -- Show the ticket sequence table
 SELECT * FROM "TicketSequences";
 
-RAISE NOTICE 'Migration 01 completed successfully: Added ShortCode support and TicketSequences table';
+-- Final success message
+DO $$
+BEGIN
+    RAISE NOTICE 'Migration 01 completed successfully: Added ShortCode support and TicketSequences table';
+END $$;

@@ -6,11 +6,9 @@
 -- SAFETY CHECK - Uncomment to proceed
 -- ========================================
 
--- Remove the comment from the line below to confirm you want to delete all data
 SET client_min_messages = WARNING;
 
--- Uncomment this line to actually execute the deletions
--- DO $$ BEGIN RAISE NOTICE 'Data deletion confirmed'; END $$;
+-- DO $$ BEGIN RAISE NOTICE 'Data deletion confirmed'; END $$;  -- commented out to avoid accidental execution
 
 -- If you haven't uncommented the above lines, the script will stop here
 DO $$
@@ -159,7 +157,7 @@ DO $$
 BEGIN
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ConsultantSkill') THEN
         DELETE FROM "ConsultantSkill" 
-        WHERE "ConsultantId" IN (SELECT "Id" FROM "Users" WHERE "Role" != 'Admin');
+        WHERE "ConsultantId" IN (SELECT "Id" FROM "Users" WHERE "Role" != 0);
         RAISE NOTICE 'Cleared ConsultantSkill for non-admin users';
     END IF;
 EXCEPTION WHEN OTHERS THEN
@@ -186,7 +184,7 @@ DO $$
 BEGIN
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'RefreshTokens') THEN
         DELETE FROM "RefreshTokens" 
-        WHERE "UserId" IN (SELECT "Id" FROM "Users" WHERE "Role" != 'Admin');
+        WHERE "UserId" IN (SELECT "Id" FROM "Users" WHERE "Role" != 0);
         RAISE NOTICE 'Cleared RefreshTokens for non-admin users';
     END IF;
 EXCEPTION WHEN OTHERS THEN
@@ -200,7 +198,7 @@ DO $$
 BEGIN
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'LoginActivities') THEN
         DELETE FROM "LoginActivities"
-        WHERE "UserId" IN (SELECT "Id" FROM "Users" WHERE "Role" != 'Admin');
+        WHERE "UserId" IN (SELECT "Id" FROM "Users" WHERE "Role" != 0);
         RAISE NOTICE 'Cleared LoginActivities for non-admin users';
     END IF;
 EXCEPTION WHEN OTHERS THEN
@@ -212,7 +210,7 @@ COMMIT;
 BEGIN;
 DO $$
 BEGIN
-    DELETE FROM "Users" WHERE "Role" != 'Admin';
+    DELETE FROM "Users" WHERE "Role" != 0;  -- 0 = Admin role enum value
     RAISE NOTICE 'Deleted non-admin users, preserved admin users';
 EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'Could not delete non-admin users: %', SQLERRM;
@@ -409,11 +407,10 @@ SELECT
     "FirstName",
     "LastName", 
     "Email",
-    "Role",
-    "CreatedAt"
+    "Role"
 FROM "Users" 
-WHERE "Role" = 'Admin'
-ORDER BY "CreatedAt";
+WHERE "Role" = 0  -- 0 = Admin role enum value
+ORDER BY "Email";
 
 -- ========================================
 -- IMPORTANT NOTES
