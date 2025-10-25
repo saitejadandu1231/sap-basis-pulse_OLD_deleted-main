@@ -154,7 +154,7 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
       {/* Status Change Section */}
       <div className="space-y-4">
         {/* Current vs New Status Display */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-muted/50 rounded-lg space-y-3 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-slate-100 dark:bg-slate-800 rounded-lg space-y-3 sm:space-y-0 border border-slate-200 dark:border-slate-700">
           <div className="flex flex-col items-center space-y-2 min-w-0">
             <Label className="text-xs font-medium text-muted-foreground">Current Status</Label>
             <Badge 

@@ -77,6 +77,9 @@ namespace SapBasisPulse.Api.Controllers
             // Get current ticket status to enforce business rules
             var currentOrder = await _context.Orders
                 .Include(o => o.Status)
+                .Include(o => o.Consultant)
+                .Include(o => o.CreatedByUser)
+                .Include(o => o.SupportType)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
             
             if (currentOrder == null)
@@ -121,7 +124,45 @@ namespace SapBasisPulse.Api.Controllers
             }
 
             await _auditLogService.LogAsync(userId, "UpdateTicketStatus", "Order", orderId.ToString(), auditMessage, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "");
+            
+            // Send email when customer responds to pending request (changes from PendingCustomerAction to InProgress)
+            if (userRole == "Customer" && isPendingCustomer && dto.Status == "InProgress" && !string.IsNullOrWhiteSpace(dto.Comment))
+            {
+                await SendCustomerResponseEmailToConsultant(currentOrder, dto.Comment);
+            }
+            
             return Ok(new { message = "Status updated successfully" });
+        }
+
+        private async Task SendCustomerResponseEmailToConsultant(Order order, string customerComment)
+        {
+            try
+            {
+                var emailSender = HttpContext.RequestServices.GetRequiredService<IEmailSender>();
+                
+                var consultant = order.Consultant;
+                var customer = order.CreatedByUser;
+                var supportType = order.SupportType;
+
+                if (consultant == null || customer == null || supportType == null)
+                    return;
+
+                var consultantSubject = $"✅ Customer Responded: Support Request #{order.OrderNumber} - Work Resumed";
+                var consultantEmailBody = EmailTemplates.StatusChangedBackToInProgressFromCustomerResponseForConsultant(
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    supportType.Name,
+                    customerComment.Length > 200 ? customerComment.Substring(0, 200) + "..." : customerComment
+                );
+
+                await emailSender.SendEmailAsync(consultant.Email, consultantSubject, consultantEmailBody);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the status update
+                // In production, add proper logging here
+            }
         }
     }
 }
