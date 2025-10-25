@@ -227,7 +227,7 @@ const Tickets = () => {
   })) || [];
 
   // Filter status options based on user role and business rules
-  const getFilteredStatusOptions = (currentTicketStatus?: string) => {
+  const getFilteredStatusOptions = (currentTicketStatus?: string, paymentStatus?: string) => {
     if (userRole === 'consultant') {
       // Check if ticket is closed - consultants cannot change status of closed tickets
       const isTicketClosed = currentTicketStatus === 'Closed' || 
@@ -262,11 +262,13 @@ const Tickets = () => {
         return true;
       });
     } else if (userRole === 'customer') {
-      // Customers can reopen closed tickets or respond to PendingCustomerAction
+      // Customers can reopen closed tickets (BUT NOT if already paid) or respond to PendingCustomerAction
       const isTicketClosed = currentTicketStatus === 'Closed' || currentTicketStatus === 'TopicClosed';
+      const isTicketPaid = paymentStatus === 'Paid';
       const isPendingCustomerAction = currentTicketStatus === 'PendingCustomerAction';
       
-      if (isTicketClosed) {
+      if (isTicketClosed && !isTicketPaid) {
+        // Can reopen only if NOT paid
         return statusOptions.filter(option => option.value === 'ReOpened');
       } else if (isPendingCustomerAction) {
         // When status is PendingCustomerAction, customer can only change to InProgress
@@ -751,11 +753,7 @@ const Tickets = () => {
             {filteredTickets.map((ticket) => (
               <Card 
                 key={ticket.id} 
-                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full cursor-pointer"
-                onClick={() => {
-                  setSelectedTicket(ticket);
-                  setIsDialogOpen(true);
-                }}
+                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full"
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -766,7 +764,7 @@ const Tickets = () => {
                       {getStatusIcon(ticket.status)}
                       {/* Quick Status Update for Consultants/Admins/Customers with available options */}
                       {(() => {
-                        const ticketFilteredOptions = getFilteredStatusOptions(ticket.status);
+                        const ticketFilteredOptions = getFilteredStatusOptions(ticket.status, ticket.paymentStatus);
                         const canUpdateTicketStatus = ticketFilteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
                         
                         return canUpdateTicketStatus ? (
@@ -776,7 +774,11 @@ const Tickets = () => {
                           >
                             <SelectTrigger className="w-auto h-6 text-xs border-none bg-transparent p-0 focus:ring-0 focus:ring-offset-0">
                               <Badge variant={getStatusVariant(ticket.status)} className="text-xs cursor-pointer hover:bg-opacity-80">
-                                {(userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
+                                {(() => {
+                                  // Consultants see "Closed" instead of "Paid"
+                                  const displayStatus = userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status;
+                                  return displayStatus.replace(/([A-Z])/g, ' $1').trim();
+                                })()}
                               </Badge>
                             </SelectTrigger>
                             <SelectContent className="min-w-[200px] z-[10000]">
@@ -791,8 +793,12 @@ const Tickets = () => {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <Badge variant={getStatusVariant(ticket.status === 'Paid' ? 'Closed' : ticket.status)} className="text-xs">
-                            {(ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
+                          <Badge variant={getStatusVariant(ticket.status)} className="text-xs">
+                            {(() => {
+                              // Consultants see "Closed" instead of "Paid", customers see "Paid"
+                              const displayStatus = userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status;
+                              return displayStatus.replace(/([A-Z])/g, ' $1').trim();
+                            })()}
                           </Badge>
                         );
                       })()}
@@ -886,7 +892,11 @@ const Tickets = () => {
 
                     {/* Payment button for customers when ticket is closed and payment is pending */}
                     {(() => {
-                      const shouldShow = userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'Paid') && ticket.paymentStatus !== 'Paid' && ticket.calculatedAmount >= 0;
+                      const shouldShow = userRole === 'customer' && 
+                                        (ticket.status === 'Closed' || ticket.status === 'TopicClosed') && 
+                                        ticket.paymentStatus !== 'Paid' && 
+                                        ticket.calculatedAmount >= 0 &&
+                                        ticket.status !== 'Paid'; // Hide if status is Paid
                         console.log('Pay Now button debug:', {
                         userRole,
                         ticketStatus: ticket.status,
@@ -1002,7 +1012,7 @@ const Tickets = () => {
           {selectedTicket && (
         <Tabs defaultValue="details" className="w-full ticket-tabs">
           {(() => {
-            const filteredOptions = getFilteredStatusOptions(selectedTicket.status);
+            const filteredOptions = getFilteredStatusOptions(selectedTicket.status, selectedTicket.paymentStatus);
             const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
             const tabCount = canUpdateStatus ? 4 : 3;
             
@@ -1054,7 +1064,11 @@ const Tickets = () => {
                 )}
               </div>
               <Badge variant={getStatusVariant(selectedTicket.status)} className="self-start sm:self-center">
-                {selectedTicket.status.replace(/([A-Z])/g, ' $1').trim()}
+                {(() => {
+                  // Consultants see "Closed" instead of "Paid", customers see "Paid"
+                  const displayStatus = userRole === 'consultant' && selectedTicket.status === 'Paid' ? 'Closed' : selectedTicket.status;
+                  return displayStatus.replace(/([A-Z])/g, ' $1').trim();
+                })()}
               </Badge>
             </CardTitle>
             <CardDescription className="text-sm">{selectedTicket.supportTypeName}</CardDescription>
@@ -1129,7 +1143,7 @@ const Tickets = () => {
           </TabsContent>
           
           {(() => {
-            const filteredOptions = getFilteredStatusOptions(selectedTicket.status);
+            const filteredOptions = getFilteredStatusOptions(selectedTicket.status, selectedTicket.paymentStatus);
             const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
             
             return canUpdateStatus && (
@@ -1201,8 +1215,10 @@ const Tickets = () => {
             
             {/* Payment Button for Customers */}
             {userRole === 'customer' && selectedTicket && 
-             (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed' || selectedTicket.status === 'Paid') && 
-             selectedTicket.paymentStatus !== 'Paid' && selectedTicket.calculatedAmount >= 0 && (
+             (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed') && 
+             selectedTicket.paymentStatus !== 'Paid' && 
+             selectedTicket.calculatedAmount >= 0 &&
+             selectedTicket.status !== 'Paid' && (
               <Button
                 variant="default"
                 size="sm"
