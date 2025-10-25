@@ -705,5 +705,88 @@ namespace SapBasisPulse.Api.Services
             </body>
             </html>";
         }
+
+        public static string TicketEscalatedToAdminNotification(string adminName, string customerName, string consultantName, string orderNumber, string supportType, string priority, string? escalationReason = null)
+        {
+            return $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='utf-8'>
+                <title>Ticket Escalated - Immediate Action Required</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                    .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                    .button {{ display: inline-block; background: #e74c3c; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                    .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    .ticket-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #e74c3c; }}
+                    .escalation-reason {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }}
+                    .urgent {{ background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 20px 0; color: #721c24; }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h1>⚠️ TICKET ESCALATED</h1>
+                        <p>Immediate action required - Senior support needed</p>
+                    </div>
+                    <div class='content'>
+                        <h2>Hello {adminName},</h2>
+                        <p>A support ticket has been <strong>ESCALATED</strong> and requires your immediate attention.</p>
+
+                        <div class='ticket-box'>
+                            <h3>Ticket Details:</h3>
+                            <p><strong>Order Number:</strong> {orderNumber}</p>
+                            <p><strong>Customer:</strong> {customerName}</p>
+                            <p><strong>Current Consultant:</strong> {consultantName}</p>
+                            <p><strong>Support Type:</strong> {supportType}</p>
+                            <p><strong>Priority:</strong> <span style='color: #e74c3c; font-weight: bold;'>{priority}</span></p>
+                            <p><strong>Status:</strong> <span style='color: #e74c3c; font-weight: bold;'>🚨 ESCALATED</span></p>
+                        </div>
+
+                        {(string.IsNullOrEmpty(escalationReason) ? "" : $@"
+                        <div class='escalation-reason'>
+                            <h4>📌 Escalation Reason:</h4>
+                            <p style='margin: 10px 0; font-style: italic;'>""{escalationReason}""</p>
+                        </div>")}
+
+                        <div class='urgent'>
+                            <strong>🔴 ACTION REQUIRED:</strong><br>
+                            This ticket has been escalated due to complexity or urgency. Please review the details and either:
+                            <ul style='margin: 10px 0;'>
+                                <li>Assign to a senior SAP BASIS consultant</li>
+                                <li>Handle directly if you have the expertise</li>
+                                <li>Coordinate with the team for resolution</li>
+                                <li>Update the customer on the escalation status</li>
+                            </ul>
+                        </div>
+
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Review Escalated Ticket</a>
+                        </div>
+
+                        <p><strong>Next Steps:</strong></p>
+                        <ul>
+                            <li>Review the full ticket history and comments</li>
+                            <li>Understand why the current consultant escalated</li>
+                            <li>Take appropriate action (reassign, handle directly, etc.)</li>
+                            <li>Keep the customer informed of progress</li>
+                            <li>Update the ticket status as you work on it</li>
+                        </ul>
+
+                        <p>This is a priority notification. Please address this escalated ticket as soon as possible.</p>
+
+                        <p>Best regards,<br>The Yuktor Team</p>
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated notification from Yuktor - Enterprise SAP BASIS Support Platform</p>
+                        <p>© 2025 Yuktor. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>";
+        }
     }
 }

@@ -408,4 +408,26 @@
   main {
     padding-top: 4rem !important; /* 64px header height */
   }
+
+  /* ========================================
+     BUTTON STYLING - SIMPLE LIGHT BACKGROUNDS
+     ======================================== */
+
+  /* Add simple light background to all buttons */
+  button {
+    border-color: hsla(217, 22%, 93%, 0.6) !important;
+  }
+
+  button:hover {
+    border-color: hsla(247, 38%, 21%, 0.8) !important;
+  }
+
+  /* Light theme buttons */
+  .light button {
+    border-color: hsla(220, 83%, 21%, 0.6) !important;
+  }
+
+  .light button:hover {
+    border-color: hsla(0, 0%, 0%, 0.8) !important;
+  }
 }

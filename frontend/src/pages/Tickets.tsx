@@ -4,6 +4,8 @@ import { useRecentTickets, useUpdateTicketStatus, useTicketRatings } from '@/hoo
 import { useStatusOptions } from '@/hooks/useStatus';
 import { useCreatePaymentOrder, useVerifyPayment } from '@/hooks/usePayment';
 import { useCreateOrGetConversationForOrder, useSendMessage } from '@/services/messagingHooks';
+import { useTokenRefresh } from '@/hooks/useTokenRefresh';
+import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import { BRANDING } from '@/lib/branding';
     
 import TicketStatusUpdater from '@/components/TicketStatusUpdater';
@@ -69,6 +71,8 @@ const TicketRatingPreview: React.FC<{ ticketId: string }> = ({ ticketId }) => {
 const Tickets = () => {
   const { user, userRole } = useAuth();
   const { data: featureFlags } = useFeatureFlags();
+  const { logTokenStatus } = useTokenRefresh();
+  const { startPolling, stopPolling } = usePaymentStatusPolling();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
@@ -77,6 +81,7 @@ const Tickets = () => {
   const [dialogHoursWorked, setDialogHoursWorked] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [processingTicketId, setProcessingTicketId] = useState<string | null>(null);
+  const [paymentCheckingTicketId, setPaymentCheckingTicketId] = useState<string | null>(null);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -227,7 +232,7 @@ const Tickets = () => {
   })) || [];
 
   // Filter status options based on user role and business rules
-  const getFilteredStatusOptions = (currentTicketStatus?: string) => {
+  const getFilteredStatusOptions = (currentTicketStatus?: string, paymentStatus?: string) => {
     if (userRole === 'consultant') {
       // Check if ticket is closed - consultants cannot change status of closed tickets
       const isTicketClosed = currentTicketStatus === 'Closed' || 
@@ -241,9 +246,15 @@ const Tickets = () => {
       
       // For consultants: allow moving FROM "New" but not TO "New" (except if already New)
       // Also cannot set TopicClosed, Paid, or ReOpened
+      // BUT can escalate to Escalate status
       return statusOptions.filter(option => {
         // Allow keeping current status
         if (option.value === currentTicketStatus) {
+          return true;
+        }
+        
+        // Allow Escalate status for consultants
+        if (option.value === 'Escalate') {
           return true;
         }
         
@@ -262,17 +273,21 @@ const Tickets = () => {
         return true;
       });
     } else if (userRole === 'customer') {
-      // Customers can reopen closed tickets or respond to PendingCustomerAction
+      // Customers can reopen closed tickets (BUT NOT if already paid) or respond to PendingCustomerAction
+      // Customers can also escalate if needed
       const isTicketClosed = currentTicketStatus === 'Closed' || currentTicketStatus === 'TopicClosed';
+      const isTicketPaid = paymentStatus === 'Paid';
       const isPendingCustomerAction = currentTicketStatus === 'PendingCustomerAction';
       
-      if (isTicketClosed) {
-        return statusOptions.filter(option => option.value === 'ReOpened');
+      if (isTicketClosed && !isTicketPaid) {
+        // Can reopen or escalate if NOT paid
+        return statusOptions.filter(option => option.value === 'ReOpened' || option.value === 'Escalate');
       } else if (isPendingCustomerAction) {
-        // When status is PendingCustomerAction, customer can only change to InProgress
-        return statusOptions.filter(option => option.value === 'InProgress');
+        // When status is PendingCustomerAction, customer can change to InProgress or Escalate
+        return statusOptions.filter(option => option.value === 'InProgress' || option.value === 'Escalate');
       } else {
-        return [];
+        // Customers can escalate from other states too
+        return statusOptions.filter(option => option.value === 'Escalate');
       }
     } else {
       // Admins can access all statuses
@@ -289,6 +304,8 @@ const Tickets = () => {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'In Progress':
         return <Clock className="w-5 h-5 text-blue-500" />;
+      case 'Escalate':
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
       default:
         return <AlertCircle className="w-5 h-5 text-orange-500" />;
     }
@@ -305,6 +322,8 @@ const Tickets = () => {
       case 'TopicClosed':
         return 'default' as const;
       case 'ReOpened':
+        return 'destructive' as const;
+      case 'Escalate':
         return 'destructive' as const;
       default:
         return 'outline' as const;
@@ -379,6 +398,9 @@ const Tickets = () => {
   const handlePayment = async (ticket: any) => {
     // Initialize Razorpay function
     const initializeRazorpay = (paymentOrder: any) => {
+      // Log token status before payment attempt
+      logTokenStatus();
+
       // Initialize Razorpay
       const options = {
         key: paymentOrder.key,
@@ -410,22 +432,55 @@ const Tickets = () => {
               return;
             }
 
-            await verifyPaymentMutation.mutateAsync({
-              razorpayOrderId: orderId,
-              razorpayPaymentId: paymentId,
-              razorpaySignature: signature
-            });
-            
-            toast.success('Payment successful! Payment has been completed.');
-            refetch(); // Refresh tickets
+            // Log token status before verification
+            logTokenStatus();
+
+            try {
+              await verifyPaymentMutation.mutateAsync({
+                razorpayOrderId: orderId,
+                razorpayPaymentId: paymentId,
+                razorpaySignature: signature
+              });
+              
+              toast.success('Payment successful! Payment has been completed.');
+              refetch();
+            } catch (verifyError: any) {
+              console.error('Payment verification failed:', verifyError);
+              console.log('Starting automatic payment status polling...');
+              
+              // Start polling to check if payment was actually processed
+              setPaymentCheckingTicketId(ticket.id);
+              startPolling({
+                orderId: ticket.id,
+                maxAttempts: 12, // 12 × 5 seconds = 60 seconds
+                pollIntervalMs: 5000,
+                onSuccess: (status) => {
+                  toast.success('Payment verified! Refreshing ticket status...');
+                  setPaymentCheckingTicketId(null);
+                  refetch();
+                },
+                onFailure: (error) => {
+                  toast.error(`Verification failed: ${error}. Please refresh the page to check payment status.`);
+                  setPaymentCheckingTicketId(null);
+                },
+                onAttempt: (attempt, max) => {
+                  console.log(`[Payment Check] Attempt ${attempt}/${max}`);
+                  if (attempt === 1) {
+                    toast.loading(`Checking payment status... (${attempt}/${max})`);
+                  }
+                }
+              });
+            }
           } catch (error: any) {
-            toast.error('Payment verification failed: ' + error.message);
+            console.error('Payment handler error:', error);
+            toast.error('Payment processing error: ' + error.message);
           } finally {
             setProcessingTicketId(null);
           }
         },
         modal: {
           ondismiss: function() {
+            console.log('Payment modal closed by user');
             setProcessingTicketId(null);
           }
         },
@@ -444,7 +499,7 @@ const Tickets = () => {
 
     try {
       setProcessingTicketId(ticket.id);
-      const amount = ticket.calculatedAmount || ticket.totalAmount || 100; // Use calculated amount first, then total amount, or default
+      const amount = ticket.calculatedAmount || ticket.totalAmount || 100;
       
       const paymentOrder = await createPaymentOrder.mutateAsync({
         orderId: ticket.id,
@@ -751,11 +806,7 @@ const Tickets = () => {
             {filteredTickets.map((ticket) => (
               <Card 
                 key={ticket.id} 
-                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full cursor-pointer"
-                onClick={() => {
-                  setSelectedTicket(ticket);
-                  setIsDialogOpen(true);
-                }}
+                className="hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col h-full"
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -766,7 +817,7 @@ const Tickets = () => {
                       {getStatusIcon(ticket.status)}
                       {/* Quick Status Update for Consultants/Admins/Customers with available options */}
                       {(() => {
-                        const ticketFilteredOptions = getFilteredStatusOptions(ticket.status);
+                        const ticketFilteredOptions = getFilteredStatusOptions(ticket.status, ticket.paymentStatus);
                         const canUpdateTicketStatus = ticketFilteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
                         
                         return canUpdateTicketStatus ? (
@@ -776,7 +827,11 @@ const Tickets = () => {
                           >
                             <SelectTrigger className="w-auto h-6 text-xs border-none bg-transparent p-0 focus:ring-0 focus:ring-offset-0">
                               <Badge variant={getStatusVariant(ticket.status)} className="text-xs cursor-pointer hover:bg-opacity-80">
-                                {(userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
+                                {(() => {
+                                  // Consultants see "Closed" instead of "Paid"
+                                  const displayStatus = userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status;
+                                  return displayStatus.replace(/([A-Z])/g, ' $1').trim();
+                                })()}
                               </Badge>
                             </SelectTrigger>
                             <SelectContent className="min-w-[200px] z-[10000]">
@@ -791,8 +846,12 @@ const Tickets = () => {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <Badge variant={getStatusVariant(ticket.status === 'Paid' ? 'Closed' : ticket.status)} className="text-xs">
-                            {(ticket.status === 'Paid' ? 'Closed' : ticket.status).replace(/([A-Z])/g, ' $1').trim()}
+                          <Badge variant={getStatusVariant(ticket.status)} className="text-xs">
+                            {(() => {
+                              // Consultants see "Closed" instead of "Paid", customers see "Paid"
+                              const displayStatus = userRole === 'consultant' && ticket.status === 'Paid' ? 'Closed' : ticket.status;
+                              return displayStatus.replace(/([A-Z])/g, ' $1').trim();
+                            })()}
                           </Badge>
                         );
                       })()}
@@ -886,7 +945,11 @@ const Tickets = () => {
 
                     {/* Payment button for customers when ticket is closed and payment is pending */}
                     {(() => {
-                      const shouldShow = userRole === 'customer' && (ticket.status === 'Closed' || ticket.status === 'Paid') && ticket.paymentStatus !== 'Paid' && ticket.calculatedAmount >= 0;
+                      const shouldShow = userRole === 'customer' && 
+                                        (ticket.status === 'Closed' || ticket.status === 'TopicClosed') && 
+                                        ticket.paymentStatus !== 'Paid' && 
+                                        ticket.calculatedAmount >= 0 &&
+                                        ticket.status !== 'Paid'; // Hide if status is Paid
                         console.log('Pay Now button debug:', {
                         userRole,
                         ticketStatus: ticket.status,
@@ -1002,7 +1065,7 @@ const Tickets = () => {
           {selectedTicket && (
         <Tabs defaultValue="details" className="w-full ticket-tabs">
           {(() => {
-            const filteredOptions = getFilteredStatusOptions(selectedTicket.status);
+            const filteredOptions = getFilteredStatusOptions(selectedTicket.status, selectedTicket.paymentStatus);
             const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
             const tabCount = canUpdateStatus ? 4 : 3;
             
@@ -1054,7 +1117,11 @@ const Tickets = () => {
                 )}
               </div>
               <Badge variant={getStatusVariant(selectedTicket.status)} className="self-start sm:self-center">
-                {selectedTicket.status.replace(/([A-Z])/g, ' $1').trim()}
+                {(() => {
+                  // Consultants see "Closed" instead of "Paid", customers see "Paid"
+                  const displayStatus = userRole === 'consultant' && selectedTicket.status === 'Paid' ? 'Closed' : selectedTicket.status;
+                  return displayStatus.replace(/([A-Z])/g, ' $1').trim();
+                })()}
               </Badge>
             </CardTitle>
             <CardDescription className="text-sm">{selectedTicket.supportTypeName}</CardDescription>
@@ -1129,7 +1196,7 @@ const Tickets = () => {
           </TabsContent>
           
           {(() => {
-            const filteredOptions = getFilteredStatusOptions(selectedTicket.status);
+            const filteredOptions = getFilteredStatusOptions(selectedTicket.status, selectedTicket.paymentStatus);
             const canUpdateStatus = filteredOptions.length > 0 && (userRole === 'consultant' || userRole === 'admin' || userRole === 'customer');
             
             return canUpdateStatus && (
@@ -1201,8 +1268,10 @@ const Tickets = () => {
             
             {/* Payment Button for Customers */}
             {userRole === 'customer' && selectedTicket && 
-             (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed' || selectedTicket.status === 'Paid') && 
-             selectedTicket.paymentStatus !== 'Paid' && selectedTicket.calculatedAmount >= 0 && (
+             (selectedTicket.status === 'Closed' || selectedTicket.status === 'TopicClosed') && 
+             selectedTicket.paymentStatus !== 'Paid' && 
+             selectedTicket.calculatedAmount >= 0 &&
+             selectedTicket.status !== 'Paid' && (
               <Button
                 variant="default"
                 size="sm"
