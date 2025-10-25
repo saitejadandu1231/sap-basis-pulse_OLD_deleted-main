@@ -98,10 +98,10 @@ namespace SapBasisPulse.Api.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, new { error = "Only customers can reopen closed tickets." });
             }
 
-            // Business rule: Customers can only reopen closed tickets OR change status from PendingCustomerAction to InProgress
-            if (userRole == "Customer" && dto.Status != "ReOpened" && !(isPendingCustomer && dto.Status == "InProgress"))
+            // Business rule: Customers can only reopen closed tickets OR change status from PendingCustomerAction to InProgress OR escalate tickets
+            if (userRole == "Customer" && dto.Status != "ReOpened" && dto.Status != "Escalate" && !(isPendingCustomer && dto.Status == "InProgress"))
             {
-                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Customers can only reopen closed tickets or respond to pending requests." });
+                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Customers can only reopen closed tickets, escalate tickets, or respond to pending requests." });
             }
 
             // Business rule: Consultants cannot modify closed tickets (they must wait for customer to reopen)
