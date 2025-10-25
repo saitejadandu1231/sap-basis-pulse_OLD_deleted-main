@@ -56,8 +56,21 @@ export const useSupabaseAuth = () => {
         })
       });
 
-      const result = await response.json();
-      console.log('[useSupabaseAuth] Backend response:', result);
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        console.error('[useSupabaseAuth] Failed to parse response as JSON:', jsonError);
+        return { error: 'Failed to parse authentication response' };
+      }
+
+      console.log('[useSupabaseAuth] Backend response:', result, 'Status:', response.status);
+      
+      // Check if response is not ok (400, 401, etc.)
+      if (!response.ok) {
+        console.log('[useSupabaseAuth] Backend returned error status:', response.status);
+        return { error: result.error || 'Authentication failed' };
+      }
       
       if (result.requiresAdditionalInfo) {
         console.log('[useSupabaseAuth] Returning requiresAdditionalInfo:', {
