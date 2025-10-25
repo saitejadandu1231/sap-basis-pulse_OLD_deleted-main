@@ -12,6 +12,7 @@ import { getDashboardPath } from "@/hooks/useDashboardPath";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ThemeToggle from "@/components/ThemeToggle";
+import { BRANDING, getAppTitle } from '@/lib/branding';
 import { 
   AlertCircle, 
   ArrowLeft, 
@@ -242,7 +243,7 @@ const Login = () => {
               <span className="text-primary-foreground font-bold">Y</span>
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-              Yuktor
+              {BRANDING.appName}
             </span>
           </div>
         </div>
@@ -356,7 +357,7 @@ const Login = () => {
                   <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="w-8 h-8 text-primary" />
                   </div>
-                  <CardTitle className="text-2xl">Join Yuktor</CardTitle>
+                  <CardTitle className="text-2xl">Join {BRANDING.appName}</CardTitle>
                   <CardDescription className="text-base">
                     Create your account to get started
                   </CardDescription>

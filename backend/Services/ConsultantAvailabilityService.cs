@@ -136,24 +136,24 @@ namespace SapBasisPulse.Api.Services
             var createdSlots = new List<ConsultantAvailabilitySlot>();
             var currentTime = startTimeUtc;
             
-            // Generate hourly slots within the time block
-            while (currentTime.AddHours(1) <= endTimeUtc)
+            // Generate 30-minute slots within the time block
+            while (currentTime.AddMinutes(30) <= endTimeUtc)
             {
                 var slot = new ConsultantAvailabilitySlot
                 {
                     Id = Guid.NewGuid(),
                     ConsultantId = dto.ConsultantId,
                     SlotStartTime = currentTime,
-                    SlotEndTime = currentTime.AddHours(1)
+                    SlotEndTime = currentTime.AddMinutes(30)
                 };
                 _context.ConsultantAvailabilitySlots.Add(slot);
                 createdSlots.Add(slot);
                 
-                // Move to the next hour
-                currentTime = currentTime.AddHours(1);
+                // Move to the next 30 minutes
+                currentTime = currentTime.AddMinutes(30);
             }
             
-            // If there's a remaining partial slot (less than an hour), create it too
+            // If there's a remaining partial slot (less than 30 minutes), create it too
             if (currentTime < endTimeUtc)
             {
                 var slot = new ConsultantAvailabilitySlot

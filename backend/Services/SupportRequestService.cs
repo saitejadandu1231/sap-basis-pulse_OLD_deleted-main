@@ -408,9 +408,18 @@ namespace SapBasisPulse.Api.Services
             await _context.SaveChangesAsync();
 
             // EMAIL NOTIFICATIONS: Send emails based on status changes
-            if (oldStatusCode == "New" && status == "In-Progress")
+            if (oldStatusCode == "New" && status == "InProgress")
             {
                 await SendStatusChangeToInProgressEmails(order, changedByUserId);
+            }
+            else if (status == "PendingCustomerAction")
+            {
+                await SendStatusChangeToPendingCustomerActionEmails(order, changedByUserId, comment);
+            }
+            else if (status == "ReOpened")
+            {
+                // Notify consultant when ticket is reopened by customer
+                await SendTicketReopenedEmails(order, changedByUserId, comment);
             }
             else if ((status == "Completed" || status == "Closed" || status == "TopicClosed") && 
                      order.HoursWorked.HasValue && order.CalculatedAmount.HasValue)
@@ -464,6 +473,70 @@ namespace SapBasisPulse.Api.Services
                 // Log error but don't fail the status update
                 // In production, you might want to add proper logging here
                 // For now, we'll silently continue - status update should not fail due to email issues
+            }
+        }
+
+        private async Task SendStatusChangeToPendingCustomerActionEmails(Order order, Guid changedByUserId, string? comment = null)
+        {
+            try
+            {
+                var customer = order.CreatedByUser;
+                var consultant = order.Consultant;
+                var supportType = order.SupportType;
+
+                if (customer == null || consultant == null || supportType == null)
+                {
+                    // Log warning - missing required data for email notification
+                    return;
+                }
+
+                // Send email to customer - action required
+                var customerSubject = $"⏳ Action Required: Support Request #{order.OrderNumber}";
+                var customerEmailBody = EmailTemplates.StatusChangedToPendingCustomerActionForCustomer(
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    supportType.Name,
+                    comment
+                );
+
+                await _emailSender.SendEmailAsync(customer.Email, customerSubject, customerEmailBody);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the status update
+                // In production, you might want to add proper logging here
+                // For now, we'll silently continue - status update should not fail due to email issues
+            }
+        }
+
+        private async Task SendTicketReopenedEmails(Order order, Guid changedByUserId, string? comment = null)
+        {
+            try
+            {
+                var customer = order.CreatedByUser;
+                var consultant = order.Consultant;
+                var supportType = order.SupportType;
+
+                if (customer == null || consultant == null || supportType == null)
+                {
+                    return;
+                }
+
+                var subject = $"🔔 Ticket Re-opened by Customer: #{order.OrderNumber}";
+                var body = EmailTemplates.StatusChangedToReopenedForConsultant(
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    supportType.Name,
+                    comment
+                );
+
+                await _emailSender.SendEmailAsync(consultant.Email, subject, body);
+            }
+            catch (Exception ex)
+            {
+                // swallow errors - do not fail the status update
             }
         }
 

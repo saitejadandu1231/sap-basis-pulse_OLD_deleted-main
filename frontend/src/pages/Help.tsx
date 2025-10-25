@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { HelpCircle, BookOpen, MessageCircle, Video, Search, ExternalLink } from 'lucide-react';
+import { BRANDING } from '@/lib/branding';
 
 const Help = () => {
   const helpSections = [
@@ -47,7 +48,7 @@ const Help = () => {
   return (
     <PageLayout
       title="Help & Support"
-      description="Find answers, guides, and get help with Yuktor"
+      description={`Find answers, guides, and get help with ${BRANDING.appName}`}
     >
       <div className="space-y-6">
         {/* Search Bar */}

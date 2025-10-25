@@ -2,6 +2,7 @@
 
 class PWAManager {
   private deferredPrompt: any = null;
+  private listeners: Set<() => void> = new Set();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -18,13 +19,34 @@ class PWAManager {
         // ignore
       }
       this.deferredPrompt = e;
+      console.log('beforeinstallprompt captured, canInstall: true');
+      // Dispatch event and also notify listeners
       window.dispatchEvent(new CustomEvent('pwa-install-prompt-change', { detail: { canInstall: true } }));
+      this.notifyListeners();
     });
 
     // Clear when app is installed
     window.addEventListener('appinstalled', () => {
+      console.log('App installed');
       this.deferredPrompt = null;
       window.dispatchEvent(new CustomEvent('pwa-install-prompt-change', { detail: { canInstall: false } }));
+      this.notifyListeners();
+    });
+  }
+
+  // Add listener for state changes
+  onChange(callback: () => void): () => void {
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
+  }
+
+  private notifyListeners() {
+    this.listeners.forEach(listener => {
+      try {
+        listener();
+      } catch (err) {
+        console.error('Error in PWA listener:', err);
+      }
     });
   }
 
@@ -42,6 +64,7 @@ class PWAManager {
       const choice = await this.deferredPrompt.userChoice;
       this.deferredPrompt = null;
       window.dispatchEvent(new CustomEvent('pwa-install-prompt-change', { detail: { canInstall: false } }));
+      this.notifyListeners();
       return { outcome: choice?.outcome ?? 'dismissed' };
     } catch (err) {
       console.error('PWA install error', err);

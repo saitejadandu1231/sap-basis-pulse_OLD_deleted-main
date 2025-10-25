@@ -9,6 +9,8 @@ import { MessageThread } from '@/components/messaging/MessageThread';
 import { MessageInput } from '@/components/messaging/MessageInput';
 import { useUnreadMessageCount, useConversation, useConversationByOrder, useCreateOrGetConversationForOrder } from '@/services/messagingHooks';
 import { useMessagingEnabled } from '@/hooks/useFeatureFlags';
+import { useOrderStatus } from '@/hooks/useSupport';
+import { useAuth } from '@/contexts/AuthContext';
 import { Conversation, Message } from '@/services/messagingService';
 import { useSearchParams } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
@@ -20,6 +22,7 @@ export const MessagingPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [processedParams, setProcessedParams] = useState<{conversationId?: string, orderId?: string}>({});
   
+  const { user } = useAuth();
   const { isEnabled: messagingEnabled, isLoading: messagingStatusLoading } = useMessagingEnabled();
   const conversationIdFromUrl = searchParams.get('conversation');
   const orderIdFromUrl = searchParams.get('orderId');
@@ -33,6 +36,9 @@ export const MessagingPage: React.FC = () => {
   
   // Mutation to create conversation for order if it doesn't exist
   const createOrGetOrderConversation = useCreateOrGetConversationForOrder();
+  
+  // Get order status for the selected conversation
+  const { data: orderStatus } = useOrderStatus(selectedConversation?.orderId || null);
   
   // Track if we're currently in the middle of processing URL params to avoid loops
   const [isProcessing, setIsProcessing] = useState(false);
@@ -361,7 +367,10 @@ export const MessagingPage: React.FC = () => {
                 />
                 <MessageInput
                   conversationId={selectedConversation.id}
-                  disabled={!selectedConversation.isActive}
+                  disabled={!selectedConversation.isActive && !(
+                    user?.role === 'Customer' && 
+                    orderStatus?.status === 'PendingCustomerAction'
+                  )}
                 />
               </div>
             </>

@@ -242,7 +242,7 @@ const ConsultantAvailability = () => {
 
   // Calculate end date and time when start date/time or hours change
   useEffect(() => {
-    if (startDate && startTime && numberOfHours >= 1) {
+    if (startDate && startTime && numberOfHours > 0) {
       // Parse the date and time properly to avoid timezone issues
       const [year, month, day] = startDate.split('-').map(Number);
       const [hours, minutes] = startTime.split(':').map(Number);
@@ -269,7 +269,7 @@ const ConsultantAvailability = () => {
   const handleDefineBlock = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!startDate || !startTime || numberOfHours < 1) {
+    if (!startDate || !startTime || numberOfHours <= 0) {
       toast({
         title: "Missing Information",
         description: "Please fill in start date, start time, and select number of hours",
@@ -451,7 +451,7 @@ const ConsultantAvailability = () => {
                 <span>Define Availability Block</span>
               </CardTitle>
               <CardDescription>
-                Select start date/time and number of hours - the end time will be calculated automatically and broken into 1-hour bookable slots
+                Select start date/time and number of hours - the end time will be calculated automatically and broken into 30-minute bookable slots
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -503,17 +503,18 @@ const ConsultantAvailability = () => {
                   <select
                     id="hours"
                     value={numberOfHours}
-                    onChange={(e) => setNumberOfHours(parseInt(e.target.value))}
+                    onChange={(e) => setNumberOfHours(parseFloat(e.target.value))}
                     className="w-full bg-background/50 border border-yuktor-300/30 focus:border-yuktor-500 focus:ring-yuktor-500/20 rounded-md px-3 py-2 h-11"
                     required
                   >
+                    <option value={0.5}>30 minutes</option>
                     {Array.from({ length: 8 }, (_, i) => i + 1).map(hour => (
                       <option key={hour} value={hour}>
                         {hour} hour{hour > 1 ? 's' : ''}
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-muted-foreground">Maximum 8 hours per block. Will be split into 1-hour bookable slots.</p>
+                  <p className="text-xs text-muted-foreground">Maximum 8 hours per block. Will be split into 30-minute bookable slots.</p>
                 </div>
                 
                 {/* Calculated End Date and Time Row (Read-only display) */}

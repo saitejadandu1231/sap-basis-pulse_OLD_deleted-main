@@ -1,11 +1,12 @@
 import React from 'react';
 import PageLayout from '@/components/layout/PageLayout';
+import { BRANDING } from '@/lib/branding';
 
 const TermsConditions = () => {
   return (
     <PageLayout
       title="Terms & Conditions"
-      description="Read Yuktor Technologies' terms and conditions"
+      description={`Read ${BRANDING.companyName} Technologies' terms and conditions`}
       showSidebar={false}
     >
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -19,7 +20,7 @@ const TermsConditions = () => {
 
             <div className="space-y-6">
               <p>
-                For the purpose of these Terms and Conditions, The term "we", "us", "our" used anywhere on this page shall mean Yuktor Technologies Private Limited, whose registered/operational office is Suite 204, Tech Park Plaza, Cyber City, Hyderabad India. "you", "your", "user", "visitor" shall mean any natural or legal person who is visiting our website and/or agreed to purchase from us.
+                For the purpose of these Terms and Conditions, The term "we", "us", "our" used anywhere on this page shall mean {BRANDING.companyName} Technologies Private Limited, whose registered/operational office is Suite 204, Tech Park Plaza, Cyber City, Hyderabad India. "you", "your", "user", "visitor" shall mean any natural or legal person who is visiting our website and/or agreed to purchase from us.
               </p>
 
               <p>
@@ -49,7 +50,7 @@ const TermsConditions = () => {
                   From time to time our website may also include links to other websites. These links are provided for your convenience to provide further information.
                 </li>
                 <li>
-                  You may not create a link to our website from another website or document without Yuktor Technologies' prior written consent.
+                  You may not create a link to our website from another website or document without {BRANDING.companyName} Technologies' prior written consent.
                 </li>
                 <li>
                   Any dispute arising out of use of our website and/or purchase with us and/or any engagement with us is subject to the laws of India .

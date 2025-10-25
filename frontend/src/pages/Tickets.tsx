@@ -3,6 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRecentTickets, useUpdateTicketStatus, useTicketRatings } from '@/hooks/useSupport';
 import { useStatusOptions } from '@/hooks/useStatus';
 import { useCreatePaymentOrder, useVerifyPayment } from '@/hooks/usePayment';
+import { useCreateOrGetConversationForOrder, useSendMessage } from '@/services/messagingHooks';
+import { BRANDING } from '@/lib/branding';
     
 import TicketStatusUpdater from '@/components/TicketStatusUpdater';
 import TicketRatingContainer from '@/components/TicketRatingContainer';
@@ -90,6 +92,10 @@ const Tickets = () => {
   const { data: statusOptionsData } = useStatusOptions();
   const createPaymentOrder = useCreatePaymentOrder();
   const verifyPaymentMutation = useVerifyPayment();
+  
+  // Messaging hooks for commenting
+  const createOrGetConversation = useCreateOrGetConversationForOrder();
+  const sendMessage = useSendMessage();
 
   // Get search query from URL
   const searchQuery = searchParams.get('search') || '';
@@ -256,11 +262,18 @@ const Tickets = () => {
         return true;
       });
     } else if (userRole === 'customer') {
-      // Customers can only reopen closed tickets
+      // Customers can reopen closed tickets or respond to PendingCustomerAction
       const isTicketClosed = currentTicketStatus === 'Closed' || currentTicketStatus === 'TopicClosed';
-      return isTicketClosed 
-        ? statusOptions.filter(option => option.value === 'ReOpened')
-        : [];
+      const isPendingCustomerAction = currentTicketStatus === 'PendingCustomerAction';
+      
+      if (isTicketClosed) {
+        return statusOptions.filter(option => option.value === 'ReOpened');
+      } else if (isPendingCustomerAction) {
+        // When status is PendingCustomerAction, customer can only change to InProgress
+        return statusOptions.filter(option => option.value === 'InProgress');
+      } else {
+        return [];
+      }
     } else {
       // Admins can access all statuses
       return statusOptions;
@@ -371,7 +384,7 @@ const Tickets = () => {
         key: paymentOrder.key,
         amount: paymentOrder.amount,
         currency: paymentOrder.currency,
-        name: 'Yuktor',
+        name: BRANDING.companyName,
         description: `Payment for ${ticket.orderNumber}`,
         order_id: paymentOrder.razorpayOrderId,
         handler: async function (response: any) {
@@ -1009,7 +1022,7 @@ const Tickets = () => {
                   <TabsTrigger value="status" className="flex-1 min-w-0 px-2 sm:px-4 py-2 text-center">
                     <span className="truncate text-xs sm:text-sm">
                       {userRole === 'customer' ? (
-                        <><span className="hidden sm:inline">Re</span>open</>
+                        <><span className="hidden sm:inline">Add </span>Comments</>
                       ) : (
                         <><span className="hidden sm:inline">Status </span>Manage</>
                       )}

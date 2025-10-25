@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.DTOs;
@@ -70,7 +71,7 @@ namespace SapBasisPulse.Api.Controllers
             // Basic permission check
             if (userRole != "Consultant" && userRole != "Admin" && userRole != "Customer")
             {
-                return Forbid("Only consultants, customers, and admins can update ticket status.");
+                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Only consultants, customers, and admins can update ticket status." });
             }
 
             // Get current ticket status to enforce business rules
@@ -85,23 +86,24 @@ namespace SapBasisPulse.Api.Controllers
 
             var currentStatus = currentOrder.Status.StatusCode;
             bool isCurrentlyClosed = currentStatus == "Closed" || currentStatus == "TopicClosed";
+            bool isPendingCustomer = currentStatus == "PendingCustomerAction";
 
             // Business rule: Only customers can reopen closed tickets
             if (dto.Status == "ReOpened" && userRole != "Customer" && userRole != "Admin")
             {
-                return Forbid("Only customers can reopen closed tickets.");
+                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Only customers can reopen closed tickets." });
             }
 
-            // Business rule: Customers can only reopen tickets, not set other statuses
-            if (userRole == "Customer" && dto.Status != "ReOpened")
+            // Business rule: Customers can only reopen closed tickets OR change status from PendingCustomerAction to InProgress
+            if (userRole == "Customer" && dto.Status != "ReOpened" && !(isPendingCustomer && dto.Status == "InProgress"))
             {
-                return Forbid("Customers can only reopen tickets.");
+                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Customers can only reopen closed tickets or respond to pending requests." });
             }
 
             // Business rule: Consultants cannot modify closed tickets (they must wait for customer to reopen)
             if (userRole == "Consultant" && isCurrentlyClosed)
             {
-                return Forbid("Cannot modify closed tickets. Only customers can reopen closed tickets.");
+                return StatusCode(StatusCodes.Status403Forbidden, new { error = "Cannot modify closed tickets. Only customers can reopen closed tickets." });
             }
 
             var result = await _service.UpdateStatusAsync(orderId, dto.Status, userId, dto.Comment, dto.HoursWorked);
