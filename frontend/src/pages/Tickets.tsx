@@ -4,6 +4,8 @@ import { useRecentTickets, useUpdateTicketStatus, useTicketRatings } from '@/hoo
 import { useStatusOptions } from '@/hooks/useStatus';
 import { useCreatePaymentOrder, useVerifyPayment } from '@/hooks/usePayment';
 import { useCreateOrGetConversationForOrder, useSendMessage } from '@/services/messagingHooks';
+import { useTokenRefresh } from '@/hooks/useTokenRefresh';
+import { usePaymentStatusPolling } from '@/hooks/usePaymentStatusPolling';
 import { BRANDING } from '@/lib/branding';
     
 import TicketStatusUpdater from '@/components/TicketStatusUpdater';
@@ -69,6 +71,8 @@ const TicketRatingPreview: React.FC<{ ticketId: string }> = ({ ticketId }) => {
 const Tickets = () => {
   const { user, userRole } = useAuth();
   const { data: featureFlags } = useFeatureFlags();
+  const { logTokenStatus } = useTokenRefresh();
+  const { startPolling, stopPolling } = usePaymentStatusPolling();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
@@ -77,6 +81,7 @@ const Tickets = () => {
   const [dialogHoursWorked, setDialogHoursWorked] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [processingTicketId, setProcessingTicketId] = useState<string | null>(null);
+  const [paymentCheckingTicketId, setPaymentCheckingTicketId] = useState<string | null>(null);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -241,9 +246,15 @@ const Tickets = () => {
       
       // For consultants: allow moving FROM "New" but not TO "New" (except if already New)
       // Also cannot set TopicClosed, Paid, or ReOpened
+      // BUT can escalate to Escalate status
       return statusOptions.filter(option => {
         // Allow keeping current status
         if (option.value === currentTicketStatus) {
+          return true;
+        }
+        
+        // Allow Escalate status for consultants
+        if (option.value === 'Escalate') {
           return true;
         }
         
@@ -263,18 +274,20 @@ const Tickets = () => {
       });
     } else if (userRole === 'customer') {
       // Customers can reopen closed tickets (BUT NOT if already paid) or respond to PendingCustomerAction
+      // Customers can also escalate if needed
       const isTicketClosed = currentTicketStatus === 'Closed' || currentTicketStatus === 'TopicClosed';
       const isTicketPaid = paymentStatus === 'Paid';
       const isPendingCustomerAction = currentTicketStatus === 'PendingCustomerAction';
       
       if (isTicketClosed && !isTicketPaid) {
-        // Can reopen only if NOT paid
-        return statusOptions.filter(option => option.value === 'ReOpened');
+        // Can reopen or escalate if NOT paid
+        return statusOptions.filter(option => option.value === 'ReOpened' || option.value === 'Escalate');
       } else if (isPendingCustomerAction) {
-        // When status is PendingCustomerAction, customer can only change to InProgress
-        return statusOptions.filter(option => option.value === 'InProgress');
+        // When status is PendingCustomerAction, customer can change to InProgress or Escalate
+        return statusOptions.filter(option => option.value === 'InProgress' || option.value === 'Escalate');
       } else {
-        return [];
+        // Customers can escalate from other states too
+        return statusOptions.filter(option => option.value === 'Escalate');
       }
     } else {
       // Admins can access all statuses
@@ -291,6 +304,8 @@ const Tickets = () => {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'In Progress':
         return <Clock className="w-5 h-5 text-blue-500" />;
+      case 'Escalate':
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
       default:
         return <AlertCircle className="w-5 h-5 text-orange-500" />;
     }
@@ -307,6 +322,8 @@ const Tickets = () => {
       case 'TopicClosed':
         return 'default' as const;
       case 'ReOpened':
+        return 'destructive' as const;
+      case 'Escalate':
         return 'destructive' as const;
       default:
         return 'outline' as const;
@@ -381,6 +398,9 @@ const Tickets = () => {
   const handlePayment = async (ticket: any) => {
     // Initialize Razorpay function
     const initializeRazorpay = (paymentOrder: any) => {
+      // Log token status before payment attempt
+      logTokenStatus();
+
       // Initialize Razorpay
       const options = {
         key: paymentOrder.key,
@@ -412,22 +432,55 @@ const Tickets = () => {
               return;
             }
 
-            await verifyPaymentMutation.mutateAsync({
-              razorpayOrderId: orderId,
-              razorpayPaymentId: paymentId,
-              razorpaySignature: signature
-            });
-            
-            toast.success('Payment successful! Payment has been completed.');
-            refetch(); // Refresh tickets
+            // Log token status before verification
+            logTokenStatus();
+
+            try {
+              await verifyPaymentMutation.mutateAsync({
+                razorpayOrderId: orderId,
+                razorpayPaymentId: paymentId,
+                razorpaySignature: signature
+              });
+              
+              toast.success('Payment successful! Payment has been completed.');
+              refetch();
+            } catch (verifyError: any) {
+              console.error('Payment verification failed:', verifyError);
+              console.log('Starting automatic payment status polling...');
+              
+              // Start polling to check if payment was actually processed
+              setPaymentCheckingTicketId(ticket.id);
+              startPolling({
+                orderId: ticket.id,
+                maxAttempts: 12, // 12 × 5 seconds = 60 seconds
+                pollIntervalMs: 5000,
+                onSuccess: (status) => {
+                  toast.success('Payment verified! Refreshing ticket status...');
+                  setPaymentCheckingTicketId(null);
+                  refetch();
+                },
+                onFailure: (error) => {
+                  toast.error(`Verification failed: ${error}. Please refresh the page to check payment status.`);
+                  setPaymentCheckingTicketId(null);
+                },
+                onAttempt: (attempt, max) => {
+                  console.log(`[Payment Check] Attempt ${attempt}/${max}`);
+                  if (attempt === 1) {
+                    toast.loading(`Checking payment status... (${attempt}/${max})`);
+                  }
+                }
+              });
+            }
           } catch (error: any) {
-            toast.error('Payment verification failed: ' + error.message);
+            console.error('Payment handler error:', error);
+            toast.error('Payment processing error: ' + error.message);
           } finally {
             setProcessingTicketId(null);
           }
         },
         modal: {
           ondismiss: function() {
+            console.log('Payment modal closed by user');
             setProcessingTicketId(null);
           }
         },
@@ -446,7 +499,7 @@ const Tickets = () => {
 
     try {
       setProcessingTicketId(ticket.id);
-      const amount = ticket.calculatedAmount || ticket.totalAmount || 100; // Use calculated amount first, then total amount, or default
+      const amount = ticket.calculatedAmount || ticket.totalAmount || 100;
       
       const paymentOrder = await createPaymentOrder.mutateAsync({
         orderId: ticket.id,

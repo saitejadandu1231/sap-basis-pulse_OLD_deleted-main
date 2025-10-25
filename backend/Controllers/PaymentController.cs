@@ -34,7 +34,9 @@ namespace SapBasisPulse.Api.Controllers
         }
 
         [HttpPost("verify")]
-        [Authorize]
+        // NOTE: No [Authorize] - The Razorpay signature validation ensures security
+        // This allows payment verification even if user's JWT token expires during long payment processing
+        // The signature itself is cryptographically secure and proves the payment came from Razorpay
         public async Task<IActionResult> VerifyPayment([FromBody] VerifyPaymentDto dto)
         {
             var (success, error, response) = await _paymentService.VerifyPaymentAsync(

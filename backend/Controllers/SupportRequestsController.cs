@@ -131,6 +131,12 @@ namespace SapBasisPulse.Api.Controllers
             {
                 await SendCustomerResponseEmailToConsultant(currentOrder, dto.Comment);
             }
+
+            // Send escalation email to admin when ticket is escalated
+            if (dto.Status == "Escalate" && currentStatus != "Escalate")
+            {
+                await SendEscalationEmailToAdmin(currentOrder, dto.Comment, userRole);
+            }
             
             return Ok(new { message = "Status updated successfully" });
         }
@@ -158,6 +164,57 @@ namespace SapBasisPulse.Api.Controllers
                 );
 
                 await emailSender.SendEmailAsync(consultant.Email, consultantSubject, consultantEmailBody);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the status update
+                // In production, add proper logging here
+            }
+        }
+
+        private async Task SendEscalationEmailToAdmin(Order order, string? escalationReason, string initiatorRole)
+        {
+            try
+            {
+                var emailSender = HttpContext.RequestServices.GetRequiredService<IEmailSender>();
+                
+                // Get all admins to send escalation notification
+                var admins = await _context.Users
+                    .Where(u => u.Role.ToString() == "Admin")
+                    .ToListAsync();
+
+                if (!admins.Any())
+                    return;
+
+                var consultant = order.Consultant;
+                var customer = order.CreatedByUser;
+                var supportType = order.SupportType;
+
+                if (customer == null || supportType == null)
+                    return;
+
+                // Create escalation reason including who escalated it
+                var reasonWithInitiator = $"[{initiatorRole}] {escalationReason}";
+
+                // Send email to all admins
+                foreach (var admin in admins)
+                {
+                    var adminName = $"{admin.FirstName} {admin.LastName}".Trim();
+                    var consultantName = consultant != null ? $"{consultant.FirstName} {consultant.LastName}".Trim() : "Unassigned";
+                    
+                    var adminSubject = $"🚨 ESCALATED: Support Request #{order.OrderNumber} - Requires Your Attention";
+                    var adminEmailBody = EmailTemplates.TicketEscalatedToAdminNotification(
+                        adminName,
+                        $"{customer.FirstName} {customer.LastName}".Trim(),
+                        consultantName,
+                        order.OrderNumber,
+                        supportType.Name,
+                        order.Priority ?? "Normal",
+                        reasonWithInitiator
+                    );
+
+                    await emailSender.SendEmailAsync(admin.Email, adminSubject, adminEmailBody);
+                }
             }
             catch (Exception ex)
             {
