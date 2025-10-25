@@ -752,3 +752,43 @@ export const useConsultantsBySkills = (supportTypeId: string, supportCategoryId?
     enabled: !!supportTypeId,
   });
 };
+
+// Get order status by order ID
+export const useOrderStatus = (orderId: string | null) => {
+  const { user, token } = useAuth();
+  
+  return useQuery({
+    queryKey: ['orderStatus', orderId],
+    queryFn: async () => {
+      if (!orderId || !user || !token) return null;
+      
+      // Get order details from recent tickets (this includes status information)
+      let endpoint = 'SupportRequests/recent/user';
+      if (user.role === 'consultant') {
+        endpoint = 'SupportRequests/recent/consultant';
+      } else if (user.role === 'admin') {
+        endpoint = 'SupportRequests';
+      }
+      
+      const response = await apiFetch(endpoint);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch order status');
+      }
+      
+      const tickets = await response.json();
+      
+      // Find the ticket with matching orderId
+      const ticket = tickets.find((t: any) => t.orderId === orderId || t.id === orderId);
+      
+      return ticket ? {
+        status: ticket.status,
+        statusString: ticket.statusString || ticket.status,
+        orderId: ticket.orderId || ticket.id,
+        orderNumber: ticket.orderNumber
+      } : null;
+    },
+    enabled: !!orderId && !!user && !!token,
+    staleTime: 30000, // Cache for 30 seconds
+  });
+};

@@ -27,7 +27,13 @@ const TicketStatusUpdater: React.FC<TicketStatusUpdaterProps> = ({
   userRole,
   consultantHourlyRate
 }) => {
-  const [selectedStatus, setSelectedStatus] = React.useState(currentStatus);
+  const [selectedStatus, setSelectedStatus] = React.useState(() => {
+    // If current status is PendingCustomerAction, default to InProgress
+    if (currentStatus === 'PendingCustomerAction') {
+      return 'InProgress';
+    }
+    return currentStatus;
+  });
   const [comment, setComment] = React.useState('');
   const [hoursWorked, setHoursWorked] = React.useState<string>('');
   const [isUpdating, setIsUpdating] = React.useState(false);

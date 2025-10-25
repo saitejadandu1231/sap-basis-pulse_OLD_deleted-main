@@ -63,6 +63,7 @@ namespace SapBasisPulse.Api.Services
         {
             return priority?.ToUpper() switch
             {
+                "VERYHIGH" => "V",
                 "HIGH" => "H",
                 "MEDIUM" => "M",
                 "LOW" => "L",

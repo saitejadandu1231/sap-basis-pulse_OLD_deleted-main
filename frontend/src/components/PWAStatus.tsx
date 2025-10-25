@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, Smartphone, X } from 'lucide-react';
 import pwaManager from '@/lib/pwa';
+import { BRANDING } from '@/lib/branding';
 
 const PWAStatus: React.FC = () => {
   const [isInstalled, setIsInstalled] = useState(false);
@@ -16,10 +17,14 @@ const PWAStatus: React.FC = () => {
     // Check if can install
     setCanInstall(!!pwaManager.getInstallPrompt());
 
-    // Listen for install prompt changes
+    // Create a check function that runs on every state change
     const checkInstallPrompt = () => {
+      console.log('checkInstallPrompt called, current installPrompt:', !!pwaManager.getInstallPrompt());
       setCanInstall(!!pwaManager.getInstallPrompt());
     };
+    
+    // Subscribe to PWA manager changes
+    const unsubscribe = pwaManager.onChange(checkInstallPrompt);
     
     // Listen to both native and custom events
     window.addEventListener('beforeinstallprompt', checkInstallPrompt);
@@ -30,6 +35,7 @@ const PWAStatus: React.FC = () => {
     });
 
     return () => {
+      unsubscribe();
       window.removeEventListener('beforeinstallprompt', checkInstallPrompt);
       window.removeEventListener('pwa-install-prompt-change', checkInstallPrompt as EventListener);
     };
@@ -49,14 +55,14 @@ const PWAStatus: React.FC = () => {
   }
 
   return (
-    <Card className="fixed top-4 right-4 z-50 max-w-sm border-yuktor-200 bg-yuktor-50 dark:border-yuktor-800 dark:bg-yuktor-950">
+    <Card className="fixed bottom-4 right-4 z-[99999] max-w-sm border-yuktor-200 bg-yuktor-50 dark:border-yuktor-800 dark:bg-yuktor-950">
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1">
             <Smartphone className="h-4 w-4 text-yuktor-600 dark:text-yuktor-400" />
             <div>
               <div className="text-sm font-medium text-yuktor-900 dark:text-yuktor-100">
-                Install Yuktor
+                Install {BRANDING.appName}
               </div>
               <div className="text-xs text-yuktor-600 dark:text-yuktor-400">
                 Get a native app experience

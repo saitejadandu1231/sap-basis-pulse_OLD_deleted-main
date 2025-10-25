@@ -1,11 +1,12 @@
 import React from 'react';
 import PageLayout from '@/components/layout/PageLayout';
+import { BRANDING } from '@/lib/branding';
 
 const PrivacyPolicy = () => {
   return (
     <PageLayout
       title="Privacy Policy"
-      description="Learn how Yuktor Technologies protects your privacy"
+      description={`Learn how ${BRANDING.companyName} Technologies protects your privacy`}
       showSidebar={false}
     >
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -19,15 +20,15 @@ const PrivacyPolicy = () => {
 
             <div className="space-y-6">
               <p>
-                This privacy policy sets out how Yuktor Technologies uses and protects any information that you give Yuktor Technologies when you visit their website and/or agree to purchase from them.
+                This privacy policy sets out how {BRANDING.companyName} Technologies uses and protects any information that you give {BRANDING.companyName} Technologies when you visit their website and/or agree to purchase from them.
               </p>
 
               <p>
-                Yuktor Technologies is committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, and then you can be assured that it will only be used in accordance with this privacy statement.
+                {BRANDING.companyName} Technologies is committed to ensuring that your privacy is protected. Should we ask you to provide certain information by which you can be identified when using this website, and then you can be assured that it will only be used in accordance with this privacy statement.
               </p>
 
               <p>
-                Yuktor Technologies may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you adhere to these changes.
+                {BRANDING.companyName} Technologies may change this policy from time to time by updating this page. You should check this page from time to time to ensure that you adhere to these changes.
               </p>
 
               <div>

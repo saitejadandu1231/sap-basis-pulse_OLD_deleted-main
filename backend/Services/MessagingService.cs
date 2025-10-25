@@ -12,10 +12,12 @@ namespace SapBasisPulse.Api.Services
 public class MessagingService : IMessagingService
 {
     private readonly AppDbContext _context;
+    private readonly IEmailSender _emailSender;
 
-    public MessagingService(AppDbContext context)
+    public MessagingService(AppDbContext context, IEmailSender emailSender)
     {
         _context = context;
+        _emailSender = emailSender;
     }
     
     public async Task<bool> OrderExistsAsync(Guid orderId)
@@ -161,16 +163,111 @@ public class MessagingService : IMessagingService
 
             // Update conversation's last message time
             var conversation = await _context.Conversations
+                .Include(c => c.Order)
+                    .ThenInclude(o => o.Status)
+                .Include(c => c.Order)
+                    .ThenInclude(o => o.CreatedByUser)
+                .Include(c => c.Order)
+                    .ThenInclude(o => o.Consultant)
+                .Include(c => c.Order)
+                    .ThenInclude(o => o.SupportType)
                 .FirstOrDefaultAsync(c => c.Id == dto.ConversationId);
             
             if (conversation != null)
             {
                 conversation.LastMessageAt = DateTime.UtcNow;
+
+                // AUTO-STATUS CHANGE: If customer sends message and ticket is "PendingCustomerAction", 
+                // automatically change status to "InProgress"
+                var order = conversation.Order;
+                if (order != null && 
+                    order.Status?.StatusCode == "PendingCustomerAction" && 
+                    senderId == order.CreatedByUserId) // Only for customer messages
+                {
+                    await AutoChangeStatusToInProgressFromCustomerResponse(order, dto.Content);
+                }
             }
 
             await _context.SaveChangesAsync();
 
             return await MapToMessageDto(message);
+        }
+
+        private async Task AutoChangeStatusToInProgressFromCustomerResponse(Order order, string customerResponse)
+        {
+            try
+            {
+                // Find "InProgress" status
+                var inProgressStatus = await _context.StatusMaster
+                    .FirstOrDefaultAsync(sm => sm.StatusCode == "InProgress");
+                
+                if (inProgressStatus == null) return;
+
+                var oldStatusId = order.StatusId;
+                var oldStatus = order.Status;
+
+                // Update order status
+                order.StatusId = inProgressStatus.Id;
+                order.StatusString = "InProgress"; // Keep backward compatibility
+                order.LastUpdated = DateTime.UtcNow;
+
+                // Create status change log entry
+                var statusChangeLog = new StatusChangeLog
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    FromStatusId = oldStatusId,
+                    ToStatusId = inProgressStatus.Id,
+                    ChangedByUserId = order.CreatedByUserId, // Customer triggered the change
+                    Comment = "Automatically changed to In Progress due to customer response",
+                    ChangedAt = DateTime.UtcNow
+                };
+
+                _context.StatusChangeLogs.Add(statusChangeLog);
+
+                // Send email notification to consultant
+                await SendCustomerResponseNotificationToConsultant(order, customerResponse);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the message sending
+                // In production, you might want to add proper logging here
+            }
+        }
+
+        private async Task SendCustomerResponseNotificationToConsultant(Order order, string customerResponse)
+        {
+            try
+            {
+                var customer = order.CreatedByUser;
+                var consultant = order.Consultant;
+                var supportType = order.SupportType;
+
+                if (customer == null || consultant == null || supportType == null)
+                {
+                    return;
+                }
+
+                // Import EmailSender and EmailTemplates if needed
+                // For now, this will require dependency injection of IEmailSender
+                // We'll need to add it to MessagingService constructor
+
+                var consultantSubject = $"✅ Customer Responded: Support Request #{order.OrderNumber} - Work Resumed";
+                var consultantEmailBody = EmailTemplates.StatusChangedBackToInProgressFromCustomerResponseForConsultant(
+                    $"{consultant.FirstName} {consultant.LastName}".Trim(),
+                    $"{customer.FirstName} {customer.LastName}".Trim(),
+                    order.OrderNumber,
+                    supportType.Name,
+                    customerResponse.Length > 200 ? customerResponse.Substring(0, 200) + "..." : customerResponse
+                );
+
+                // Send email notification to consultant
+                await _emailSender.SendEmailAsync(consultant.Email, consultantSubject, consultantEmailBody);
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't fail the status update
+            }
         }
 
         public async Task<MessageDto?> GetMessageByIdAsync(Guid messageId, Guid userId)

@@ -8,6 +8,7 @@ import { useUnreadMessageCount } from "@/services/messagingHooks";
 import { Badge } from "@/components/ui/badge";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import DashboardOverview from "@/components/dashboard/DashboardOverview";
+import { BRANDING } from '@/lib/branding';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-yuktor-400 to-yuktor-600 bg-clip-text text-transparent">
-              Yuktor Dashboard
+              {BRANDING.appName} Dashboard
             </h1>
             <p className="text-sm text-muted-foreground">
               Welcome back, {displayName} ({userRole})

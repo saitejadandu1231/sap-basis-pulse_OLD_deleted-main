@@ -1,4 +1,5 @@
 {
+  "_comment": "This file should be generated from frontend/src/lib/branding.ts - Update branding.ts to change company name, app name, etc.",
   "name": "Yuktor",
   "short_name": "Yuktor", 
   "description": "Yuktor - Enterprise Support Management System",

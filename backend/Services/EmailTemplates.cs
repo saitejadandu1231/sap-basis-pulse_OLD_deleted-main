@@ -502,5 +502,208 @@ namespace SapBasisPulse.Api.Services
             </body>
             </html>";
         }
+
+        public static string StatusChangedToPendingCustomerActionForCustomer(string customerName, string orderNumber, string consultantName, string supportType, string? comment = null)
+        {
+            return $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='utf-8'>
+                <title>Action Required - Your Support Request</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                    .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                    .button {{ display: inline-block; background: #f39c12; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                    .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    .action-box {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                    .ticket-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f39c12; }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h1>⏳ Action Required</h1>
+                        <p>Your consultant needs additional information</p>
+                    </div>
+                    <div class='content'>
+                        <h2>Hello {customerName},</h2>
+                        <p>Your SAP BASIS consultant needs additional information or action from you to continue working on your support request.</p>
+
+                        <div class='ticket-box'>
+                            <h3>Request Details:</h3>
+                            <p><strong>Order Number:</strong> {orderNumber}</p>
+                            <p><strong>Support Type:</strong> {supportType}</p>
+                            <p><strong>Consultant:</strong> {consultantName}</p>
+                            <p><strong>Status:</strong> <span style='color: #f39c12; font-weight: bold;'>⏳ Pending Customer Action</span></p>
+                        </div>
+
+                        {(string.IsNullOrEmpty(comment) ? "" : $@"
+                        <div class='action-box'>
+                            <h4>💬 Message from your consultant:</h4>
+                            <p style='font-style: italic; margin: 10px 0;'>""{comment}""</p>
+                        </div>
+                        ")}
+
+                        <div class='action-box'>
+                            <h4>📝 What you need to do:</h4>
+                            <ol style='margin: 15px 0;'>
+                                <li>Click the button below to access your ticket</li>
+                                <li>Review the consultant's message or request</li>
+                                <li>Provide the requested information or clarification</li>
+                                <li>Add your response in the comments section</li>
+                            </ol>
+                            <p><strong>⚡ Once you add your response, work will automatically resume!</strong></p>
+                        </div>
+
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Respond to Request</a>
+                        </div>
+
+                        <p><strong>Why is this important?</strong></p>
+                        <ul>
+                            <li>Your consultant needs this information to provide accurate support</li>
+                            <li>Quick responses help resolve your issue faster</li>
+                            <li>Work will resume immediately after your response</li>
+                        </ul>
+
+                        <p>Thank you for choosing Yuktor for your SAP BASIS support needs.</p>
+
+                        <p>Best regards,<br>The Yuktor Team</p>
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated notification from Yuktor - Enterprise SAP BASIS Support Platform</p>
+                        <p>© 2025 Yuktor. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>";
+        }
+
+        public static string StatusChangedBackToInProgressFromCustomerResponseForConsultant(string consultantName, string customerName, string orderNumber, string supportType, string customerResponse)
+        {
+            return $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='utf-8'>
+                <title>Customer Responded - Work Resumed</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                    .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                    .button {{ display: inline-block; background: #27ae60; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                    .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    .response-box {{ background: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                    .ticket-box {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #27ae60; }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h1>✅ Customer Responded</h1>
+                        <p>Work has automatically resumed</p>
+                    </div>
+                    <div class='content'>
+                        <h2>Hello {consultantName},</h2>
+                        <p>Great news! The customer has provided the information you requested, and the ticket status has been automatically changed back to ""In Progress"".</p>
+
+                        <div class='ticket-box'>
+                            <h3>Request Details:</h3>
+                            <p><strong>Order Number:</strong> {orderNumber}</p>
+                            <p><strong>Customer:</strong> {customerName}</p>
+                            <p><strong>Support Type:</strong> {supportType}</p>
+                            <p><strong>Status:</strong> <span style='color: #27ae60; font-weight: bold;'>🔄 In Progress</span></p>
+                        </div>
+
+                        <div class='response-box'>
+                            <h4>💬 Customer's Response:</h4>
+                            <p style='font-style: italic; margin: 10px 0; background: white; padding: 15px; border-radius: 5px;'>""{customerResponse}""</p>
+                        </div>
+
+                        <div style='background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                            <strong>📢 Action Required:</strong><br>
+                            Please review the customer's response and continue working on their support request. You can access the full conversation in the ticket details.
+                        </div>
+
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Continue Working</a>
+                        </div>
+
+                        <p><strong>Next Steps:</strong></p>
+                        <ul>
+                            <li>Review the customer's response thoroughly</li>
+                            <li>Continue providing the requested support</li>
+                            <li>Update the customer on your progress</li>
+                            <li>Mark as completed when finished</li>
+                        </ul>
+
+                        <p>Thank you for providing excellent SAP BASIS support through Yuktor!</p>
+
+                        <p>Best regards,<br>The Yuktor Team</p>
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated notification from Yuktor - Enterprise SAP BASIS Support Platform</p>
+                        <p>© 2025 Yuktor. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>";
+        }
+
+        public static string StatusChangedToReopenedForConsultant(string consultantName, string customerName, string orderNumber, string supportType, string? comment = null)
+        {
+            return $@"
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='utf-8'>
+                <title>Ticket Re-opened</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: linear-gradient(135deg, #6f42c1 0%, #8e44ad 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                    .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                    .button {{ display: inline-block; background: #6f42c1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                    .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    .comment-box {{ background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e6e6e6; margin-top: 10px; }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h1>🔔 Ticket Re-opened</h1>
+                        <p>The customer has re-opened the support request</p>
+                    </div>
+                    <div class='content'>
+                        <h2>Hello {consultantName},</h2>
+                        <p>The customer {customerName} has re-opened the support request <strong>#{orderNumber}</strong> (Type: {supportType}). Please review and continue the work.</p>
+
+                        {(string.IsNullOrEmpty(comment) ? "" : $"<div class='comment-box'><h4>Customer Comment:</h4><p style='margin:0;'>{comment}</p></div>")}
+
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Open Ticket</a>
+                        </div>
+
+                        <p><strong>Next steps:</strong></p>
+                        <ul>
+                            <li>Review the customer's reason for reopening</li>
+                            <li>Contact the customer if clarification is needed</li>
+                            <li>Update the ticket status and continue work</li>
+                        </ul>
+
+                        <p>Best regards,<br>The Yuktor Team</p>
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated notification from Yuktor - Enterprise SAP BASIS Support Platform</p>
+                        <p>© 2025 Yuktor. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>";
+        }
     }
 }

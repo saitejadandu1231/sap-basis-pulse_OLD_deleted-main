@@ -1,6 +1,7 @@
 // Minimal service worker for PWA installation support
 // This service worker doesn't cache anything - it's online-only as specified in the requirements
 
+// Note: Cache name should be updated in branding configuration
 const CACHE_NAME = 'yuktor-v1';
 
 // Install event - no caching, just claim immediately
