@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SapBasisPulse.Api.Data;
 using SapBasisPulse.Api.DTOs;
+using SapBasisPulse.Api.Entities;
 using SapBasisPulse.Api.Services;
 using System.Security.Claims;
 
