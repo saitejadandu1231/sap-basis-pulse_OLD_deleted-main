@@ -48,7 +48,7 @@ namespace SapBasisPulse.Api.Services
                         </ul>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/' class='button'>View in Dashboard</a>
+                            <a href='https://app.yuktor.com/' class='button'>View in Dashboard</a>
                         </div>
 
                         <p>If you have any questions, feel free to reply to this email or contact our support team.</p>
@@ -113,7 +113,7 @@ namespace SapBasisPulse.Api.Services
                         </ul>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/' class='button'>View in Dashboard</a>
+                            <a href='https://app.yuktor.com/' class='button'>View in Dashboard</a>
                         </div>
 
                         <p>Thank you for your dedication to providing excellent SAP BASIS support!</p>
@@ -243,7 +243,7 @@ namespace SapBasisPulse.Api.Services
                         </div>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/tickets' class='button'>View Progress</a>
+                            <a href='https://app.yuktor.com/tickets' class='button'>View Progress</a>
                         </div>
 
                         <p>Thank you for choosing Yuktor for your SAP BASIS support needs!</p>
@@ -315,7 +315,7 @@ namespace SapBasisPulse.Api.Services
                         </div>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/dashboard' class='button'>View Dashboard</a>
+                            <a href='https://app.yuktor.com/dashboard' class='button'>View Dashboard</a>
                         </div>
 
                         <p>Keep up the excellent work!</p>
@@ -400,7 +400,7 @@ namespace SapBasisPulse.Api.Services
                         </div>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/tickets' class='button'>View Details & Rate</a>
+                            <a href='https://app.yuktor.com/tickets' class='button'>View Details & Rate</a>
                         </div>
 
                         <p>Thank you for choosing Yuktor for your SAP BASIS support needs. We hope the service met your expectations!</p>
@@ -487,7 +487,7 @@ namespace SapBasisPulse.Api.Services
                         </ul>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/dashboard' class='button'>View Dashboard</a>
+                            <a href='https://app.yuktor.com/dashboard' class='button'>View Dashboard</a>
                         </div>
 
                         <p>Excellent work! Thank you for providing quality SAP BASIS support.</p>
@@ -559,7 +559,7 @@ namespace SapBasisPulse.Api.Services
                         </div>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Respond to Request</a>
+                            <a href='https://app.yuktor.com/tickets?ticket={orderNumber}' class='button'>Respond to Request</a>
                         </div>
 
                         <p><strong>Why is this important?</strong></p>
@@ -630,7 +630,7 @@ namespace SapBasisPulse.Api.Services
                         </div>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Continue Working</a>
+                            <a href='https://app.yuktor.com/tickets?ticket={orderNumber}' class='button'>Continue Working</a>
                         </div>
 
                         <p><strong>Next Steps:</strong></p>
@@ -685,7 +685,7 @@ namespace SapBasisPulse.Api.Services
                         {(string.IsNullOrEmpty(comment) ? "" : $"<div class='comment-box'><h4>Customer Comment:</h4><p style='margin:0;'>{comment}</p></div>")}
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Open Ticket</a>
+                            <a href='https://app.yuktor.com/tickets?ticket={orderNumber}' class='button'>Open Ticket</a>
                         </div>
 
                         <p><strong>Next steps:</strong></p>
@@ -764,7 +764,7 @@ namespace SapBasisPulse.Api.Services
                         </div>
 
                         <div style='text-align: center; margin: 30px 0;'>
-                            <a href='https://yuktor.vercel.app/tickets?ticket={orderNumber}' class='button'>Review Escalated Ticket</a>
+                            <a href='https://app.yuktor.com/tickets?ticket={orderNumber}' class='button'>Review Escalated Ticket</a>
                         </div>
 
                         <p><strong>Next Steps:</strong></p>
