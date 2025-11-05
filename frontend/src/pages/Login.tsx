@@ -32,6 +32,7 @@ import {
 import { apiFetch } from "@/lib/api";
 import SSOButtons from "@/components/SSOButtons";
 import { Checkbox } from "@/components/ui/checkbox";
+import "@/styles/branding.css";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -239,10 +240,10 @@ const Login = () => {
         {/* Simple logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-primary to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">Y</span>
+            <div className="w-10 h-10 brand-logo-bg rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold">Y</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold brand-text">
               {BRANDING.appName}
             </span>
           </div>
@@ -333,7 +334,7 @@ const Login = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full btn-glow h-12 text-lg font-medium"
+                      className="w-full btn-glow h-12 text-lg font-medium brand-button-hover"
                       disabled={loading}
                     >
                       {loading ? (
@@ -538,7 +539,7 @@ const Login = () => {
                     
                     <Button
                       type="submit"
-                      className="w-full btn-glow h-12 text-lg font-medium"
+                      className="w-full btn-glow h-12 text-lg font-medium brand-button-hover"
                       disabled={loading}
                     >
                       {loading ? (
@@ -560,7 +561,36 @@ const Login = () => {
             </div>
           </Card>
 
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 space-y-4">
+          <div className="flex flex-wrap justify-center gap-4 text-sm">
+            <a 
+              href="https://www.yuktor.com/privacy" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+            >
+              Privacy Policy
+            </a>
+            <span className="text-muted-foreground">•</span>
+            <a 
+              href="https://www.yuktor.com/terms" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+            >
+              Terms & Conditions
+            </a>
+            <span className="text-muted-foreground">•</span>
+            <a 
+              href="https://www.youtube.com/@YuktorSAP" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+            >
+              YouTube
+            </a>
+          </div>
+          
           <Button variant="ghost" onClick={() => navigate('/')} className="text-muted-foreground hover:text-foreground">
             <ArrowLeft className="mr-2 w-4 h-4" />
             Back to Home

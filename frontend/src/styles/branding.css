@@ -1,0 +1,18 @@
+/* Branding colors - easily customizable */
+.brand-text {
+  color: hsl(50.04deg 100% 50.39%);
+}
+
+.brand-text-bold {
+  color: hsl(50.04deg 100% 50.39%);
+  font-weight: bold;
+}
+
+.brand-logo-bg {
+  background-color: hsl(50.04deg 100% 50.39%);
+}
+
+.brand-button-hover:hover {
+  background-color: hsl(50.04deg 100% 50.39%) !important;
+  color: black !important;
+}

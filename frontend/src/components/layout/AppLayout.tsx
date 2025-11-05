@@ -210,7 +210,7 @@ const AppLayout = () => {
                   onClick={() => navigate(dashboardPath)}
                   className="hover:opacity-80 transition-opacity"
                 >
-                  <h1 className="font-semibold text-gray-900">Yuktor</h1>
+                  <h1 className="font-semibold brand-text">Yuktor</h1>
                 </button>
                 <p className="text-xs text-gray-500">Enterprise Support</p>
               </div>
@@ -348,7 +348,7 @@ const AppLayout = () => {
                   onClick={() => navigate(dashboardPath)}
                   className="hover:opacity-80 transition-opacity"
                 >
-                  <h1 className="font-semibold text-gray-900 text-lg">Yuktor</h1>
+                  <h1 className="font-semibold brand-text text-lg">Yuktor</h1>
                 </button>
               </div>
               
