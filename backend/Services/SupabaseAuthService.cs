@@ -247,30 +247,35 @@ namespace SapBasisPulse.Api.Services
             try
             {
                 var supabaseUrl = _config["Supabase:Url"];
-                var supabaseServiceKey = _config["Supabase:ServiceKey"]; // We'll use anon key as fallback
+                var supabaseAnonKey = _config["Supabase:AnonKey"];
                 
-                if (string.IsNullOrEmpty(supabaseUrl))
+                if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseAnonKey))
+                {
+                    Console.WriteLine($"[SSO] Missing Supabase configuration - URL: {!string.IsNullOrEmpty(supabaseUrl)}, AnonKey: {!string.IsNullOrEmpty(supabaseAnonKey)}");
                     return null;
+                }
 
-                // Clear any existing authorization headers
-                _httpClient.DefaultRequestHeaders.Authorization = null;
-                _httpClient.DefaultRequestHeaders.Clear();
+                // Create a new HttpClient instance to avoid header conflicts
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Clear();
                 
-                // Use proper Supabase headers
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
-                _httpClient.DefaultRequestHeaders.Add("apikey", supabaseServiceKey ?? _config["Supabase:AnonKey"]);
+                // Use proper Supabase headers - apikey is required for Supabase Auth API
+                httpClient.DefaultRequestHeaders.Add("apikey", supabaseAnonKey);
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
                 
-                var response = await _httpClient.GetAsync($"{supabaseUrl}/auth/v1/user");
+                Console.WriteLine($"[SSO] Validating token with Supabase API: {supabaseUrl}/auth/v1/user");
+                
+                var response = await httpClient.GetAsync($"{supabaseUrl}/auth/v1/user");
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Supabase API Error: {response.StatusCode} - {errorContent}");
+                    Console.WriteLine($"[SSO] Supabase API Error: {response.StatusCode} - {errorContent}");
                     return null;
                 }
 
                 var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Supabase User Response: {content}");
+                Console.WriteLine($"[SSO] Supabase User Response: {content.Substring(0, Math.Min(200, content.Length))}...");
                 
                 var userInfo = JsonSerializer.Deserialize<JsonElement>(content);
 
@@ -283,6 +288,9 @@ namespace SapBasisPulse.Api.Services
                     
                     if (userInfo.TryGetProperty("user_metadata", out var userMetadata))
                     {
+                        Console.WriteLine($"[SSO] Found user_metadata: {userMetadata}");
+                        
+                        // Try full_name first
                         if (userMetadata.TryGetProperty("full_name", out var fullName))
                         {
                             var nameParts = fullName.GetString()?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
@@ -295,7 +303,33 @@ namespace SapBasisPulse.Api.Services
                                 }
                             }
                         }
+                        
+                        // If full_name not available, try first_name and last_name separately
+                        if (string.IsNullOrEmpty(firstName) && userMetadata.TryGetProperty("first_name", out var fn))
+                        {
+                            firstName = fn.GetString() ?? "";
+                        }
+                        if (string.IsNullOrEmpty(lastName) && userMetadata.TryGetProperty("last_name", out var ln))
+                        {
+                            lastName = ln.GetString() ?? "";
+                        }
+                        
+                        // Fallback to name field
+                        if (string.IsNullOrEmpty(firstName) && userMetadata.TryGetProperty("name", out var name))
+                        {
+                            var nameParts = name.GetString()?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                            if (nameParts.Length > 0)
+                            {
+                                firstName = nameParts[0];
+                                if (nameParts.Length > 1)
+                                {
+                                    lastName = string.Join(" ", nameParts.Skip(1));
+                                }
+                            }
+                        }
                     }
+                    
+                    Console.WriteLine($"[SSO] Successfully validated Supabase user - Email: {email.GetString()}, Name: {firstName} {lastName}");
                     
                     return new SupabaseUser
                     {
@@ -306,11 +340,13 @@ namespace SapBasisPulse.Api.Services
                     };
                 }
 
+                Console.WriteLine($"[SSO] Failed to extract id/email from Supabase response");
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Token validation error: {ex.Message}");
+                Console.WriteLine($"[SSO] Token validation error: {ex.Message}");
+                Console.WriteLine($"[SSO] Stack trace: {ex.StackTrace}");
                 return null;
             }
         }
