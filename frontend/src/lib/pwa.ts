@@ -11,15 +11,20 @@ class PWAManager {
   }
 
   private init() {
+    console.log('PWA Manager: Initializing and setting up beforeinstallprompt listener');
+    
     // Capture beforeinstallprompt so UI can show a custom install button
     window.addEventListener('beforeinstallprompt', (e: any) => {
+      console.log('🎉 beforeinstallprompt event FIRED!', e);
       try {
         e.preventDefault();
+        console.log('✅ preventDefault() called successfully');
       } catch (err) {
-        // ignore
+        console.error('❌ Failed to preventDefault:', err);
       }
       this.deferredPrompt = e;
-      console.log('beforeinstallprompt captured, canInstall: true');
+      console.log('✅ beforeinstallprompt captured, canInstall: true');
+      console.log('Prompt object stored:', this.deferredPrompt);
       // Dispatch event and also notify listeners
       window.dispatchEvent(new CustomEvent('pwa-install-prompt-change', { detail: { canInstall: true } }));
       this.notifyListeners();
@@ -126,4 +131,11 @@ class PWAManager {
 }
 
 const pwaManager = new PWAManager();
+
+// Expose to window for debugging
+if (typeof window !== 'undefined') {
+  (window as any).pwaManager = pwaManager;
+  console.log('PWA Manager initialized and exposed to window.pwaManager');
+}
+
 export default pwaManager;
