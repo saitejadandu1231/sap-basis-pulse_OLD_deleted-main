@@ -52,7 +52,7 @@ const Help = () => {
     >
       <div className="space-y-6">
         {/* Search Bar */}
-        <Card>
+        {/* <Card>
           <CardContent className="p-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -62,39 +62,11 @@ const Help = () => {
               />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader className="text-center">
-              <MessageCircle className="w-12 h-12 text-blue-500 mx-auto mb-2" />
-              <CardTitle>Contact Support</CardTitle>
-              <CardDescription>
-                Get direct help from our support team
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button className="w-full">Start a Conversation</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader className="text-center">
-              <BookOpen className="w-12 h-12 text-green-500 mx-auto mb-2" />
-              <CardTitle>Browse Guides</CardTitle>
-              <CardDescription>
-                Explore our documentation library
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button variant="outline" className="w-full">
-                View All Guides
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+        <div className="flex justify-center">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow max-w-md w-full">
             <CardHeader className="text-center">
               <Video className="w-12 h-12 text-purple-500 mx-auto mb-2" />
               <CardTitle>Watch Tutorials</CardTitle>
@@ -103,15 +75,20 @@ const Help = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Button variant="outline" className="w-full">
-                View Videos
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => window.open('https://www.youtube.com/@YuktorSAP', '_blank')}
+              >
+                <Video className="w-4 h-4 mr-2" />
+                View Videos on YouTube
               </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* Help Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {helpSections.map((section) => {
             const Icon = section.icon;
             return (
@@ -143,10 +120,10 @@ const Help = () => {
               </Card>
             );
           })}
-        </div>
+        </div> */}
 
         {/* Contact Information */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Still Need Help?</CardTitle>
             <CardDescription>
@@ -169,7 +146,7 @@ const Help = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </PageLayout>
   );

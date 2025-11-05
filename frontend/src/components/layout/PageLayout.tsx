@@ -130,7 +130,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
               className="hover:opacity-80 transition-opacity flex items-center space-x-2"
             >
               <div className="text-left">
-                <h1 className="text-xl md:text-2xl font-bold text-primary tracking-tight">
+                <h1 className="text-xl md:text-2xl font-bold brand-text tracking-tight">
                   Yuktor
                 </h1>
                 <p className="text-xs text-muted-foreground hidden sm:block capitalize">
