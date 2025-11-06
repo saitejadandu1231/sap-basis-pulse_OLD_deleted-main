@@ -5,9 +5,10 @@ WORKDIR /app
 # Create non-root user for security
 RUN adduser --disabled-password --gecos '' --shell /bin/bash --uid 1001 appuser
 
-# Railway automatically assigns PORT, but we'll default to 8080
+# Expose a default port (useful for local runs). Vercel sets PORT at runtime.
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
+# Listen on the port provided by the environment (Vercel sets $PORT at runtime)
+ENV ASPNETCORE_URLS=http://+:$PORT
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
@@ -44,7 +45,7 @@ USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD sh -c 'curl -f http://localhost:${PORT:-8080}/health || exit 1'
 
 # Start application
 ENTRYPOINT ["dotnet", "SapBasisPulse.Api.dll"]
